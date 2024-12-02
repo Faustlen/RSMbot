@@ -28,11 +28,14 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.liquibase:liquibase-core")
+    implementation("org.telegram:telegrambots:6.9.7.1")
     compileOnly("org.projectlombok:lombok")
     runtimeOnly("org.postgresql:postgresql")
     annotationProcessor("org.projectlombok:lombok")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.security:spring-security-test")
+    testImplementation("org.apache.logging.log4j:log4j-api")
+    testImplementation("org.apache.logging.log4j:log4j-slf4j-impl")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
