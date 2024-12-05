@@ -16,5 +16,5 @@ logging.level.org.hibernate.orm.jdbc.bind=trace
 logging.level.org.hibernate.type=trace
 
 spring.datasource.url=jdbc:postgresql://localhost:5432/rsm_db
-spring.datasource.username=artem
-spring.datasource.password=dunice
+spring.datasource.username=
+spring.datasource.password=
