@@ -19,8 +19,8 @@ public class Partner {
     @Column(nullable = false, unique = true)
     private String name;
 
-    @Column(nullable = false, unique = true)
-    private String phone;
+    @Column(nullable = false, unique = true, name = "phone_number")
+    private String phoneNumber;
 
     @Column(nullable = false, name = "discount_percent")
     private Integer discountPercent;
