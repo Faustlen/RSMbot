@@ -4,7 +4,8 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 application*.properties
-gradlew.*
+gradlew
+gradlew.bat
 gradle/*
 
 ### STS ###
