@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Getter
 @Setter
@@ -27,7 +27,7 @@ public class User {
     private Role userRole;
 
     @Column(nullable = false, name = "birth_date")
-    private LocalDateTime birthDate;
+    private LocalDate birthDate;
 
     @Column(nullable = false, name = "first_name")
     private String firstName;
@@ -36,5 +36,5 @@ public class User {
     private String info;
 
     @Column(name = "user_card", nullable = false, unique = true)
-    private String userCard;
+    private Integer userCard;
 }

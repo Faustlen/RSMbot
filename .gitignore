@@ -1,9 +1,12 @@
 README.md
 .gradle
 build/
-!gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
+application*.properties
+gradlew
+gradlew.bat
+gradle/*
 
 ### STS ###
 .apt_generated
@@ -26,6 +29,7 @@ out/
 !**/src/main/**/out/
 !**/src/test/**/out/
 application*.properties
+
 
 ### NetBeans ###
 /nbproject/private/
