@@ -14,9 +14,9 @@ public class User {
 
     @Id
     @Column(name = "tg_id")
-    private long tgId;
+    private Long tgId;
 
-    @Column(name = "full_name", nullable = false, unique = true)
+    @Column(name = "full_name", nullable = false)
     private String fullName;
 
     @Column(name = "phone_number", nullable = false, unique = true)
@@ -29,8 +29,8 @@ public class User {
     @Column(nullable = false, name = "birth_date")
     private LocalDate birthDate;
 
-    @Column(nullable = false, name = "first_name")
-    private String firstName;
+    @Column(nullable = false)
+    private String name;
 
     @Column(nullable = false)
     private String info;

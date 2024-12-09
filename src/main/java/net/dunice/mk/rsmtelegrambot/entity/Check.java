@@ -4,7 +4,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDate;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -14,23 +15,24 @@ public class Check {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "check_id")
+    private Integer checkId;
 
     @ManyToOne
     @JoinColumn(name = "partner_id", nullable = false)
     private Partner partnerId;
 
-    @Column(name = "check_sum", nullable = false)
-    private Double checkSum;
+    @Column(name = "check_sum")
+    private BigDecimal checkSum;
 
-    @Column(name = "discount_percent", nullable = false)
-    private Integer discountPercent;
+    @Column(name = "discount_percent")
+    private Short discountPercent;
 
     @ManyToOne
-    @JoinColumn(name = "user_card", nullable = false)
+    @JoinColumn(name = "user_card", referencedColumnName = "user_card", nullable = false)
     private User userCard;
 
     @Column(nullable = false)
-    private LocalDate date;
+    private LocalDateTime date;
 }
 
