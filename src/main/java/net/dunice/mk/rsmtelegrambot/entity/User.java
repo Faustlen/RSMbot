@@ -14,7 +14,7 @@ public class User {
 
     @Id
     @Column(name = "tg_id")
-    private Long tgId;
+    private Long telegramId;
 
     @Column(name = "full_name", nullable = false)
     private String fullName;
