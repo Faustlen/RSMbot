@@ -30,6 +30,7 @@ CREATE TABLE users
     name         VARCHAR(25)  NOT NULL,
     info         VARCHAR(250) NOT NULL,
     user_card    INTEGER      NOT NULL,
+    is_banned    BOOLEAN      NOT NULL,
     CONSTRAINT pk_users PRIMARY KEY (tg_id),
     CONSTRAINT uc_users_phone_number UNIQUE (phone_number),
     CONSTRAINT uc_users_user_card UNIQUE (user_card)

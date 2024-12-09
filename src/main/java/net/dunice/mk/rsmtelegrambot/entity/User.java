@@ -35,6 +35,9 @@ public class User {
     @Column(nullable = false)
     private String info;
 
-    @Column(name = "user_card", nullable = false, unique = true)
+    @Column(nullable = false, unique = true, name = "user_card")
     private Integer userCard;
+
+    @Column(name = "is_banned")
+    private boolean isBanned;
 }
