@@ -73,7 +73,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 if ("Да".equalsIgnoreCase(messageText)) {
                     state.setStep(UserRegistrationStep.FULL_NAME);
                     sendMessage(telegramId, "Введите ФИО:");
-                } else if ("Отменить регистрацию".equalsIgnoreCase(messageText)) {
+                } else if ("Нет".equalsIgnoreCase(messageText)) {
                     sendMessage(telegramId, "Регистрация отменена.");
                     registrationState.remove(telegramId);
                 }

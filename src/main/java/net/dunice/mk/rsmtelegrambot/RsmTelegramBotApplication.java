@@ -12,6 +12,7 @@ public class RsmTelegramBotApplication {
 
     public static void main(String[] args) {
         var context = SpringApplication.run(RsmTelegramBotApplication.class, args);
+
         try {
             TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
             TelegramBot telegramBot = context.getBean(TelegramBot.class);
