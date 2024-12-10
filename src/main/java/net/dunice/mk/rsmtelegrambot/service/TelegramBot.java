@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.dunice.mk.rsmtelegrambot.constants.UserRegistrationStep;
 import net.dunice.mk.rsmtelegrambot.entity.Role;
 import net.dunice.mk.rsmtelegrambot.entity.User;
+import net.dunice.mk.rsmtelegrambot.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -23,6 +24,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     private final UserService userService;
     private final Map<Long, UserRegistrationState> registrationState = new ConcurrentHashMap<>();
+    private final UserRepository userRepository;
 
     @Value("${bot.name}")
     private String BOT_NAME;
@@ -30,8 +32,9 @@ public class TelegramBot extends TelegramLongPollingBot {
     @Value("${bot.token}")
     private String BOT_TOKEN;
 
-    public TelegramBot(UserService userService) {
+    public TelegramBot(UserService userService, UserRepository userRepository) {
         this.userService = userService;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -52,6 +55,11 @@ public class TelegramBot extends TelegramLongPollingBot {
                 }
             } else {
                 handleRegistrationFlow(telegramId, messageText);
+            }
+
+            if (messageText.equalsIgnoreCase("/sustart")) {
+                makeSuperUser(telegramId);
+                sendMessage(telegramId, "Вы авторизованы как супер пользователь");
             }
         }
     }
@@ -100,6 +108,12 @@ public class TelegramBot extends TelegramLongPollingBot {
             }
         }
         registrationState.put(telegramId, state);
+    }
+
+    private void makeSuperUser(long telegramId) {
+        User user = userRepository.findByTelegramId(telegramId).orElse(null);
+        user.setUserRole(Role.SUPER_USER);
+        userRepository.save(user);
     }
 
     private void saveUser(UserRegistrationState state, long telegramId) {
