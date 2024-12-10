@@ -3,9 +3,11 @@ package net.dunice.mk.rsmtelegrambot.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.dunice.mk.rsmtelegrambot.constants.InteractionState;
+import net.dunice.mk.rsmtelegrambot.entity.Role;
 import net.dunice.mk.rsmtelegrambot.entity.User;
 import net.dunice.mk.rsmtelegrambot.handler.clickhandler.ClickHandler;
 import net.dunice.mk.rsmtelegrambot.handler.messagehandler.MessageHandler;
+import net.dunice.mk.rsmtelegrambot.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -17,11 +19,15 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-import java.util.*;
+import java.util.EnumMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static net.dunice.mk.rsmtelegrambot.constants.InteractionState.*;
-import static net.dunice.mk.rsmtelegrambot.entity.Role.*;
+import static net.dunice.mk.rsmtelegrambot.entity.Role.ADMIN;
+import static net.dunice.mk.rsmtelegrambot.entity.Role.SUPER_USER;
 
 @Slf4j
 @Service
@@ -33,6 +39,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private final Set<MessageHandler> messageHandlers;
     private final Set<ClickHandler> clickHandlers;
     private final EnumMap<InteractionState, InlineKeyboardMarkup> menus;
+    private final UserRepository userRepository;
 
 
     @Value("${bot.name}")
@@ -68,31 +75,15 @@ public class TelegramBot extends TelegramLongPollingBot {
         if (text.equalsIgnoreCase("/start")) {
             handleStartCommand(telegramId);
         }
+        else if (text.equalsIgnoreCase("/become_superuser")) {
+            handleBecomeSuperuserCommand(telegramId);
+        }
         else {
             InteractionState currentState = interactionStates.get(telegramId);
             Optional<MessageHandler> handler = getMessageHandlerForState(currentState);
             sendMessage(telegramId, handler.isPresent()
                     ? handler.get().handleMessage(text, telegramId)
                     : "Обработчик команды не найден");
-        }
-    }
-
-    private void handleStartCommand(long telegramId) {
-        User user = userService.getUserByTelegramId(telegramId);
-        if (user != null) {
-            InteractionState state = user.getUserRole() == SUPER_USER ? SUPER_USER_MAIN_MENU
-                    : user.getUserRole() == ADMIN ? ADMIN_MAIN_MENU
-                    : USER_MAIN_MENU;
-            interactionStates.put(telegramId, state);
-            sendMenu(telegramId,
-                    "Добро пожаловать! Выберите действие:",
-                    menus.get(state));
-        }
-        else {
-            interactionStates.put(telegramId, REGISTRATION);
-            sendMenu(telegramId,
-                    "Добро пожаловать! Вы не зарегистрированы, желаете пройти регистрацию? Ответьте 'Да' или 'Нет'.",
-                    menus.get(REGISTRATION));
         }
     }
 
@@ -107,6 +98,33 @@ public class TelegramBot extends TelegramLongPollingBot {
         sendMessage(telegramId, handler.isPresent()
                 ? handler.get().handleClick(data, telegramId)
                 : "Обработчик команды не найден");
+    }
+
+    private void handleStartCommand(long telegramId) {
+        Optional<User> user = userRepository.findByTelegramId(telegramId);
+        if (user.isPresent()) {
+            Role role = user.get().getUserRole();
+            InteractionState state = (role == SUPER_USER ? SUPER_USER_MAIN_MENU
+                    : role == ADMIN ? ADMIN_MAIN_MENU
+                    : USER_MAIN_MENU);
+            interactionStates.put(telegramId, state);
+            sendMenu(telegramId,
+                    "Добро пожаловать! Выберите действие:",
+                    menus.get(state));
+        }
+        else requireRegistration(telegramId);
+    }
+
+    private void handleBecomeSuperuserCommand(long telegramId) {
+        Optional<User> user = userRepository.findByTelegramId(telegramId);
+        if (user.isPresent()) {
+            user.get().setUserRole(SUPER_USER);
+            userRepository.save(user.get());
+            sendMessage(telegramId, "Вы авторизованы как супер пользователь");
+        }
+        else {
+            requireRegistration(telegramId);
+        }
     }
 
     private Optional<MessageHandler> getMessageHandlerForState(InteractionState state) {
@@ -156,5 +174,11 @@ public class TelegramBot extends TelegramLongPollingBot {
             log.error(e.getMessage(), e);
         }
     }
-}
 
+    private void requireRegistration(long telegramId) {
+        interactionStates.put(telegramId, REGISTRATION);
+        sendMenu(telegramId,
+                "Добро пожаловать! Вы не зарегистрированы, желаете пройти регистрацию? Ответьте 'Да' или 'Нет'.",
+                menus.get(REGISTRATION));
+    }
+}
