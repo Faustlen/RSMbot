@@ -5,6 +5,7 @@ import net.dunice.mk.rsmtelegrambot.constants.UserRegistrationStep;
 public class UserRegistrationState {
     private UserRegistrationStep step = UserRegistrationStep.CONFIRM;
     private String fullName;
+    private String name;
     private String phoneNumber;
     private String info;
 
@@ -38,5 +39,13 @@ public class UserRegistrationState {
 
     public void setInfo(String info) {
         this.info = info;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 }

@@ -1,28 +1,39 @@
 package net.dunice.mk.rsmtelegrambot.service;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.dunice.mk.rsmtelegrambot.constants.UserRegistrationStep;
-import net.dunice.mk.rsmtelegrambot.entity.Role;
+import net.dunice.mk.rsmtelegrambot.constants.InteractionState;
 import net.dunice.mk.rsmtelegrambot.entity.User;
+import net.dunice.mk.rsmtelegrambot.handler.clickhandler.ClickHandler;
+import net.dunice.mk.rsmtelegrambot.handler.messagehandler.MessageHandler;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
+import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
+import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-import java.time.LocalDate;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static net.dunice.mk.rsmtelegrambot.constants.InteractionState.*;
+import static net.dunice.mk.rsmtelegrambot.entity.Role.*;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class TelegramBot extends TelegramLongPollingBot {
 
-    private static int currentUserCard = 1;
-
     private final UserService userService;
-    private final Map<Long, UserRegistrationState> registrationState = new ConcurrentHashMap<>();
+    private final  Map<Long, InteractionState> interactionStates = new ConcurrentHashMap<>();
+    private final Set<MessageHandler> messageHandlers;
+    private final Set<ClickHandler> clickHandlers;
+    private final EnumMap<InteractionState, InlineKeyboardMarkup> menus;
+
 
     @Value("${bot.name}")
     private String BOT_NAME;
@@ -30,29 +41,14 @@ public class TelegramBot extends TelegramLongPollingBot {
     @Value("${bot.token}")
     private String BOT_TOKEN;
 
-    public TelegramBot(UserService userService) {
-        this.userService = userService;
-    }
 
     @Override
     public void onUpdateReceived(Update update) {
         if (update.hasMessage() && update.getMessage().hasText()) {
-            long telegramId = update.getMessage().getFrom().getId();
-            String messageText = update.getMessage().getText();
-
-            if (messageText.equalsIgnoreCase("/start")) {
-                if (userService.isUserRegistered(telegramId)) {
-                    sendMessage(telegramId, "Вы уже зарегистрированы");
-                } else {
-                    sendMessage(telegramId,
-                        "Добро пожаловать! Вы не зарегистрированы, желаете пройти регистрацию? Ответьте 'Да' или 'Нет'.");
-                    UserRegistrationState state = new UserRegistrationState();
-                    state.setStep(UserRegistrationStep.CONFIRM);
-                    registrationState.put(telegramId, state);
-                }
-            } else {
-                handleRegistrationFlow(telegramId, messageText);
-            }
+            handleTextMessage(update.getMessage());
+        }
+        else if (update.hasCallbackQuery()) {
+            handleCallbackQuery(update.getCallbackQuery());
         }
     }
 
@@ -66,60 +62,63 @@ public class TelegramBot extends TelegramLongPollingBot {
         return BOT_TOKEN;
     }
 
-    private void handleRegistrationFlow(long telegramId, String messageText) {
-        UserRegistrationState state = registrationState.getOrDefault(telegramId, new UserRegistrationState());
-        switch (state.getStep()) {
-            case CONFIRM -> {
-                if ("Да".equalsIgnoreCase(messageText)) {
-                    state.setStep(UserRegistrationStep.FULL_NAME);
-                    sendMessage(telegramId, "Введите ФИО:");
-                } else if ("Нет".equalsIgnoreCase(messageText)) {
-                    sendMessage(telegramId, "Регистрация отменена.");
-                    registrationState.remove(telegramId);
-                }
-            }
-            case FULL_NAME -> {
-                state.setFullName(messageText);
-                state.setStep(UserRegistrationStep.PHONE_NUMBER);
-                sendMessage(telegramId, "Введите номер телефона:");
-            }
-            case PHONE_NUMBER -> {
-                state.setPhoneNumber(messageText);
-                state.setStep(UserRegistrationStep.INFO);
-                sendMessage(telegramId, "Введите дополнительное описание (до 255 символов):");
-            }
-            case INFO -> {
-                if (messageText.length() <= 255) {
-                    state.setInfo(messageText);
-                    saveUser(state, telegramId);
-                    sendMessage(telegramId, "Вы успешно зарегистрированы!");
-                    registrationState.remove(telegramId);
-                } else {
-                    sendMessage(telegramId, "Описание слишком длинное. Попробуйте снова.");
-                }
-            }
+    private void handleTextMessage(Message message) {
+        long telegramId = message.getFrom().getId();
+        String text = message.getText();
+        if (text.equalsIgnoreCase("/start")) {
+            handleStartCommand(telegramId);
         }
-        registrationState.put(telegramId, state);
+        else {
+            InteractionState currentState = interactionStates.get(telegramId);
+            Optional<MessageHandler> handler = getMessageHandlerForState(currentState);
+            sendMessage(telegramId, handler.isPresent()
+                    ? handler.get().handleMessage(text, telegramId)
+                    : "Обработчик команды не найден");
+        }
     }
 
-    private void saveUser(UserRegistrationState state, long telegramId) {
-        User user = new User();
-        user.setTelegramId(telegramId);
-        user.setFullName(state.getFullName());
-        String[] nameParts = state.getFullName().trim().split("\\s+");
-        if (nameParts.length < 2) {
-            sendMessage(telegramId, "Ошибка: ФИО должно содержать минимум 3 слова. Регистрация отменена.");
-            registrationState.remove(telegramId);
-            return;
+    private void handleStartCommand(long telegramId) {
+        User user = userService.getUserByTelegramId(telegramId);
+        if (user != null) {
+            InteractionState state = user.getUserRole() == SUPER_USER ? SUPER_USER_MAIN_MENU
+                    : user.getUserRole() == ADMIN ? ADMIN_MAIN_MENU
+                    : USER_MAIN_MENU;
+            interactionStates.put(telegramId, state);
+            sendMenu(telegramId,
+                    "Добро пожаловать! Выберите действие:",
+                    menus.get(state));
         }
-        String firstName = nameParts[1];
-        user.setName(firstName);
-        user.setUserCard(currentUserCard++);
-        user.setPhoneNumber(state.getPhoneNumber());
-        user.setInfo(state.getInfo());
-        user.setUserRole(Role.USER);
-        user.setBirthDate(LocalDate.now()); // Временно
-        userService.saveUser(user);
+        else {
+            interactionStates.put(telegramId, REGISTRATION);
+            sendMenu(telegramId,
+                    "Добро пожаловать! Вы не зарегистрированы, желаете пройти регистрацию? Ответьте 'Да' или 'Нет'.",
+                    menus.get(REGISTRATION));
+        }
+    }
+
+    private void handleCallbackQuery(CallbackQuery callbackQuery) {
+        long telegramId = callbackQuery.getMessage().getChatId();
+        String data = callbackQuery.getData();
+        InteractionState currentState = interactionStates.get(telegramId);
+
+        deleteButtons(callbackQuery);
+
+        Optional<ClickHandler> handler = getClickHandlerForState(currentState);
+        sendMessage(telegramId, handler.isPresent()
+                ? handler.get().handleClick(data, telegramId)
+                : "Обработчик команды не найден");
+    }
+
+    private Optional<MessageHandler> getMessageHandlerForState(InteractionState state) {
+        return messageHandlers.stream()
+                .filter(handler -> handler.getState() == state)
+                .findFirst();
+    }
+
+    private Optional<ClickHandler> getClickHandlerForState(InteractionState state) {
+        return clickHandlers.stream()
+                .filter(handler -> handler.getState() == state)
+                .findFirst();
     }
 
     private void sendMessage(long chatId, String text) {
@@ -132,4 +131,30 @@ public class TelegramBot extends TelegramLongPollingBot {
             log.error("Не удалось отправить сообщение", e);
         }
     }
+
+    private void sendMenu(long chatId, String text, InlineKeyboardMarkup keyboardMarkup) {
+        SendMessage message = new SendMessage();
+        message.setChatId(chatId);
+        message.setText(text);
+        message.setReplyMarkup(keyboardMarkup);
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error(e.getMessage(), e);
+        }
+    }
+
+    private void deleteButtons(CallbackQuery callbackQuery) {
+        Long telegramId = callbackQuery.getMessage().getChatId();
+        Integer messageId = callbackQuery.getMessage().getMessageId();
+        DeleteMessage deleteMessage = new DeleteMessage();
+        deleteMessage.setChatId(telegramId);
+        deleteMessage.setMessageId(messageId);
+        try {
+            execute(deleteMessage);
+        } catch (TelegramApiException e) {
+            log.error(e.getMessage(), e);
+        }
+    }
 }
+
