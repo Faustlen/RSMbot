@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -14,7 +14,8 @@ public class Partner {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "partner_id")
+    private Integer partnerId;
 
     @Column(nullable = false, unique = true)
     private String name;
@@ -23,18 +24,18 @@ public class Partner {
     private String phoneNumber;
 
     @Column(nullable = false, name = "discount_percent")
-    private Integer discountPercent;
+    private Short discountPercent;
 
     @ManyToOne
     @JoinColumn(nullable = false, name = "category_id")
     private Category categoryId;
 
     @Column(nullable = false)
-    private String logo;
+    private byte[] logo;
 
     @Column(nullable = false, name = "partners_info")
     private String partnersInfo;
 
     @Column(nullable = false, name = "discount_date")
-    private LocalDate discountDate;
+    private LocalDateTime discountDate;
 }

@@ -113,7 +113,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             return;
         }
         String firstName = nameParts[1];
-        user.setFirstName(firstName);
+        user.setName(firstName);
         user.setUserCard(currentUserCard++);
         user.setPhoneNumber(state.getPhoneNumber());
         user.setInfo(state.getInfo());
