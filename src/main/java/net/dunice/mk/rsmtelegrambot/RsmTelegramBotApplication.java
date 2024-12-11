@@ -17,6 +17,7 @@ public class RsmTelegramBotApplication {
             TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
             TelegramBot telegramBot = context.getBean(TelegramBot.class);
             botsApi.registerBot(telegramBot);
+            telegramBot.setBotCommands();
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
