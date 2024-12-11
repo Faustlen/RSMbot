@@ -1,4 +1,4 @@
-package net.dunice.mk.rsmtelegrambot.handler;
+package net.dunice.mk.rsmtelegrambot.handler.messagehandler;
 
 import lombok.RequiredArgsConstructor;
 import net.dunice.mk.rsmtelegrambot.constant.InteractionState;

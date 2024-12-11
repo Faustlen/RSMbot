@@ -3,7 +3,7 @@ package net.dunice.mk.rsmtelegrambot.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.dunice.mk.rsmtelegrambot.constant.InteractionState;
-import net.dunice.mk.rsmtelegrambot.handler.MessageHandler;
+import net.dunice.mk.rsmtelegrambot.handler.messagehandler.MessageHandler;
 import net.dunice.mk.rsmtelegrambot.handler.SustartCommandHandler;
 import net.dunice.mk.rsmtelegrambot.handler.StartCommandHandler;
 import org.springframework.beans.factory.annotation.Value;

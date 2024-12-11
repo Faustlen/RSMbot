@@ -5,5 +5,6 @@ public enum InteractionState {
     GRANT_ADMIN,
     IN_USER_MAIN_MENU,
     IN_SUPERUSER_MAIN_MENU,
-    IN_ADMIN_MAIN_MENU
+    IN_ADMIN_MAIN_MENU,
+    CHANGE_PROFILE,
 }

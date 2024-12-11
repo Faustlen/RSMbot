@@ -1,4 +1,4 @@
-package net.dunice.mk.rsmtelegrambot.handler;
+package net.dunice.mk.rsmtelegrambot.handler.messagehandler;
 
 import lombok.RequiredArgsConstructor;
 import net.dunice.mk.rsmtelegrambot.constant.InteractionState;
@@ -7,21 +7,29 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 
 import java.util.Map;
 
-import static net.dunice.mk.rsmtelegrambot.constant.InteractionState.IN_ADMIN_MAIN_MENU;
+import static net.dunice.mk.rsmtelegrambot.constant.InteractionState.*;
+
 
 @Service
 @RequiredArgsConstructor
-public class AdminMenuHandler implements MessageHandler {
+public class SuperuserMenuHandler implements MessageHandler {
 
-    private final GrantAdminHandler grantAdminHandler;
     private final Map<Long, InteractionState> interactionStates;
+    private final ProfileUpdateHandler profileUpdateHandler;
 
     @Override
     public SendMessage handleMessage(String message, Long telegramId) {
         return  switch (message) {
-            case "Изменить профиль" -> generateSendMessage(telegramId, "Вы выбрали: Изменить профиль");
+            case "Изменить профиль" -> {
+                interactionStates.put(telegramId, CHANGE_PROFILE);
+                yield profileUpdateHandler.handleMessage(message, telegramId);
+            }
             case "Партнеры" -> generateSendMessage(telegramId,"Вы выбрали: Партнеры");
             case "Мероприятия" -> generateSendMessage(telegramId, "Вы выбрали: Мероприятия");
+            case "Назначить админа" -> {
+                interactionStates.put(telegramId, GRANT_ADMIN);
+                yield generateSendMessage(telegramId, "Введите ID пользователя, которому хотите дать права администратора");
+            }
             case "Добавить партнера" -> generateSendMessage(telegramId, "Вы выбрали: Добавить партнера");
             case "Добавить мероприятие" -> generateSendMessage(telegramId, "Вы выбрали: Добавить мероприятие");
             default -> generateSendMessage(telegramId, "Неверная команда - " + message);
@@ -30,6 +38,6 @@ public class AdminMenuHandler implements MessageHandler {
 
     @Override
     public InteractionState getState() {
-        return IN_ADMIN_MAIN_MENU;
+        return IN_SUPERUSER_MAIN_MENU;
     }
 }
