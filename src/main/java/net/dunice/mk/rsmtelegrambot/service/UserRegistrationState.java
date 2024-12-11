@@ -1,6 +1,6 @@
 package net.dunice.mk.rsmtelegrambot.service;
 
-import net.dunice.mk.rsmtelegrambot.constants.UserRegistrationStep;
+import net.dunice.mk.rsmtelegrambot.constant.UserRegistrationStep;
 
 public class UserRegistrationState {
     private UserRegistrationStep step = UserRegistrationStep.CONFIRM;
