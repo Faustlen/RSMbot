@@ -7,13 +7,12 @@ import org.jvnet.hk2.annotations.Service;
 public class MainMenuClickHandler implements ClickHandler {
     @Override
     public String handleClick(String data, Long telegramId) {
-        String response = switch (data) {
+        return switch (data) {
             case "Изменить профиль" -> "Вы выбрали: Изменить профиль";
             case "Партнеры" -> "Вы выбрали: Партнёры";
             case "Мероприятия" -> "Вы выбрали: Мероприятия";
             default -> "Неверная команда - " + data;
         };
-        return response;
     }
 
     @Override

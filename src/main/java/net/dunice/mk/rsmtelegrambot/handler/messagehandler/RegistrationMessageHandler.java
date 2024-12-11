@@ -27,7 +27,7 @@ public class RegistrationMessageHandler implements MessageHandler {
         if (state == null) {
             registrationState.put(telegramId, (state = new UserRegistrationState()) );
         }
-        String response = switch (state.getStep()) {
+        return switch (state.getStep()) {
             case CONFIRM -> {
                 if ("Да".equalsIgnoreCase(message)) {
                     state.setStep(UserRegistrationStep.FULL_NAME);
@@ -70,7 +70,6 @@ public class RegistrationMessageHandler implements MessageHandler {
                 }
             }
         };
-        return response;
     }
 
     private void saveUser(UserRegistrationState state, long telegramId) {
