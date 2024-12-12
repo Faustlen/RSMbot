@@ -7,14 +7,14 @@ CREATE TABLE category
 
 CREATE TABLE partners
 (
-    partner_id       INTEGER        NOT NULL,
-    name             VARCHAR(100)   NOT NULL,
-    phone_number     VARCHAR(20)    NOT NULL,
-    discount_percent SMALLINT       NULL,
-    category_id      INTEGER        NOT NULL,
-    logo             BYTEA          NULL,
-    discount_date    TIMESTAMP      NULL,
-    partners_info    VARCHAR(250)   NULL,
+    partner_id       INTEGER      NOT NULL,
+    name             VARCHAR(100) NOT NULL,
+    phone_number     VARCHAR(20)  NOT NULL,
+    discount_percent SMALLINT     NULL,
+    category_id      INTEGER      NOT NULL,
+    logo             BYTEA        NULL,
+    discount_date    TIMESTAMP    NULL,
+    partners_info    VARCHAR(250) NULL,
     CONSTRAINT pk_partners PRIMARY KEY (partner_id),
     CONSTRAINT uc_partners_phone UNIQUE (phone_number),
     CONSTRAINT fk_partners_category FOREIGN KEY (category_id) REFERENCES category (category_id)
@@ -38,12 +38,12 @@ CREATE TABLE users
 
 CREATE TABLE checks
 (
-    check_id         INTEGER         NOT NULL,
-    partner_id       INTEGER         NOT NULL,
-    check_sum        DECIMAL(5,2)    NULL,
-    discount_percent SMALLINT        NULL,
-    user_card        INTEGER         NOT NULL,
-    date             TIMESTAMP       NOT NULL,
+    check_id         INTEGER       NOT NULL,
+    partner_id       INTEGER       NOT NULL,
+    check_sum        DECIMAL(5, 2) NULL,
+    discount_percent SMALLINT      NULL,
+    user_card        INTEGER       NOT NULL,
+    date             TIMESTAMP     NOT NULL,
     CONSTRAINT pk_checks PRIMARY KEY (check_id),
     CONSTRAINT fk_checks_partner FOREIGN KEY (partner_id) REFERENCES partners (partner_id),
     CONSTRAINT fk_checks_user_card FOREIGN KEY (user_card) REFERENCES users (user_card)
@@ -51,10 +51,10 @@ CREATE TABLE checks
 
 CREATE TABLE events
 (
-    event_id   INTEGER        NOT NULL,
-    title      VARCHAR(100)   NOT NULL,
-    text       VARCHAR(250)   NULL,
-    event_date TIMESTAMP      NOT NULL,
-    link       VARCHAR(250)   NULL,
+    event_id   INTEGER      NOT NULL,
+    title      VARCHAR(100) NOT NULL,
+    text       VARCHAR(250) NULL,
+    event_date TIMESTAMP    NOT NULL,
+    link       VARCHAR(250) NULL,
     CONSTRAINT pk_events PRIMARY KEY (event_id)
 );

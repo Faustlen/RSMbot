@@ -3,9 +3,9 @@ package net.dunice.mk.rsmtelegrambot.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.dunice.mk.rsmtelegrambot.constant.InteractionState;
-import net.dunice.mk.rsmtelegrambot.handler.messagehandler.MessageHandler;
-import net.dunice.mk.rsmtelegrambot.handler.SustartCommandHandler;
 import net.dunice.mk.rsmtelegrambot.handler.StartCommandHandler;
+import net.dunice.mk.rsmtelegrambot.handler.SustartCommandHandler;
+import net.dunice.mk.rsmtelegrambot.handler.messagehandler.MessageHandler;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -17,7 +17,10 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
@@ -49,15 +52,13 @@ public class TelegramBot extends TelegramLongPollingBot {
 
             if (text.equalsIgnoreCase("/start") || currentState == null) {
                 sendMessage(startCommandHandler.handleMessage(text, telegramId));
-            }
-            else if (text.equalsIgnoreCase("/sustart")) {
+            } else if (text.equalsIgnoreCase("/sustart")) {
                 sendMessage(sustartCommandHandler.handleMessage(text, telegramId));
-            }
-            else {
+            } else {
                 Optional<MessageHandler> handler = getMessageHandlerForState(currentState);
                 sendMessage(handler.isPresent()
-                        ? handler.get().handleMessage(text, telegramId)
-                        : generateHandlerNotFoundMessage(telegramId));
+                    ? handler.get().handleMessage(text, telegramId)
+                    : generateHandlerNotFoundMessage(telegramId));
             }
         }
     }
@@ -74,8 +75,8 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     private Optional<MessageHandler> getMessageHandlerForState(InteractionState state) {
         return messageHandlers.stream()
-                .filter(handler -> handler.getState() == state)
-                .findFirst();
+            .filter(handler -> handler.getState() == state)
+            .findFirst();
     }
 
     private void sendMessage(SendMessage message) {
@@ -117,7 +118,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     public void setBotCommands() {
         List<BotCommand> commands = List.of(
-                new BotCommand("/start", "Запустить бота")
+            new BotCommand("/start", "Запустить бота")
         );
 
         SetMyCommands setMyCommands = new SetMyCommands();

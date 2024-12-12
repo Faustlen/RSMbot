@@ -1,5 +1,9 @@
 package net.dunice.mk.rsmtelegrambot.handler.messagehandler;
 
+import static net.dunice.mk.rsmtelegrambot.constant.GrantAdminStep.CONFIRM;
+import static net.dunice.mk.rsmtelegrambot.constant.InteractionState.GRANT_ADMIN;
+import static net.dunice.mk.rsmtelegrambot.constant.Menu.SELECTION_MENU;
+
 import lombok.RequiredArgsConstructor;
 import net.dunice.mk.rsmtelegrambot.constant.InteractionState;
 import net.dunice.mk.rsmtelegrambot.constant.Menu;
@@ -14,10 +18,6 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMar
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static net.dunice.mk.rsmtelegrambot.constant.GrantAdminStep.CONFIRM;
-import static net.dunice.mk.rsmtelegrambot.constant.InteractionState.GRANT_ADMIN;
-import static net.dunice.mk.rsmtelegrambot.constant.Menu.SELECTION_MENU;
 
 @Service
 @RequiredArgsConstructor
@@ -45,15 +45,17 @@ public class GrantAdminHandler implements MessageHandler {
                         state.setTargetUser(targetUser);
                         state.setStep(CONFIRM);
                         yield generateSendMessage(telegramId,
-                                String.format("Хотите дать права администратора пользователю '%s'?", targetUser.getFullName()),
-                                menus.get(SELECTION_MENU));
+                            String.format("Хотите дать права администратора пользователю '%s'?",
+                                targetUser.getFullName()),
+                            menus.get(SELECTION_MENU));
                     } else {
                         grantAdminStates.remove(telegramId);
                         yield generateSendMessage(telegramId, "Пользователь с таким ID не найден. Попробуйте снова.");
                     }
                 } catch (NumberFormatException e) {
                     grantAdminStates.remove(telegramId);
-                    yield generateSendMessage(telegramId, "Ошибка: введённое значение не является корректным ID пользователя.");
+                    yield generateSendMessage(telegramId,
+                        "Ошибка: введённое значение не является корректным ID пользователя.");
                 }
             }
             case CONFIRM -> {
@@ -63,13 +65,13 @@ public class GrantAdminHandler implements MessageHandler {
                         targetUser.setUserRole(Role.ADMIN);
                         userService.saveUser(targetUser);
                         grantAdminStates.remove(telegramId);
-                        yield generateSendMessage(telegramId, String.format("Пользователю '%s' даны права администратора.", targetUser.getFullName()));
+                        yield generateSendMessage(telegramId,
+                            String.format("Пользователю '%s' даны права администратора.", targetUser.getFullName()));
                     } else {
                         grantAdminStates.remove(telegramId);
                         yield generateSendMessage(telegramId, "Ошибка: пользователь для назначения роли не найден.");
                     }
-                }
-                else if ("Нет".equalsIgnoreCase(message)) {
+                } else if ("Нет".equalsIgnoreCase(message)) {
                     grantAdminStates.remove(telegramId);
                     yield generateSendMessage(telegramId, "Назначение роли отменено.");
                 } else {

@@ -1,5 +1,15 @@
 package net.dunice.mk.rsmtelegrambot.handler;
 
+import static net.dunice.mk.rsmtelegrambot.constant.InteractionState.IN_SUPERUSER_MAIN_MENU;
+import static net.dunice.mk.rsmtelegrambot.constant.InteractionState.IN_USER_MAIN_MENU;
+import static net.dunice.mk.rsmtelegrambot.constant.InteractionState.REGISTRATION;
+import static net.dunice.mk.rsmtelegrambot.constant.Menu.ADMIN_MAIN_MENU;
+import static net.dunice.mk.rsmtelegrambot.constant.Menu.SELECTION_MENU;
+import static net.dunice.mk.rsmtelegrambot.constant.Menu.SUPERUSER_MAIN_MENU;
+import static net.dunice.mk.rsmtelegrambot.constant.Menu.USER_MAIN_MENU;
+import static net.dunice.mk.rsmtelegrambot.entity.Role.ADMIN;
+import static net.dunice.mk.rsmtelegrambot.entity.Role.SUPER_USER;
+
 import lombok.RequiredArgsConstructor;
 import net.dunice.mk.rsmtelegrambot.constant.InteractionState;
 import net.dunice.mk.rsmtelegrambot.constant.Menu;
@@ -13,12 +23,6 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMar
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.Optional;
-
-import static net.dunice.mk.rsmtelegrambot.constant.InteractionState.*;
-import static net.dunice.mk.rsmtelegrambot.constant.Menu.*;
-import static net.dunice.mk.rsmtelegrambot.constant.Menu.ADMIN_MAIN_MENU;
-import static net.dunice.mk.rsmtelegrambot.entity.Role.ADMIN;
-import static net.dunice.mk.rsmtelegrambot.entity.Role.SUPER_USER;
 
 @Service
 @RequiredArgsConstructor
@@ -38,25 +42,24 @@ public class StartCommandHandler implements BaseHandler {
             if (role == SUPER_USER) {
                 menu = SUPERUSER_MAIN_MENU;
                 state = IN_SUPERUSER_MAIN_MENU;
-            }
-            else if (role == ADMIN) {
+            } else if (role == ADMIN) {
                 menu = ADMIN_MAIN_MENU;
                 state = InteractionState.IN_ADMIN_MAIN_MENU;
-            }
-            else {
+            } else {
                 menu = USER_MAIN_MENU;
                 state = IN_USER_MAIN_MENU;
             }
             interactionStates.put(telegramId, state);
-            return generateSendMessage(telegramId,"Добро пожаловать! Выберите действие:", menus.get(menu));
+            return generateSendMessage(telegramId, "Добро пожаловать! Выберите действие:", menus.get(menu));
+        } else {
+            return requireRegistration(telegramId);
         }
-        else return requireRegistration(telegramId);
     }
 
     private SendMessage requireRegistration(long telegramId) {
         interactionStates.put(telegramId, REGISTRATION);
         return generateSendMessage(telegramId,
-                "Добро пожаловать! Вы не зарегистрированы, желаете пройти регистрацию? Ответьте 'Да' или 'Нет'.",
-                menus.get(SELECTION_MENU));
+            "Добро пожаловать! Вы не зарегистрированы, желаете пройти регистрацию? Ответьте 'Да' или 'Нет'.",
+            menus.get(SELECTION_MENU));
     }
 }
