@@ -1,9 +1,9 @@
 package net.dunice.mk.rsmtelegrambot.service;
 
+import static net.dunice.mk.rsmtelegrambot.constant.GrantAdminStep.USER_ID;
+
 import net.dunice.mk.rsmtelegrambot.constant.GrantAdminStep;
 import net.dunice.mk.rsmtelegrambot.entity.User;
-
-import static net.dunice.mk.rsmtelegrambot.constant.GrantAdminStep.USER_ID;
 
 public class GrantAdminState {
     private User targetUser;

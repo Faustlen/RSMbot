@@ -1,5 +1,7 @@
 package net.dunice.mk.rsmtelegrambot.handler.messagehandler;
 
+import static net.dunice.mk.rsmtelegrambot.constant.InteractionState.REGISTRATION;
+
 import lombok.RequiredArgsConstructor;
 import net.dunice.mk.rsmtelegrambot.constant.InteractionState;
 import net.dunice.mk.rsmtelegrambot.constant.UserRegistrationStep;
@@ -14,14 +16,12 @@ import java.time.LocalDate;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static net.dunice.mk.rsmtelegrambot.constant.InteractionState.REGISTRATION;
-
 @Service
 @RequiredArgsConstructor
 public class RegistrationHandler implements MessageHandler {
+    private static int currentUserCard = 1;
     private final Map<Long, UserRegistrationState> registrationState = new ConcurrentHashMap<>();
     private final Map<Long, InteractionState> interactionStates;
-    private static int currentUserCard = 1;
     private final UserService userService;
 
 
@@ -29,19 +29,17 @@ public class RegistrationHandler implements MessageHandler {
     public SendMessage handleMessage(String message, Long telegramId) {
         UserRegistrationState state = registrationState.get(telegramId);
         if (state == null) {
-            registrationState.put(telegramId, (state = new UserRegistrationState()) );
+            registrationState.put(telegramId, (state = new UserRegistrationState()));
         }
         String response = switch (state.getStep()) {
             case CONFIRM -> {
                 if ("Да".equalsIgnoreCase(message)) {
                     state.setStep(UserRegistrationStep.FULL_NAME);
                     yield "Введите ФИО:";
-                }
-                else if ("Нет".equalsIgnoreCase(message)) {
+                } else if ("Нет".equalsIgnoreCase(message)) {
                     cleanRegistrationStates(telegramId);
-                    yield  "Регистрация отменена.";
-                }
-                else {
+                    yield "Регистрация отменена.";
+                } else {
                     cleanRegistrationStates(telegramId);
                     yield "Неверная команда";
                 }
@@ -68,8 +66,7 @@ public class RegistrationHandler implements MessageHandler {
                     saveUser(state, telegramId);
                     cleanRegistrationStates(telegramId);
                     yield "Вы успешно зарегистрированы!";
-                }
-                else {
+                } else {
                     cleanRegistrationStates(telegramId);
                     yield "Описание слишком длинное. Попробуйте снова.";
                 }

@@ -18,10 +18,10 @@ public class AppConfig {
 
     @Bean
     public EnumMap<Menu, ReplyKeyboardMarkup> getReplyKeyboardMenus(
-            ReplyKeyboardMarkup userMainMenu,
-            ReplyKeyboardMarkup selectionMenu,
-            ReplyKeyboardMarkup superUserMainMenu,
-            ReplyKeyboardMarkup adminMainMenu) {
+        ReplyKeyboardMarkup userMainMenu,
+        ReplyKeyboardMarkup selectionMenu,
+        ReplyKeyboardMarkup superUserMainMenu,
+        ReplyKeyboardMarkup adminMainMenu) {
         EnumMap<Menu, ReplyKeyboardMarkup> menus = new EnumMap<>(Menu.class);
         menus.put(Menu.SELECTION_MENU, selectionMenu);
         menus.put(Menu.USER_MAIN_MENU, userMainMenu);

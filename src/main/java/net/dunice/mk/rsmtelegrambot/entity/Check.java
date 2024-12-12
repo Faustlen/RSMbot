@@ -1,6 +1,13 @@
 package net.dunice.mk.rsmtelegrambot.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -19,8 +26,8 @@ public class Check {
     private Integer checkId;
 
     @ManyToOne
-    @JoinColumn(name = "partner_id", nullable = false)
-    private Partner partnerId;
+    @JoinColumn(name = "partner_tg_id", nullable = false)
+    private Partner partnerTelegramId;
 
     @Column(name = "check_sum")
     private BigDecimal checkSum;
@@ -29,8 +36,8 @@ public class Check {
     private Short discountPercent;
 
     @ManyToOne
-    @JoinColumn(name = "user_card", referencedColumnName = "user_card", nullable = false)
-    private User userCard;
+    @JoinColumn(name = "tg_id", referencedColumnName = "tg_id", nullable = false)
+    private User userTelegramId;
 
     @Column(nullable = false)
     private LocalDateTime date;

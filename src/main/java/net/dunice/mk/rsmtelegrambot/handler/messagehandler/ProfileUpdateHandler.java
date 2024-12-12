@@ -1,5 +1,7 @@
 package net.dunice.mk.rsmtelegrambot.handler.messagehandler;
 
+import static net.dunice.mk.rsmtelegrambot.constant.InteractionState.CHANGE_PROFILE;
+
 import lombok.RequiredArgsConstructor;
 import net.dunice.mk.rsmtelegrambot.constant.InteractionState;
 import net.dunice.mk.rsmtelegrambot.constant.UserUpdateStep;
@@ -11,8 +13,6 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static net.dunice.mk.rsmtelegrambot.constant.InteractionState.CHANGE_PROFILE;
 
 @Service
 @RequiredArgsConstructor
