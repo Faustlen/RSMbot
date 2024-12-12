@@ -1,4 +1,4 @@
-package net.dunice.mk.rsmtelegrambot.constants;
+package net.dunice.mk.rsmtelegrambot.constant;
 
 public enum UserUpdateStep {
     CONFIRM,

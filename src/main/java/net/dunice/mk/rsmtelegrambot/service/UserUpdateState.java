@@ -2,7 +2,7 @@ package net.dunice.mk.rsmtelegrambot.service;
 
 import lombok.Getter;
 import lombok.Setter;
-import net.dunice.mk.rsmtelegrambot.constants.UserUpdateStep;
+import net.dunice.mk.rsmtelegrambot.constant.UserUpdateStep;
 
 @Setter
 @Getter

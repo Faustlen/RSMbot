@@ -1,25 +1,28 @@
 package net.dunice.mk.rsmtelegrambot.handler.messagehandler;
 
 import lombok.RequiredArgsConstructor;
-import net.dunice.mk.rsmtelegrambot.constants.InteractionState;
-import net.dunice.mk.rsmtelegrambot.constants.UserUpdateStep;
+import net.dunice.mk.rsmtelegrambot.constant.InteractionState;
+import net.dunice.mk.rsmtelegrambot.constant.UserUpdateStep;
 import net.dunice.mk.rsmtelegrambot.entity.User;
 import net.dunice.mk.rsmtelegrambot.service.UserService;
 import net.dunice.mk.rsmtelegrambot.service.UserUpdateState;
 import org.springframework.stereotype.Service;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static net.dunice.mk.rsmtelegrambot.constant.InteractionState.CHANGE_PROFILE;
+
 @Service
 @RequiredArgsConstructor
-public class ProfileUpdateMessageHandler implements MessageHandler {
+public class ProfileUpdateHandler implements MessageHandler {
 
     private final Map<Long, UserUpdateState> userUpdateState = new ConcurrentHashMap<>();
     private final UserService userService;
 
     @Override
-    public String handleMessage(String message, Long telegramId) {
+    public SendMessage handleMessage(String message, Long telegramId) {
         UserUpdateState state = userUpdateState.get(telegramId);
         if (state == null) {
             userUpdateState.put(telegramId, (state = new UserUpdateState()));
@@ -27,16 +30,16 @@ public class ProfileUpdateMessageHandler implements MessageHandler {
 
         if ("Отмена".equalsIgnoreCase(message)) {
             userUpdateState.remove(telegramId);
-            return "Обновление профиля отменено.";
+            return generateSendMessage(telegramId, "Обновление профиля отменено.");
         }
 
         if ("Готово".equalsIgnoreCase(message)) {
             userUpdateState.remove(telegramId);
             saveUser(state, telegramId);
-            return "Изменения сохранены.";
+            return generateSendMessage(telegramId, "Изменения сохранены.");
         }
 
-        return switch (state.getStep()) {
+        String response = switch (state.getStep()) {
             case CONFIRM -> {
                 if ("Изменить профиль".equals(message)) {
                     state.setStep(UserUpdateStep.FULL_NAME);
@@ -79,6 +82,7 @@ public class ProfileUpdateMessageHandler implements MessageHandler {
                 }
             }
         };
+        return generateSendMessage(telegramId, response);
     }
 
     private void saveUser(UserUpdateState state, long telegramId) {
@@ -100,6 +104,6 @@ public class ProfileUpdateMessageHandler implements MessageHandler {
 
     @Override
     public InteractionState getState() {
-        return InteractionState.USER_MAIN_MENU;
+        return CHANGE_PROFILE;
     }
 }

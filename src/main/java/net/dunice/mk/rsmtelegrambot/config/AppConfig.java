@@ -1,6 +1,7 @@
 package net.dunice.mk.rsmtelegrambot.config;
 
-import net.dunice.mk.rsmtelegrambot.constants.InteractionState;
+import net.dunice.mk.rsmtelegrambot.constant.InteractionState;
+import net.dunice.mk.rsmtelegrambot.constant.Menu;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
@@ -9,35 +10,37 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.Keyboard
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Configuration
 public class AppConfig {
 
     @Bean
-    public EnumMap<InteractionState, ReplyKeyboardMarkup> getReplyKeyboardMenus(
+    public EnumMap<Menu, ReplyKeyboardMarkup> getReplyKeyboardMenus(
             ReplyKeyboardMarkup userMainMenu,
-            ReplyKeyboardMarkup registrationMenu,
+            ReplyKeyboardMarkup selectionMenu,
             ReplyKeyboardMarkup superUserMainMenu,
             ReplyKeyboardMarkup adminMainMenu) {
-        EnumMap<InteractionState, ReplyKeyboardMarkup> menus = new EnumMap<>(InteractionState.class);
-        menus.put(InteractionState.REGISTRATION, registrationMenu);
-        menus.put(InteractionState.USER_MAIN_MENU, userMainMenu);
-        menus.put(InteractionState.SUPER_USER_MAIN_MENU, superUserMainMenu);
-        menus.put(InteractionState.ADMIN_MAIN_MENU, adminMainMenu);
+        EnumMap<Menu, ReplyKeyboardMarkup> menus = new EnumMap<>(Menu.class);
+        menus.put(Menu.SELECTION_MENU, selectionMenu);
+        menus.put(Menu.USER_MAIN_MENU, userMainMenu);
+        menus.put(Menu.SUPERUSER_MAIN_MENU, superUserMainMenu);
+        menus.put(Menu.ADMIN_MAIN_MENU, adminMainMenu);
         return menus;
     }
 
     @Bean("userMainMenu")
     public ReplyKeyboardMarkup getUserMainMenu() {
-        return getBaseReplyMenu();
+        return getBaseMenu();
     }
 
     @Bean("adminMainMenu")
     public ReplyKeyboardMarkup getAdminMainMenu() {
-        ReplyKeyboardMarkup replyMarkup = getBaseReplyMenu();
+        ReplyKeyboardMarkup replyMarkup = getBaseMenu();
         List<KeyboardRow> keyboard = replyMarkup.getKeyboard();
         KeyboardRow row = new KeyboardRow();
-        row.add("Добавить партнёра");
+        row.add("Добавить партнера");
         row.add("Добавить мероприятие");
         keyboard.add(row);
         return replyMarkup;
@@ -45,18 +48,18 @@ public class AppConfig {
 
     @Bean("superUserMainMenu")
     public ReplyKeyboardMarkup getSuperUserMainMenu() {
-        ReplyKeyboardMarkup replyMarkup = getBaseReplyMenu();
+        ReplyKeyboardMarkup replyMarkup = getBaseMenu();
         List<KeyboardRow> keyboard = replyMarkup.getKeyboard();
         KeyboardRow row = new KeyboardRow();
         row.add("Назначить админа");
-        row.add("Добавить партнёра");
+        row.add("Добавить партнера");
         row.add("Добавить мероприятие");
         keyboard.add(row);
         return replyMarkup;
     }
 
-    @Bean("registrationMenu")
-    public ReplyKeyboardMarkup getRegistrationMenu() {
+    @Bean("selectionMenu")
+    public ReplyKeyboardMarkup getSelectionMenu() {
         ReplyKeyboardMarkup replyMarkup = new ReplyKeyboardMarkup();
         List<KeyboardRow> keyboard = new ArrayList<>();
         KeyboardRow row = new KeyboardRow();
@@ -69,11 +72,16 @@ public class AppConfig {
         return replyMarkup;
     }
 
-    private ReplyKeyboardMarkup getBaseReplyMenu() {
+    @Bean
+    public Map<Long, InteractionState> getInteractionStatesMap() {
+        return new ConcurrentHashMap<>();
+    }
+
+    private ReplyKeyboardMarkup getBaseMenu() {
         ReplyKeyboardMarkup replyMarkup = new ReplyKeyboardMarkup();
         List<KeyboardRow> keyboard = new ArrayList<>();
         KeyboardRow row = new KeyboardRow();
-        row.add("Партнёры");
+        row.add("Партнеры");
         row.add("Мероприятия");
         row.add("Изменить профиль");
         keyboard.add(row);
