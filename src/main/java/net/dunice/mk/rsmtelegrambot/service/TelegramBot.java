@@ -2,10 +2,10 @@ package net.dunice.mk.rsmtelegrambot.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.dunice.mk.rsmtelegrambot.constant.InteractionState;
+import net.dunice.mk.rsmtelegrambot.constant.Command;
+import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
 import net.dunice.mk.rsmtelegrambot.handler.messagehandler.MessageHandler;
-import net.dunice.mk.rsmtelegrambot.handler.SustartCommandHandler;
-import net.dunice.mk.rsmtelegrambot.handler.StartCommandHandler;
+import net.dunice.mk.rsmtelegrambot.handler.CommandHandler;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -25,11 +25,11 @@ import java.util.concurrent.ConcurrentHashMap;
 @RequiredArgsConstructor
 public class TelegramBot extends TelegramLongPollingBot {
 
-    private final StartCommandHandler startCommandHandler;
-    private final SustartCommandHandler sustartCommandHandler;
-    private final Map<Long, InteractionState> interactionStates;
+    private final CommandHandler commandHandler;
+    private final Map<Long, BasicState> states;
     private final Set<MessageHandler> messageHandlers;
     private final Map<Long, Integer> lastBotMessageIds = new ConcurrentHashMap<>();
+    private final List<Map<Long, ?>> allStatesMap;
 
     @Value("${bot.name}")
     private String BOT_NAME;
@@ -41,23 +41,20 @@ public class TelegramBot extends TelegramLongPollingBot {
     public void onUpdateReceived(Update update) {
         if (update.hasMessage() && update.getMessage().hasText()) {
             Message message = update.getMessage();
-            long telegramId = message.getFrom().getId();
             String text = message.getText();
-            InteractionState currentState = interactionStates.get(telegramId);
-
+            Long telegramId = message.getChatId();
+            BasicState currentState = states.get(telegramId);
             deletePreviousMessages(message);
-
-            if (text.equalsIgnoreCase("/start") || currentState == null) {
-                sendMessage(startCommandHandler.handleMessage(text, telegramId));
-            }
-            else if (text.equalsIgnoreCase("/sustart")) {
-                sendMessage(sustartCommandHandler.handleMessage(text, telegramId));
+            if (Command.isValidCommand(text) || currentState == null) {
+                states.remove(telegramId);
+                allStatesMap.forEach(map -> map.remove(telegramId));
+                sendMessage(commandHandler.handle(text, telegramId));
             }
             else {
                 Optional<MessageHandler> handler = getMessageHandlerForState(currentState);
                 sendMessage(handler.isPresent()
-                        ? handler.get().handleMessage(text, telegramId)
-                        : generateHandlerNotFoundMessage(telegramId));
+                    ? handler.get().handle(text, telegramId)
+                    : generateHandlerNotFoundMessage(telegramId));
             }
         }
     }
@@ -72,10 +69,10 @@ public class TelegramBot extends TelegramLongPollingBot {
         return BOT_TOKEN;
     }
 
-    private Optional<MessageHandler> getMessageHandlerForState(InteractionState state) {
+    private Optional<MessageHandler> getMessageHandlerForState(BasicState state) {
         return messageHandlers.stream()
-                .filter(handler -> handler.getState() == state)
-                .findFirst();
+            .filter(handler -> handler.getState() == state)
+            .findFirst();
     }
 
     private void sendMessage(SendMessage message) {
@@ -115,14 +112,14 @@ public class TelegramBot extends TelegramLongPollingBot {
         return message;
     }
 
+
     public void setBotCommands() {
         List<BotCommand> commands = List.of(
-                new BotCommand("/start", "Запустить бота")
+            new BotCommand("/start", "Запустить бота")
         );
 
         SetMyCommands setMyCommands = new SetMyCommands();
         setMyCommands.setCommands(commands);
-
         try {
             execute(setMyCommands);
             log.info("Команды бота успешно настроены");

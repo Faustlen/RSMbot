@@ -1,40 +1,43 @@
 package net.dunice.mk.rsmtelegrambot.handler.messagehandler;
 
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.CHANGE_PROFILE;
+
 import lombok.RequiredArgsConstructor;
-import net.dunice.mk.rsmtelegrambot.constant.InteractionState;
-import net.dunice.mk.rsmtelegrambot.constant.UserUpdateStep;
+import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
+import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.step.UpdateProfileStep;
 import net.dunice.mk.rsmtelegrambot.entity.User;
+import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.UpdateProfileState;
 import net.dunice.mk.rsmtelegrambot.service.UserService;
-import net.dunice.mk.rsmtelegrambot.service.UserUpdateState;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
-import static net.dunice.mk.rsmtelegrambot.constant.InteractionState.CHANGE_PROFILE;
 
 @Service
 @RequiredArgsConstructor
-public class ProfileUpdateHandler implements MessageHandler {
+public class UpdateProfileHandler implements MessageHandler {
 
-    private final Map<Long, UserUpdateState> userUpdateState = new ConcurrentHashMap<>();
+    private final Map<Long, BasicState> states;
+    private final Map<Long, UpdateProfileState> updateProfileStates;
     private final UserService userService;
 
     @Override
-    public SendMessage handleMessage(String message, Long telegramId) {
-        UserUpdateState state = userUpdateState.get(telegramId);
+    public SendMessage handle(String message, Long telegramId) {
+
+        states.put(telegramId, CHANGE_PROFILE);
+
+        UpdateProfileState state = updateProfileStates.get(telegramId);
         if (state == null) {
-            userUpdateState.put(telegramId, (state = new UserUpdateState()));
+            updateProfileStates.put(telegramId, (state = new UpdateProfileState()));
         }
 
         if ("Отмена".equalsIgnoreCase(message)) {
-            userUpdateState.remove(telegramId);
+            cleanStates(telegramId);
             return generateSendMessage(telegramId, "Обновление профиля отменено.");
         }
 
         if ("Готово".equalsIgnoreCase(message)) {
-            userUpdateState.remove(telegramId);
+            cleanStates(telegramId);
             saveUser(state, telegramId);
             return generateSendMessage(telegramId, "Изменения сохранены.");
         }
@@ -42,14 +45,14 @@ public class ProfileUpdateHandler implements MessageHandler {
         String response = switch (state.getStep()) {
             case CONFIRM -> {
                 if ("Изменить профиль".equals(message)) {
-                    state.setStep(UserUpdateStep.FULL_NAME);
+                    state.setStep(UpdateProfileStep.FULL_NAME);
                     yield "Введите ФИО (Можете ввести 'Отмена' для отмены редактирования или" +
                           " 'Готово' для сохранения текущих изменений):";
                 } else if ("Нет".equalsIgnoreCase(message)) {
-                    userUpdateState.remove(telegramId);
+                    cleanStates(telegramId);
                     yield "Обновление пользователя отменено";
                 } else {
-                    userUpdateState.remove(telegramId);
+                    cleanStates(telegramId);
                     yield "Неверная команда";
                 }
             }
@@ -57,24 +60,24 @@ public class ProfileUpdateHandler implements MessageHandler {
                 state.setFullName(message);
                 String[] nameParts = state.getFullName().trim().split("\\s+");
                 if (nameParts.length < 3) {
-                    userUpdateState.remove(telegramId);
+                    cleanStates(telegramId);
                     yield "Ошибка: ФИО должно содержать минимум 3 слова. Обновление отменено.";
                 }
                 state.setName(nameParts[1]);
-                state.setStep(UserUpdateStep.PHONE_NUMBER);
+                state.setStep(UpdateProfileStep.PHONE_NUMBER);
                 yield "Введите номер телефона (Можете ввести 'Отмена' для отмены редактирования или" +
                       " 'Готово' для сохранения текущих изменений):";
             }
             case PHONE_NUMBER -> {
                 state.setPhoneNumber(message);
-                state.setStep(UserUpdateStep.INFO);
+                state.setStep(UpdateProfileStep.INFO);
                 yield "Введите дополнительное описание (до 255 символов) (Можете ввести 'Отмена' для отмены " +
                       "редактирования или 'Готово' для сохранения текущих изменений):";
             }
             case INFO -> {
                 if (message.length() <= 255) {
                     state.setInfo(message);
-                    userUpdateState.remove(telegramId);
+                    cleanStates(telegramId);
                     saveUser(state, telegramId);
                     yield "Вы успешно изменили свои данные!";
                 } else {
@@ -85,7 +88,7 @@ public class ProfileUpdateHandler implements MessageHandler {
         return generateSendMessage(telegramId, response);
     }
 
-    private void saveUser(UserUpdateState state, long telegramId) {
+    private void saveUser(UpdateProfileState state, long telegramId) {
         User user = userService.getUserByTelegramId(telegramId);
         if (state.getFullName() != null) {
             user.setFullName(state.getFullName());
@@ -103,7 +106,12 @@ public class ProfileUpdateHandler implements MessageHandler {
     }
 
     @Override
-    public InteractionState getState() {
+    public BasicState getState() {
         return CHANGE_PROFILE;
+    }
+
+    private void cleanStates(long telegramId) {
+        updateProfileStates.remove(telegramId);
+        states.remove(telegramId);
     }
 }
