@@ -66,7 +66,7 @@ public class ShowEventsHandler implements MessageHandler {
             }
             case SHOW_EVENT_DETAILS -> {
                 if (TO_MAIN_MENU.equalsIgnoreCase(message)) {
-                    cleanStates(telegramId);
+                    showEventSteps.remove(telegramId);
                     basicStates.put(telegramId, IN_MAIN_MENU);
                     yield menuGenerator.generateRoleSpecificMainMenu(telegramId,
                         userRepository.findByTelegramId(telegramId).get().getUserRole());
@@ -89,7 +89,7 @@ public class ShowEventsHandler implements MessageHandler {
             }
             case FINISH -> {
                 if (TO_MAIN_MENU.equalsIgnoreCase(message)) {
-                    cleanStates(telegramId);
+                    showEventSteps.remove(telegramId);
                     basicStates.put(telegramId, IN_MAIN_MENU);
                     yield menuGenerator.generateRoleSpecificMainMenu(telegramId,
                         userRepository.findByTelegramId(telegramId).get().getUserRole());
@@ -131,10 +131,5 @@ public class ShowEventsHandler implements MessageHandler {
         keyboard.add(List.of(toEventsButton));
         inlineKeyboardMarkup.setKeyboard(keyboard);
         return inlineKeyboardMarkup;
-    }
-
-    private void cleanStates(Long telegramId) {
-        showEventSteps.remove(telegramId);
-        basicStates.remove(telegramId);
     }
 }

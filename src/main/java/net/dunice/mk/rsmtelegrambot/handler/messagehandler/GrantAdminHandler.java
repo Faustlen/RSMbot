@@ -112,9 +112,4 @@ public class GrantAdminHandler implements MessageHandler {
     public BasicState getState() {
         return GRANT_ADMIN;
     }
-
-    private void cleanStates(long telegramId) {
-        grantAdminStates.remove(telegramId);
-        basicStates.remove(telegramId);
-    }
 }
