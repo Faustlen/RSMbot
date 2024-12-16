@@ -5,6 +5,7 @@ import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.GrantAdminState;
 import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.RegistrationState;
 import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.UpdateProfileState;
 import net.dunice.mk.rsmtelegrambot.handler.state.step.ShowEventsStep;
+import net.dunice.mk.rsmtelegrambot.handler.state.step.ShowPartnersStep;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -39,6 +40,9 @@ public class StatesConfig {
     public Map<Long, ShowEventsStep> showEventsStepMap() {
         return new ConcurrentHashMap<>();
     }
+
+    @Bean("showPartnerSteps")
+    public Map<Long, ShowPartnersStep> showPartnersStepMap() {return new ConcurrentHashMap<>();};
 
     @Bean("allStatesMap")
     public List<Map<Long, ?>> getAllStatesMap(Map<Long, GrantAdminState> grantAdminStates,

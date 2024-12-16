@@ -12,6 +12,7 @@ public class ButtonName {
         ADD_EVENT = "Добавить мероприятие",
         TO_MAIN_MENU = "⌂ В главное меню",
         TO_EVENTS_LIST = "☰ К списку мероприятий",
+        TO_PARTNERS_LIST = "☰ К списку партнеров",
         TRY_AGAIN = "\uD83D\uDD01 Попробовать eще раз";
 
 

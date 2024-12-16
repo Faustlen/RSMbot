@@ -24,7 +24,8 @@ import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
 import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.RegistrationState;
 import net.dunice.mk.rsmtelegrambot.repository.UserRepository;
 import org.springframework.stereotype.Service;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
+import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 
 import java.time.LocalDate;
@@ -43,7 +44,7 @@ public class RegistrationHandler implements MessageHandler {
 
 
     @Override
-    public SendMessage handle(String message, Long telegramId) {
+    public PartialBotApiMethod<Message> handle(String message, Long telegramId) {
         RegistrationState state = registrationStates.get(telegramId);
         if (state == null) {
             registrationStates.put(telegramId, (state = new RegistrationState()));

@@ -1,5 +1,7 @@
 package net.dunice.mk.rsmtelegrambot.service;
 
+import static net.dunice.mk.rsmtelegrambot.constant.Command.START;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.dunice.mk.rsmtelegrambot.constant.Command;
@@ -9,8 +11,10 @@ import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -50,7 +54,10 @@ public class TelegramBot extends TelegramLongPollingBot {
             String text = message.getText();
             deletePreviousMessages(telegramId, userMessageId, botMessageId);
             BasicState currentState = basicStates.get(telegramId);
-            if (Command.isValidCommand(text) || currentState == null) {
+            if (currentState == null) {
+                text = START.getStringValue();
+            }
+            if (Command.isValidCommand(text)) {
                 basicStates.remove(telegramId);
                 allStatesMap.forEach(map -> map.remove(telegramId));
                 sendMessage(commandHandler.handle(text, telegramId));
@@ -88,9 +95,13 @@ public class TelegramBot extends TelegramLongPollingBot {
             .findFirst();
     }
 
-    private void sendMessage(SendMessage message) {
+    private void sendMessage(PartialBotApiMethod<Message> message) {
         try {
-            Message sentMessage = execute(message);
+            Message sentMessage = switch (message) {
+                case SendMessage sendMessage -> execute(sendMessage);
+                case SendPhoto sendPhoto -> execute(sendPhoto);
+                default -> throw new IllegalStateException("Unexpected value: " + message);
+            };
             lastBotMessageIds.put(sentMessage.getChatId(), sentMessage.getMessageId());
         } catch (TelegramApiException e) {
             log.error("Не удалось отправить сообщение", e);

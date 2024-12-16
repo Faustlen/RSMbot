@@ -6,13 +6,16 @@ import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.CHANGE_PROFI
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.GRANT_ADMIN;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.IN_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.SHOW_EVENTS;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.SHOW_PARTNERS;
 
 import lombok.RequiredArgsConstructor;
 import net.dunice.mk.rsmtelegrambot.entity.Role;
 import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
 import net.dunice.mk.rsmtelegrambot.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.Message;
 
 import java.util.Map;
 import java.util.Optional;
@@ -25,18 +28,22 @@ public class UserMenuHandler implements MessageHandler {
     private final UpdateProfileHandler updateProfileHandler;
     private final GrantAdminHandler grantAdminHandler;
     private final ShowEventsHandler showEventsHandler;
+    private final ShowPartnersHandler showPartnersHandler;
     private final Map<Long, BasicState> basicStates;
 
     @Override
-    public SendMessage handle(String message, Long telegramId) {
+    public PartialBotApiMethod<Message> handle(String message, Long telegramId) {
         Role role = userRepository.findByTelegramId(telegramId).get().getUserRole();
-        Optional<SendMessage> sendMessage = Optional.ofNullable(
+        Optional<PartialBotApiMethod<Message>> sendMessage = Optional.ofNullable(
             switch (message) {
                 case "Изменить профиль" -> {
                     basicStates.put(telegramId, CHANGE_PROFILE);
                     yield updateProfileHandler.handle(message, telegramId);
                 }
-                case "Партнеры" -> generateSendMessage(telegramId, "Вы выбрали: Партнеры");
+                case "Партнеры" -> {
+                    basicStates.put(telegramId, SHOW_PARTNERS);
+                    yield showPartnersHandler.handle(message, telegramId);
+                }
                 case "Мероприятия" -> {
                     basicStates.put(telegramId, SHOW_EVENTS);
                     yield showEventsHandler.handle(message, telegramId);

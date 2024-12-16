@@ -12,7 +12,8 @@ import net.dunice.mk.rsmtelegrambot.handler.messagehandler.RegistrationHandler;
 import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
 import net.dunice.mk.rsmtelegrambot.repository.UserRepository;
 import org.springframework.stereotype.Service;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
+import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 
 import java.util.EnumMap;
@@ -30,7 +31,7 @@ public class CommandHandler implements BaseHandler {
     private final Map<Long, BasicState> basicStates;
 
     @Override
-    public SendMessage handle(String message, Long telegramId) {
+    public PartialBotApiMethod<Message> handle(String message, Long telegramId) {
         Optional<User> user = userRepository.findById(telegramId);
         if (user.isPresent()) {
             return switch (Command.getCommandByString(message)) {

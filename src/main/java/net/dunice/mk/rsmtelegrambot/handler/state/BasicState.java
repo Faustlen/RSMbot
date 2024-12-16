@@ -5,5 +5,6 @@ public enum BasicState {
     GRANT_ADMIN,
     IN_MAIN_MENU,
     CHANGE_PROFILE,
-    SHOW_EVENTS
+    SHOW_EVENTS,
+    SHOW_PARTNERS,
 }
