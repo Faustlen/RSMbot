@@ -42,4 +42,3 @@ public class Check {
     @Column(nullable = false)
     private LocalDateTime date;
 }
-

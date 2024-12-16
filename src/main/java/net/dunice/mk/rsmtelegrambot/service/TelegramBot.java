@@ -2,10 +2,10 @@ package net.dunice.mk.rsmtelegrambot.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.dunice.mk.rsmtelegrambot.constant.InteractionState;
-import net.dunice.mk.rsmtelegrambot.handler.StartCommandHandler;
-import net.dunice.mk.rsmtelegrambot.handler.SustartCommandHandler;
+import net.dunice.mk.rsmtelegrambot.constant.Command;
+import net.dunice.mk.rsmtelegrambot.handler.CommandHandler;
 import net.dunice.mk.rsmtelegrambot.handler.messagehandler.MessageHandler;
+import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -28,11 +28,11 @@ import java.util.concurrent.ConcurrentHashMap;
 @RequiredArgsConstructor
 public class TelegramBot extends TelegramLongPollingBot {
 
-    private final StartCommandHandler startCommandHandler;
-    private final SustartCommandHandler sustartCommandHandler;
-    private final Map<Long, InteractionState> interactionStates;
+    private final CommandHandler commandHandler;
+    private final Map<Long, BasicState> basicStates;
     private final Set<MessageHandler> messageHandlers;
     private final Map<Long, Integer> lastBotMessageIds = new ConcurrentHashMap<>();
+    private final List<Map<Long, ?>> allStatesMap;
 
     @Value("${bot.name}")
     private String BOT_NAME;
@@ -44,22 +44,31 @@ public class TelegramBot extends TelegramLongPollingBot {
     public void onUpdateReceived(Update update) {
         if (update.hasMessage() && update.getMessage().hasText()) {
             Message message = update.getMessage();
-            long telegramId = message.getFrom().getId();
+            Long telegramId = message.getFrom().getId();
+            Integer userMessageId = message.getMessageId();
+            Integer botMessageId = lastBotMessageIds.remove(telegramId);
             String text = message.getText();
-            InteractionState currentState = interactionStates.get(telegramId);
-
-            deletePreviousMessages(message);
-
-            if (text.equalsIgnoreCase("/start") || currentState == null) {
-                sendMessage(startCommandHandler.handleMessage(text, telegramId));
-            } else if (text.equalsIgnoreCase("/sustart")) {
-                sendMessage(sustartCommandHandler.handleMessage(text, telegramId));
+            deletePreviousMessages(telegramId, userMessageId, botMessageId);
+            BasicState currentState = basicStates.get(telegramId);
+            if (Command.isValidCommand(text) || currentState == null) {
+                basicStates.remove(telegramId);
+                allStatesMap.forEach(map -> map.remove(telegramId));
+                sendMessage(commandHandler.handle(text, telegramId));
             } else {
                 Optional<MessageHandler> handler = getMessageHandlerForState(currentState);
                 sendMessage(handler.isPresent()
-                    ? handler.get().handleMessage(text, telegramId)
+                    ? handler.get().handle(text, telegramId)
                     : generateHandlerNotFoundMessage(telegramId));
             }
+        } else if (update.hasCallbackQuery()) {
+            Long telegramId = update.getCallbackQuery().getFrom().getId();
+            String data = update.getCallbackQuery().getData();
+            deleteMessage(telegramId, lastBotMessageIds.remove(telegramId));
+            BasicState currentState = basicStates.get(telegramId);
+            Optional<MessageHandler> handler = getMessageHandlerForState(currentState);
+            sendMessage(handler.isPresent()
+                ? handler.get().handle(data, telegramId)
+                : generateHandlerNotFoundMessage(telegramId));
         }
     }
 
@@ -73,7 +82,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         return BOT_TOKEN;
     }
 
-    private Optional<MessageHandler> getMessageHandlerForState(InteractionState state) {
+    private Optional<MessageHandler> getMessageHandlerForState(BasicState state) {
         return messageHandlers.stream()
             .filter(handler -> handler.getState() == state)
             .findFirst();
@@ -99,14 +108,11 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
-    private void deletePreviousMessages(Message message) {
-        long chatId = message.getChatId();
-        int messageId = message.getMessageId();
-        Integer lastBotMessageId = lastBotMessageIds.remove(chatId);
-        if (lastBotMessageId != null) {
-            deleteMessage(chatId, lastBotMessageId);
+    private void deletePreviousMessages(Long chatId, Integer userMessageId, Integer botMessageId) {
+        if (botMessageId != null) {
+            deleteMessage(chatId, botMessageId);
         }
-        deleteMessage(chatId, messageId);
+        deleteMessage(chatId, userMessageId);
     }
 
     private SendMessage generateHandlerNotFoundMessage(long telegramId) {
@@ -116,6 +122,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         return message;
     }
 
+
     public void setBotCommands() {
         List<BotCommand> commands = List.of(
             new BotCommand("/start", "Запустить бота")
@@ -123,7 +130,6 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         SetMyCommands setMyCommands = new SetMyCommands();
         setMyCommands.setCommands(commands);
-
         try {
             execute(setMyCommands);
             log.info("Команды бота успешно настроены");

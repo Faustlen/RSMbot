@@ -29,4 +29,3 @@ public class Category {
     @OneToMany(mappedBy = "categoryId")
     private List<Partner> partners;
 }
-
