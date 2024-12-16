@@ -3,10 +3,10 @@ package net.dunice.mk.rsmtelegrambot.handler.messagehandler;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.CHANGE_PROFILE;
 
 import lombok.RequiredArgsConstructor;
-import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
-import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.step.UpdateProfileStep;
 import net.dunice.mk.rsmtelegrambot.entity.User;
+import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
 import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.UpdateProfileState;
+import net.dunice.mk.rsmtelegrambot.handler.state.step.UpdateProfileStep;
 import net.dunice.mk.rsmtelegrambot.service.UserService;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -17,14 +17,12 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class UpdateProfileHandler implements MessageHandler {
 
-    private final Map<Long, BasicState> states;
+    private final Map<Long, BasicState> basicStates;
     private final Map<Long, UpdateProfileState> updateProfileStates;
     private final UserService userService;
 
     @Override
     public SendMessage handle(String message, Long telegramId) {
-
-        states.put(telegramId, CHANGE_PROFILE);
 
         UpdateProfileState state = updateProfileStates.get(telegramId);
         if (state == null) {
@@ -112,6 +110,6 @@ public class UpdateProfileHandler implements MessageHandler {
 
     private void cleanStates(long telegramId) {
         updateProfileStates.remove(telegramId);
-        states.remove(telegramId);
+        basicStates.remove(telegramId);
     }
 }
