@@ -62,7 +62,7 @@ public class ShowPartnersHandler implements MessageHandler {
 
         return switch (step) {
             case SHOW_PARTNERS_LIST -> {
-                List<Partner> partners = partnerRepository.findAll();
+                List<Partner> partners = partnerRepository.findValidPartnersWithPresentDiscount();
                 showPartnerSteps.put(telegramId, SHOW_PARTNER_DETAILS);
                 yield generateSendMessage(telegramId, "Партнеры: ",
                     getPartnersListKeyboard(partners));
