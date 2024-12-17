@@ -3,3 +3,5 @@ databaseChangeLog:
       file: classpath:/db/changelog/changes/V001_initial_schema.sql
   - include:
       file: classpath:/db/changelog/changes/V002_alter_schema_partners_checks.sql
+  - include:
+      file: classpath:/db/changelog/changes/V003_alter_schema_partners_checks.sql

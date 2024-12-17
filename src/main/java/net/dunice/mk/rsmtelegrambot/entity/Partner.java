@@ -19,7 +19,7 @@ public class Partner {
 
     @Id
     @Column(name = "partner_tg_id")
-    private Integer partnerTelegramId;
+    private Long partnerTelegramId;
 
     @Column(nullable = false, unique = true)
     private String name;
@@ -32,7 +32,7 @@ public class Partner {
 
     @ManyToOne
     @JoinColumn(nullable = false, name = "category_id")
-    private Category categoryId;
+    private Category category;
 
     @Column(nullable = false)
     private byte[] logo;

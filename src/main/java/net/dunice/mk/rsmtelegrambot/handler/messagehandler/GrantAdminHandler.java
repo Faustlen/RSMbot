@@ -21,8 +21,7 @@ import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
 import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.GrantAdminState;
 import net.dunice.mk.rsmtelegrambot.repository.UserRepository;
 import org.springframework.stereotype.Service;
-import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
-import org.telegram.telegrambots.meta.api.objects.Message;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 
 import java.util.EnumMap;
@@ -40,7 +39,7 @@ public class GrantAdminHandler implements MessageHandler {
     private final MenuGenerator menuGenerator;
 
     @Override
-    public PartialBotApiMethod<Message> handle(String message, Long telegramId) {
+    public SendMessage handle(String message, Long telegramId) {
         GrantAdminState state = grantAdminStates.get(telegramId);
         if (state == null) {
             grantAdminStates.put(telegramId, (state = new GrantAdminState()));

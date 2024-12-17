@@ -2,8 +2,10 @@ package net.dunice.mk.rsmtelegrambot.config;
 
 import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
 import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.GrantAdminState;
-import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.RegistrationState;
+import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.PartnerRegistrationState;
+import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.UserRegistrationState;
 import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.UpdateProfileState;
+import net.dunice.mk.rsmtelegrambot.handler.state.step.SelectRegistrationStep;
 import net.dunice.mk.rsmtelegrambot.handler.state.step.ShowEventsStep;
 import net.dunice.mk.rsmtelegrambot.handler.state.step.ShowPartnersStep;
 import org.springframework.context.annotation.Bean;
@@ -26,8 +28,13 @@ public class StatesConfig {
         return new ConcurrentHashMap<>();
     }
 
-    @Bean("registrationStates")
-    public Map<Long, RegistrationState> getRegistrationStatesMap() {
+    @Bean("userRegistrationStates")
+    public Map<Long, UserRegistrationState> getRegistrationStatesMap() {
+        return new ConcurrentHashMap<>();
+    }
+
+    @Bean("partnerRegistrationStates")
+    public Map<Long, PartnerRegistrationState> getPartnerRegistrationStatesMap() {
         return new ConcurrentHashMap<>();
     }
 
@@ -44,11 +51,17 @@ public class StatesConfig {
     @Bean("showPartnerSteps")
     public Map<Long, ShowPartnersStep> showPartnersStepMap() {return new ConcurrentHashMap<>();};
 
+    @Bean("selectRegistrationSteps")
+    public Map<Long, SelectRegistrationStep> selectRegistrationStepsMap() {
+        return new ConcurrentHashMap<>();
+    };
+
     @Bean("allStatesMap")
     public List<Map<Long, ?>> getAllStatesMap(Map<Long, GrantAdminState> grantAdminStates,
-                                              Map<Long, RegistrationState> registrationStates,
+                                              Map<Long, UserRegistrationState> registrationStates,
                                               Map<Long, UpdateProfileState> updateProfileStates,
-                                              Map<Long, ShowEventsStep> showEventSteps) {
-        return List.of(grantAdminStates, registrationStates, updateProfileStates, showEventSteps);
+                                              Map<Long, ShowEventsStep> showEventSteps,
+                                              Map<Long, ShowPartnersStep> showPartnerSteps) {
+        return List.of(grantAdminStates, registrationStates, updateProfileStates, showEventSteps, showPartnerSteps);
     }
 }

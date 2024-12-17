@@ -3,17 +3,15 @@ package net.dunice.mk.rsmtelegrambot.handler.messagehandler;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TRY_AGAIN;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.GO_TO_MAIN_MENU;
-import static net.dunice.mk.rsmtelegrambot.constant.Menu.SELECTION_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.TRY_AGAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.IN_MAIN_MENU;
-import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.REGISTRATION;
-import static net.dunice.mk.rsmtelegrambot.handler.state.step.RegistrationStep.CONFIRM;
-import static net.dunice.mk.rsmtelegrambot.handler.state.step.RegistrationStep.FINISH;
-import static net.dunice.mk.rsmtelegrambot.handler.state.step.RegistrationStep.FULL_NAME;
-import static net.dunice.mk.rsmtelegrambot.handler.state.step.RegistrationStep.INFO;
-import static net.dunice.mk.rsmtelegrambot.handler.state.step.RegistrationStep.PHONE_NUMBER;
-import static net.dunice.mk.rsmtelegrambot.handler.state.step.RegistrationStep.REQUEST_REGISTRATION;
-import static net.dunice.mk.rsmtelegrambot.handler.state.step.RegistrationStep.RETRY_REGISTRATION;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.USER_REGISTRATION;
+import static net.dunice.mk.rsmtelegrambot.handler.state.step.UserRegistrationStep.FINISH;
+import static net.dunice.mk.rsmtelegrambot.handler.state.step.UserRegistrationStep.INFO;
+import static net.dunice.mk.rsmtelegrambot.handler.state.step.UserRegistrationStep.PHONE_NUMBER;
+import static net.dunice.mk.rsmtelegrambot.handler.state.step.UserRegistrationStep.REQUEST_FULL_NAME;
+import static net.dunice.mk.rsmtelegrambot.handler.state.step.UserRegistrationStep.RETRY_REGISTRATION;
+import static net.dunice.mk.rsmtelegrambot.handler.state.step.UserRegistrationStep.VALIDATE_FULL_NAME;
 
 import lombok.RequiredArgsConstructor;
 import net.dunice.mk.rsmtelegrambot.constant.Menu;
@@ -21,11 +19,10 @@ import net.dunice.mk.rsmtelegrambot.entity.Role;
 import net.dunice.mk.rsmtelegrambot.entity.User;
 import net.dunice.mk.rsmtelegrambot.handler.MenuGenerator;
 import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
-import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.RegistrationState;
+import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.UserRegistrationState;
 import net.dunice.mk.rsmtelegrambot.repository.UserRepository;
 import org.springframework.stereotype.Service;
-import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
-import org.telegram.telegrambots.meta.api.objects.Message;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 
 import java.time.LocalDate;
@@ -34,8 +31,8 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
-public class RegistrationHandler implements MessageHandler {
-    private final Map<Long, RegistrationState> registrationStates;
+public class UserRegistrationHandler implements MessageHandler {
+    private final Map<Long, UserRegistrationState> userRegistrationStates;
     private final Map<Long, BasicState> basicStates;
     private static int currentUserCard = 1;
     private final EnumMap<Menu, ReplyKeyboard> menus;
@@ -44,32 +41,17 @@ public class RegistrationHandler implements MessageHandler {
 
 
     @Override
-    public PartialBotApiMethod<Message> handle(String message, Long telegramId) {
-        RegistrationState state = registrationStates.get(telegramId);
+    public SendMessage handle(String message, Long telegramId) {
+        UserRegistrationState state = userRegistrationStates.get(telegramId);
         if (state == null) {
-            registrationStates.put(telegramId, (state = new RegistrationState()));
+            userRegistrationStates.put(telegramId, (state = new UserRegistrationState()));
         }
         return switch (state.getStep()) {
-            case REQUEST_REGISTRATION -> {
-                state.setStep(CONFIRM);
-                yield generateSendMessage(telegramId,
-                    "Добро пожаловать! Вы не зарегистрированы, желаете пройти регистрацию? Ответьте 'Да' или 'Нет'.",
-                    menus.get(SELECTION_MENU));
+            case REQUEST_FULL_NAME -> {
+                state.setStep(VALIDATE_FULL_NAME);
+                yield generateSendMessage(telegramId, "Введите ФИО:");
             }
-            case CONFIRM -> {
-                if ("Да".equalsIgnoreCase(message)) {
-                    state.setStep(FULL_NAME);
-                    yield generateSendMessage(telegramId, "Введите ФИО:");
-                } else if ("Нет".equalsIgnoreCase(message)) {
-                    state.setStep(RETRY_REGISTRATION);
-                    yield generateSendMessage(telegramId, "Регистрация отменена.", menus.get(TRY_AGAIN_MENU));
-                } else {
-                    state.setStep(RETRY_REGISTRATION);
-                    yield generateSendMessage(telegramId, "Неверная команда, регистрация отменена",
-                        menus.get(TRY_AGAIN_MENU));
-                }
-            }
-            case FULL_NAME -> {
+            case VALIDATE_FULL_NAME -> {
                 state.setFullName(message);
                 String[] nameParts = state.getFullName().trim().split("\\s+");
                 if (nameParts.length < 3) {
@@ -101,7 +83,7 @@ public class RegistrationHandler implements MessageHandler {
             }
             case RETRY_REGISTRATION -> {
                 if (TRY_AGAIN.equalsIgnoreCase(message)) {
-                    registrationStates.get(telegramId).setStep(REQUEST_REGISTRATION);
+                    state.setStep(REQUEST_FULL_NAME);
                     yield handle(message, telegramId);
                 } else {
                     yield generateSendMessage(telegramId, "Неверная команда");
@@ -109,7 +91,7 @@ public class RegistrationHandler implements MessageHandler {
             }
             case FINISH -> {
                 if (TO_MAIN_MENU.equalsIgnoreCase(message)) {
-                    registrationStates.remove(telegramId);
+                    userRegistrationStates.remove(telegramId);
                     basicStates.put(telegramId, IN_MAIN_MENU);
                     yield menuGenerator.generateRoleSpecificMainMenu(telegramId,
                         userRepository.findByTelegramId(telegramId).get().getUserRole());
@@ -120,7 +102,7 @@ public class RegistrationHandler implements MessageHandler {
         };
     }
 
-    private void saveUser(RegistrationState state, long telegramId) {
+    private void saveUser(UserRegistrationState state, long telegramId) {
         User user = new User();
         user.setTelegramId(telegramId);
         user.setFullName(state.getFullName());
@@ -135,6 +117,6 @@ public class RegistrationHandler implements MessageHandler {
 
     @Override
     public BasicState getState() {
-        return REGISTRATION;
+        return USER_REGISTRATION;
     }
 }

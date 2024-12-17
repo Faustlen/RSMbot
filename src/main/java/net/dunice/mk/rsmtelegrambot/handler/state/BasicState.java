@@ -1,7 +1,9 @@
 package net.dunice.mk.rsmtelegrambot.handler.state;
 
 public enum BasicState {
-    REGISTRATION,
+    SELECT_REGISTRATION_TYPE,
+    USER_REGISTRATION,
+    PARTNER_REGISTRATION,
     GRANT_ADMIN,
     IN_MAIN_MENU,
     CHANGE_PROFILE,

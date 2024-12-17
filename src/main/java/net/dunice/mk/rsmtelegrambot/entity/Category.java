@@ -26,6 +26,6 @@ public class Category {
     @Column(nullable = false, name = "category_name")
     private String categoryName;
 
-    @OneToMany(mappedBy = "categoryId")
+    @OneToMany(mappedBy = "category")
     private List<Partner> partners;
 }

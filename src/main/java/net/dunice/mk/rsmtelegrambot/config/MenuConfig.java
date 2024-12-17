@@ -5,6 +5,8 @@ import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.ADD_PARTNER;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.EVENTS;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.NO;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.PARTNERS;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.RSM_MEMBER;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.RSM_PARTNER;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.SET_ADMIN;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TRY_AGAIN;
@@ -14,6 +16,7 @@ import static net.dunice.mk.rsmtelegrambot.constant.Menu.ADMIN_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.GO_TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.SELECTION_MENU;
+import static net.dunice.mk.rsmtelegrambot.constant.Menu.SELECTION_USER_TYPE_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.SUPERUSER_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.TRY_AGAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.TRY_AGAIN_OR_GO_TO_MAIN_MENU;
@@ -42,9 +45,11 @@ public class MenuConfig {
         ReplyKeyboard adminMainMenu,
         ReplyKeyboard goToMainMenu,
         ReplyKeyboard tryAgainMenu,
-        ReplyKeyboard tryAgainOrGoToMainMenu) {
+        ReplyKeyboard tryAgainOrGoToMainMenu,
+        ReplyKeyboard selectionUserTypeMenu) {
         EnumMap<Menu, ReplyKeyboard> menus = new EnumMap<>(Menu.class);
         menus.put(SELECTION_MENU, selectionMenu);
+        menus.put(SELECTION_USER_TYPE_MENU, selectionUserTypeMenu);
         menus.put(MAIN_MENU, userMainMenu);
         menus.put(SUPERUSER_MAIN_MENU, superUserMainMenu);
         menus.put(ADMIN_MAIN_MENU, adminMainMenu);
@@ -95,6 +100,24 @@ public class MenuConfig {
         buttonNo.setCallbackData(buttonNo.getText());
         row.add(buttonYes);
         row.add(buttonNo);
+        keyboard.add(row);
+        inlineKeyboardMarkup.setKeyboard(keyboard);
+        return inlineKeyboardMarkup;
+    }
+
+    @Bean("selectionUserTypeMenu")
+    public ReplyKeyboard getSelectionUserTypeMenu() {
+        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
+        List<InlineKeyboardButton> row = new ArrayList<>();
+        InlineKeyboardButton buttonMember = new InlineKeyboardButton();
+        buttonMember.setText(RSM_MEMBER);
+        buttonMember.setCallbackData(buttonMember.getText());
+        InlineKeyboardButton buttonPartner = new InlineKeyboardButton();
+        buttonPartner.setText(RSM_PARTNER);
+        buttonPartner.setCallbackData(buttonPartner.getText());
+        row.add(buttonMember);
+        row.add(buttonPartner);
         keyboard.add(row);
         inlineKeyboardMarkup.setKeyboard(keyboard);
         return inlineKeyboardMarkup;

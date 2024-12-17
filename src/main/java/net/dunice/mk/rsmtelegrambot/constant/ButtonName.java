@@ -13,7 +13,7 @@ public class ButtonName {
         TO_MAIN_MENU = "⌂ В главное меню",
         TO_EVENTS_LIST = "☰ К списку мероприятий",
         TO_PARTNERS_LIST = "☰ К списку партнеров",
-        TRY_AGAIN = "\uD83D\uDD01 Попробовать eще раз";
-
-
+        TRY_AGAIN = "\uD83D\uDD01 Попробовать eще раз",
+        RSM_MEMBER = "Член РСМ",
+        RSM_PARTNER = "Партнер РСМ";
 }

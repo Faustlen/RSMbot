@@ -6,11 +6,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.dunice.mk.rsmtelegrambot.constant.Command;
 import net.dunice.mk.rsmtelegrambot.handler.CommandHandler;
+import net.dunice.mk.rsmtelegrambot.handler.MessageGenerator;
 import net.dunice.mk.rsmtelegrambot.handler.messagehandler.MessageHandler;
 import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.telegram.telegrambots.meta.api.methods.GetFile;
 import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -21,21 +23,22 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import java.io.File;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class TelegramBot extends TelegramLongPollingBot {
+public class TelegramBot extends TelegramLongPollingBot implements MessageGenerator {
 
     private final CommandHandler commandHandler;
     private final Map<Long, BasicState> basicStates;
     private final Set<MessageHandler> messageHandlers;
-    private final Map<Long, Integer> lastBotMessageIds = new ConcurrentHashMap<>();
+    private final Map<Long, Integer> lastBotMessageIdMap;
     private final List<Map<Long, ?>> allStatesMap;
 
     @Value("${bot.name}")
@@ -45,12 +48,31 @@ public class TelegramBot extends TelegramLongPollingBot {
     private String BOT_TOKEN;
 
     @Override
+    public String getBotUsername() {
+        return BOT_NAME;
+    }
+
+    @Override
+    public String getBotToken() {
+        return BOT_TOKEN;
+    }
+
+    @Override
     public void onUpdateReceived(Update update) {
         if (update.hasMessage() && update.getMessage().hasText()) {
             Message message = update.getMessage();
+
+            String photoId = message.getPhoto().getFirst().getFileId();
+            try {
+                InputStream inputStream = downloadFileAsStream(execute(new GetFile(photoId)));
+                byte[] imageBytes = inputStream.readAllBytes();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+
             Long telegramId = message.getFrom().getId();
             Integer userMessageId = message.getMessageId();
-            Integer botMessageId = lastBotMessageIds.remove(telegramId);
+            Integer botMessageId = lastBotMessageIdMap.remove(telegramId);
             String text = message.getText();
             deletePreviousMessages(telegramId, userMessageId, botMessageId);
             BasicState currentState = basicStates.get(telegramId);
@@ -65,47 +87,37 @@ public class TelegramBot extends TelegramLongPollingBot {
                 Optional<MessageHandler> handler = getMessageHandlerForState(currentState);
                 sendMessage(handler.isPresent()
                     ? handler.get().handle(text, telegramId)
-                    : generateHandlerNotFoundMessage(telegramId));
+                    : generateSendMessage(telegramId, "Обработчик команды не найден"));
             }
         } else if (update.hasCallbackQuery()) {
             Long telegramId = update.getCallbackQuery().getFrom().getId();
             String data = update.getCallbackQuery().getData();
-            deleteMessage(telegramId, lastBotMessageIds.remove(telegramId));
+            deleteMessage(telegramId, lastBotMessageIdMap.remove(telegramId));
             BasicState currentState = basicStates.get(telegramId);
             Optional<MessageHandler> handler = getMessageHandlerForState(currentState);
             sendMessage(handler.isPresent()
                 ? handler.get().handle(data, telegramId)
-                : generateHandlerNotFoundMessage(telegramId));
+                : generateSendMessage(telegramId, "Обработчик команды не найден"));
         }
     }
 
-    @Override
-    public String getBotUsername() {
-        return BOT_NAME;
-    }
-
-    @Override
-    public String getBotToken() {
-        return BOT_TOKEN;
-    }
-
-    private Optional<MessageHandler> getMessageHandlerForState(BasicState state) {
-        return messageHandlers.stream()
-            .filter(handler -> handler.getState() == state)
-            .findFirst();
-    }
-
-    private void sendMessage(PartialBotApiMethod<Message> message) {
+    public void sendMessage(PartialBotApiMethod<Message> message) {
         try {
             Message sentMessage = switch (message) {
                 case SendMessage sendMessage -> execute(sendMessage);
                 case SendPhoto sendPhoto -> execute(sendPhoto);
                 default -> throw new IllegalStateException("Unexpected value: " + message);
             };
-            lastBotMessageIds.put(sentMessage.getChatId(), sentMessage.getMessageId());
+            lastBotMessageIdMap.put(sentMessage.getChatId(), sentMessage.getMessageId());
         } catch (TelegramApiException e) {
             log.error("Не удалось отправить сообщение", e);
         }
+    }
+
+    private Optional<MessageHandler> getMessageHandlerForState(BasicState state) {
+        return messageHandlers.stream()
+            .filter(handler -> handler.getState() == state)
+            .findFirst();
     }
 
     private void deleteMessage(long chatId, int messageId) {
@@ -125,14 +137,6 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
         deleteMessage(chatId, userMessageId);
     }
-
-    private SendMessage generateHandlerNotFoundMessage(long telegramId) {
-        SendMessage message = new SendMessage();
-        message.setChatId(telegramId);
-        message.setText("Обработчик команды не найден");
-        return message;
-    }
-
 
     public void setBotCommands() {
         List<BotCommand> commands = List.of(

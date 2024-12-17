@@ -79,7 +79,7 @@ public class ShowPartnersHandler implements MessageHandler {
                         Partner partner = partnerOptional.get();
                         String partnerDescription = String.format(DESCRIPTION_TEMPLATE,
                             partner.getName(),
-                            partner.getCategoryId().getCategoryName(),
+                            partner.getCategory().getCategoryName(),
                             partner.getPartnersInfo(),
                             partner.getPhoneNumber(),
                             partner.getDiscountPercent(),

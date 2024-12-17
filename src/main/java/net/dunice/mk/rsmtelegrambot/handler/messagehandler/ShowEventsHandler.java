@@ -16,8 +16,7 @@ import net.dunice.mk.rsmtelegrambot.handler.state.step.ShowEventsStep;
 import net.dunice.mk.rsmtelegrambot.repository.EventRepository;
 import net.dunice.mk.rsmtelegrambot.repository.UserRepository;
 import org.springframework.stereotype.Service;
-import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
-import org.telegram.telegrambots.meta.api.objects.Message;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
@@ -51,7 +50,7 @@ public class ShowEventsHandler implements MessageHandler {
     }
 
     @Override
-    public PartialBotApiMethod<Message> handle(String message, Long telegramId) {
+    public SendMessage handle(String message, Long telegramId) {
 
         ShowEventsStep step = showEventSteps.get(telegramId);
         if (step == null) {

@@ -9,8 +9,7 @@ import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.UpdateProfileState
 import net.dunice.mk.rsmtelegrambot.handler.state.step.UpdateProfileStep;
 import net.dunice.mk.rsmtelegrambot.service.UserService;
 import org.springframework.stereotype.Service;
-import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
-import org.telegram.telegrambots.meta.api.objects.Message;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 
 import java.util.Map;
 
@@ -23,7 +22,7 @@ public class UpdateProfileHandler implements MessageHandler {
     private final UserService userService;
 
     @Override
-    public PartialBotApiMethod<Message> handle(String message, Long telegramId) {
+    public SendMessage handle(String message, Long telegramId) {
 
         UpdateProfileState state = updateProfileStates.get(telegramId);
         if (state == null) {
