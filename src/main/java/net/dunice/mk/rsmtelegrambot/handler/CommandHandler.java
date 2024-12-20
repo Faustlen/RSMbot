@@ -7,6 +7,7 @@ import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.SELECT_REGIS
 import lombok.RequiredArgsConstructor;
 import net.dunice.mk.rsmtelegrambot.constant.Command;
 import net.dunice.mk.rsmtelegrambot.constant.Menu;
+import net.dunice.mk.rsmtelegrambot.dto.MessageDto;
 import net.dunice.mk.rsmtelegrambot.entity.Partner;
 import net.dunice.mk.rsmtelegrambot.entity.User;
 import net.dunice.mk.rsmtelegrambot.handler.messagehandler.SelectRegistrationHandler;
@@ -33,10 +34,10 @@ public class CommandHandler implements BaseHandler {
     private final Map<Long, BasicState> basicStates;
 
     @Override
-    public SendMessage handle(String message, Long telegramId) {
+    public SendMessage handle(MessageDto messageDto, Long telegramId) {
         Optional<User> user = userRepository.findById(telegramId);
         if (user.isPresent()) {
-            return switch (Command.getCommandByString(message)) {
+            return switch (Command.getCommandByString(messageDto.getText())) {
                 case START -> {
                     basicStates.put(telegramId, IN_MAIN_MENU);
                     yield menuGenerator.generateRoleSpecificMainMenu(telegramId, user.get().getUserRole());
@@ -53,7 +54,7 @@ public class CommandHandler implements BaseHandler {
                 return generateSendMessage(telegramId, "Функционал меню партнера не реализован");
             } else {
                 basicStates.put(telegramId, SELECT_REGISTRATION_TYPE);
-                return selectRegistrationHandler.handle(null, telegramId);
+                return selectRegistrationHandler.handle(messageDto, telegramId);
             }
         }
     }

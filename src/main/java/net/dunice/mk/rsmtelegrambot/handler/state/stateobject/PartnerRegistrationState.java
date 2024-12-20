@@ -3,7 +3,6 @@ package net.dunice.mk.rsmtelegrambot.handler.state.stateobject;
 import lombok.Getter;
 import lombok.Setter;
 import net.dunice.mk.rsmtelegrambot.entity.Category;
-import net.dunice.mk.rsmtelegrambot.handler.state.step.PartnerRegistrationStep;
 
 import java.time.LocalDate;
 
@@ -18,4 +17,15 @@ public class PartnerRegistrationState {
     private byte[] logo;
     private LocalDate discountDate;
     private String info;
+
+    public enum PartnerRegistrationStep {
+        REQUEST_PARTNER_NAME,
+        VALIDATE_PARTNER_NAME,
+        PHONE_NUMBER,
+        DISCOUNT_PERCENT,
+        CATEGORY,
+        LOGO,
+        DISCOUNT_DATE,
+        PARTNER_INFO,
+    }
 }

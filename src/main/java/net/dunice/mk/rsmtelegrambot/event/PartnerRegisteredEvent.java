@@ -1,4 +1,4 @@
-package net.dunice.mk.rsmtelegrambot.events;
+package net.dunice.mk.rsmtelegrambot.event;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

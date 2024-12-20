@@ -5,6 +5,7 @@ import static net.dunice.mk.rsmtelegrambot.constant.Command.START;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.dunice.mk.rsmtelegrambot.constant.Command;
+import net.dunice.mk.rsmtelegrambot.dto.MessageDto;
 import net.dunice.mk.rsmtelegrambot.handler.CommandHandler;
 import net.dunice.mk.rsmtelegrambot.handler.MessageGenerator;
 import net.dunice.mk.rsmtelegrambot.handler.messagehandler.MessageHandler;
@@ -23,7 +24,6 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-import java.io.File;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +40,7 @@ public class TelegramBot extends TelegramLongPollingBot implements MessageGenera
     private final Set<MessageHandler> messageHandlers;
     private final Map<Long, Integer> lastBotMessageIdMap;
     private final List<Map<Long, ?>> allStatesMap;
+    private final GoogleSheetDownloader downloader;
 
     @Value("${bot.name}")
     private String BOT_NAME;
@@ -59,17 +60,8 @@ public class TelegramBot extends TelegramLongPollingBot implements MessageGenera
 
     @Override
     public void onUpdateReceived(Update update) {
-        if (update.hasMessage() && update.getMessage().hasText()) {
+        if (update.hasMessage() && (update.getMessage().hasText() || update.getMessage().hasPhoto())) {
             Message message = update.getMessage();
-
-            String photoId = message.getPhoto().getFirst().getFileId();
-            try {
-                InputStream inputStream = downloadFileAsStream(execute(new GetFile(photoId)));
-                byte[] imageBytes = inputStream.readAllBytes();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-
             Long telegramId = message.getFrom().getId();
             Integer userMessageId = message.getMessageId();
             Integer botMessageId = lastBotMessageIdMap.remove(telegramId);
@@ -82,21 +74,22 @@ public class TelegramBot extends TelegramLongPollingBot implements MessageGenera
             if (Command.isValidCommand(text)) {
                 basicStates.remove(telegramId);
                 allStatesMap.forEach(map -> map.remove(telegramId));
-                sendMessage(commandHandler.handle(text, telegramId));
+                sendMessage(commandHandler.handle(new MessageDto(text), telegramId));
             } else {
+                byte[] image = downloadImageIfPresent(message);
                 Optional<MessageHandler> handler = getMessageHandlerForState(currentState);
                 sendMessage(handler.isPresent()
-                    ? handler.get().handle(text, telegramId)
+                    ? handler.get().handle(new MessageDto(text, image), telegramId)
                     : generateSendMessage(telegramId, "Обработчик команды не найден"));
             }
         } else if (update.hasCallbackQuery()) {
             Long telegramId = update.getCallbackQuery().getFrom().getId();
-            String data = update.getCallbackQuery().getData();
+            String text = update.getCallbackQuery().getData();
             deleteMessage(telegramId, lastBotMessageIdMap.remove(telegramId));
             BasicState currentState = basicStates.get(telegramId);
             Optional<MessageHandler> handler = getMessageHandlerForState(currentState);
             sendMessage(handler.isPresent()
-                ? handler.get().handle(data, telegramId)
+                ? handler.get().handle(new MessageDto(text), telegramId)
                 : generateSendMessage(telegramId, "Обработчик команды не найден"));
         }
     }
@@ -136,6 +129,19 @@ public class TelegramBot extends TelegramLongPollingBot implements MessageGenera
             deleteMessage(chatId, botMessageId);
         }
         deleteMessage(chatId, userMessageId);
+    }
+
+    private byte[] downloadImageIfPresent(Message message) {
+        if (message.hasPhoto()) {
+            String imageID = message.getPhoto().getFirst().getFileId();
+            try {
+                InputStream inputStream = downloadFileAsStream(execute(new GetFile(imageID)));
+                return inputStream.readAllBytes();
+            } catch (Exception e) {
+                log.error(e.getMessage(), e);
+            }
+        }
+        return null;
     }
 
     public void setBotCommands() {

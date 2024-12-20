@@ -8,6 +8,7 @@ public class ButtonName {
         YES = "Да",
         NO = "Нет",
         SET_ADMIN = "Назначить админа",
+        BAN_USER = "Забанить пользователя",
         ADD_PARTNER = "Добавить партнера",
         ADD_EVENT = "Добавить мероприятие",
         TO_MAIN_MENU = "⌂ В главное меню",

@@ -9,4 +9,6 @@ public enum BasicState {
     CHANGE_PROFILE,
     SHOW_EVENTS,
     SHOW_PARTNERS,
+    BAN_USER,
+    CREATE_EVENT,
 }

@@ -1,10 +1,12 @@
 package net.dunice.mk.rsmtelegrambot.config;
 
 import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
+import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.BanUserState;
+import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.EventCreationState;
 import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.GrantAdminState;
 import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.PartnerRegistrationState;
-import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.UserRegistrationState;
 import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.UpdateProfileState;
+import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.UserRegistrationState;
 import net.dunice.mk.rsmtelegrambot.handler.state.step.SelectRegistrationStep;
 import net.dunice.mk.rsmtelegrambot.handler.state.step.ShowEventsStep;
 import net.dunice.mk.rsmtelegrambot.handler.state.step.ShowPartnersStep;
@@ -20,6 +22,16 @@ public class StatesConfig {
 
     @Bean
     public Map<Long, BasicState> getInteractionStatesMap() {
+        return new ConcurrentHashMap<>();
+    }
+
+    @Bean("banUserStates")
+    public Map<Long, BanUserState> getBanUserStatesMap() {
+        return new ConcurrentHashMap<>();
+    }
+
+    @Bean("eventCreationStates")
+    public Map<Long, EventCreationState> getEventCreationStatesMap() {
         return new ConcurrentHashMap<>();
     }
 
@@ -44,24 +56,34 @@ public class StatesConfig {
     }
 
     @Bean("showEventSteps")
-    public Map<Long, ShowEventsStep> showEventsStepMap() {
+    public Map<Long, ShowEventsStep> getShowEventsStepMap() {
         return new ConcurrentHashMap<>();
     }
 
     @Bean("showPartnerSteps")
-    public Map<Long, ShowPartnersStep> showPartnersStepMap() {return new ConcurrentHashMap<>();};
+    public Map<Long, ShowPartnersStep> getShowPartnersStepMap() {
+        return new ConcurrentHashMap<>();
+    }
+
+    ;
 
     @Bean("selectRegistrationSteps")
-    public Map<Long, SelectRegistrationStep> selectRegistrationStepsMap() {
+    public Map<Long, SelectRegistrationStep> getSelectRegistrationStepsMap() {
         return new ConcurrentHashMap<>();
-    };
+    }
+
+    ;
 
     @Bean("allStatesMap")
     public List<Map<Long, ?>> getAllStatesMap(Map<Long, GrantAdminState> grantAdminStates,
                                               Map<Long, UserRegistrationState> registrationStates,
                                               Map<Long, UpdateProfileState> updateProfileStates,
                                               Map<Long, ShowEventsStep> showEventSteps,
-                                              Map<Long, ShowPartnersStep> showPartnerSteps) {
-        return List.of(grantAdminStates, registrationStates, updateProfileStates, showEventSteps, showPartnerSteps);
+                                              Map<Long, ShowPartnersStep> showPartnerSteps,
+                                              Map<Long, BanUserState> banUserStates,
+                                              Map<Long, EventCreationState> eventCreationStates,
+                                              Map<Long, PartnerRegistrationState> partnerRegistrationStates) {
+        return List.of(grantAdminStates, registrationStates, updateProfileStates, showEventSteps, showPartnerSteps,
+            banUserStates, eventCreationStates, partnerRegistrationStates);
     }
 }

@@ -2,6 +2,7 @@ package net.dunice.mk.rsmtelegrambot.config;
 
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.ADD_EVENT;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.ADD_PARTNER;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.BAN_USER;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.EVENTS;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.NO;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.PARTNERS;
@@ -71,6 +72,7 @@ public class MenuConfig {
         KeyboardRow row = new KeyboardRow();
         row.add(ADD_PARTNER);
         row.add(ADD_EVENT);
+        row.add(BAN_USER);
         keyboard.add(row);
         return replyMarkup;
     }
@@ -83,6 +85,9 @@ public class MenuConfig {
         row.add(SET_ADMIN);
         row.add(ADD_PARTNER);
         row.add(ADD_EVENT);
+        keyboard.add(row);
+        row = new KeyboardRow();
+        row.add(BAN_USER);
         keyboard.add(row);
         return replyMarkup;
     }

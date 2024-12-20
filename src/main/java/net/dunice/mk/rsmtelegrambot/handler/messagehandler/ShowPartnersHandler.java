@@ -4,11 +4,11 @@ import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TO_PARTNERS_LIST;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.IN_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.SHOW_PARTNERS;
-import static net.dunice.mk.rsmtelegrambot.handler.state.step.ShowPartnersStep.FINISH;
 import static net.dunice.mk.rsmtelegrambot.handler.state.step.ShowPartnersStep.SHOW_PARTNERS_LIST;
 import static net.dunice.mk.rsmtelegrambot.handler.state.step.ShowPartnersStep.SHOW_PARTNER_DETAILS;
 
 import lombok.RequiredArgsConstructor;
+import net.dunice.mk.rsmtelegrambot.dto.MessageDto;
 import net.dunice.mk.rsmtelegrambot.entity.Partner;
 import net.dunice.mk.rsmtelegrambot.handler.MenuGenerator;
 import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
@@ -17,6 +17,7 @@ import net.dunice.mk.rsmtelegrambot.repository.PartnerRepository;
 import net.dunice.mk.rsmtelegrambot.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
@@ -38,13 +39,13 @@ public class ShowPartnersHandler implements MessageHandler {
     private final Map<Long, BasicState> basicStates;
     private final UserRepository userRepository;
     private final Map<Long, ShowPartnersStep> showPartnerSteps;
-    private static final String DESCRIPTION_TEMPLATE = """
-        Партнер - %s
-        Категория - %s
-        Информация о партнере - %s
-        Номер телефона - %s
-        Процент скидки - %s%%
-        Дата окончания скидки - %s
+    private static final String PARTNER_INFO_TEMPLATE = """
+        Партнер: %s
+        Категория: %s
+        Информация о партнере: %s
+        Номер телефона: %s
+        Процент скидки: %s%%
+        Дата окончания скидки: %s
         """;
 
     @Override
@@ -53,11 +54,19 @@ public class ShowPartnersHandler implements MessageHandler {
     }
 
     @Override
-    public PartialBotApiMethod<Message> handle(String message, Long telegramId) {
-
+    public PartialBotApiMethod<Message> handle(MessageDto messageDto, Long telegramId) {
+        String text = messageDto.getText();
         ShowPartnersStep step = showPartnerSteps.get(telegramId);
         if (step == null) {
             showPartnerSteps.put(telegramId, (step = ShowPartnersStep.SHOW_PARTNERS_LIST));
+        }
+
+        if (TO_MAIN_MENU.equalsIgnoreCase(text)) {
+            return goToMainMenu(telegramId);
+        }
+        else if (TO_PARTNERS_LIST.equalsIgnoreCase(text)) {
+            showPartnerSteps.put(telegramId, SHOW_PARTNERS_LIST);
+            step = SHOW_PARTNERS_LIST;
         }
 
         return switch (step) {
@@ -68,16 +77,16 @@ public class ShowPartnersHandler implements MessageHandler {
                     getPartnersListKeyboard(partners));
             }
             case SHOW_PARTNER_DETAILS -> {
-                if (TO_MAIN_MENU.equalsIgnoreCase(message)) {
+                if (TO_MAIN_MENU.equalsIgnoreCase(text)) {
                     showPartnerSteps.remove(telegramId);
                     basicStates.put(telegramId, IN_MAIN_MENU);
                     yield menuGenerator.generateRoleSpecificMainMenu(telegramId,
                         userRepository.findByTelegramId(telegramId).get().getUserRole());
                 } else {
-                    Optional<Partner> partnerOptional = partnerRepository.findByName(message);
+                    Optional<Partner> partnerOptional = partnerRepository.findByName(text);
                     if (partnerOptional.isPresent()) {
                         Partner partner = partnerOptional.get();
-                        String partnerDescription = String.format(DESCRIPTION_TEMPLATE,
+                        String partnerDescription = PARTNER_INFO_TEMPLATE.formatted(
                             partner.getName(),
                             partner.getCategory().getCategoryName(),
                             partner.getPartnersInfo(),
@@ -85,7 +94,6 @@ public class ShowPartnersHandler implements MessageHandler {
                             partner.getDiscountPercent(),
                             partner.getDiscountDate() == null ? "Неограниченно" :
                                 partner.getDiscountDate().toLocalDate());
-                        showPartnerSteps.put(telegramId, FINISH);
                         byte[] logo = partner.getLogo();
                         yield isLogoPresent(logo)
                             ? generateImageMessage(telegramId, partnerDescription, getGoBackKeyboard(), logo)
@@ -93,19 +101,6 @@ public class ShowPartnersHandler implements MessageHandler {
                     } else {
                         yield generateSendMessage(telegramId, "Нет мероприятия с таким названием");
                     }
-                }
-            }
-            case FINISH -> {
-                if (TO_MAIN_MENU.equalsIgnoreCase(message)) {
-                    showPartnerSteps.remove(telegramId);
-                    basicStates.put(telegramId, IN_MAIN_MENU);
-                    yield menuGenerator.generateRoleSpecificMainMenu(telegramId,
-                        userRepository.findByTelegramId(telegramId).get().getUserRole());
-                } else if (TO_PARTNERS_LIST.equalsIgnoreCase(message)) {
-                    showPartnerSteps.put(telegramId, SHOW_PARTNERS_LIST);
-                    yield handle(message, telegramId);
-                } else {
-                    yield generateSendMessage(telegramId, "Неверная команда");
                 }
             }
         };
@@ -139,6 +134,13 @@ public class ShowPartnersHandler implements MessageHandler {
         keyboard.add(List.of(toPartnersButton));
         inlineKeyboardMarkup.setKeyboard(keyboard);
         return inlineKeyboardMarkup;
+    }
+
+    private SendMessage goToMainMenu(Long telegramId) {
+        showPartnerSteps.remove(telegramId);
+        basicStates.put(telegramId, IN_MAIN_MENU);
+        return menuGenerator.generateRoleSpecificMainMenu(telegramId,
+            userRepository.findByTelegramId(telegramId).get().getUserRole());
     }
 
     private boolean isLogoPresent(byte[] logo) {

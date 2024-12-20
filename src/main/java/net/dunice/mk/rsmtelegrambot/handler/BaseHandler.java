@@ -1,9 +1,9 @@
 package net.dunice.mk.rsmtelegrambot.handler;
 
+import net.dunice.mk.rsmtelegrambot.dto.MessageDto;
 import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
 import org.telegram.telegrambots.meta.api.objects.Message;
 
 public interface BaseHandler extends MessageGenerator {
-
-    public PartialBotApiMethod<Message> handle(String message, Long telegramId);
+    PartialBotApiMethod<Message> handle(MessageDto messageDto, Long telegramId);
 }

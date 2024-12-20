@@ -2,21 +2,22 @@ package net.dunice.mk.rsmtelegrambot.handler.messagehandler;
 
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.GO_TO_MAIN_MENU;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.IN_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.PARTNER_REGISTRATION;
-import static net.dunice.mk.rsmtelegrambot.handler.state.step.PartnerRegistrationStep.CATEGORY;
-import static net.dunice.mk.rsmtelegrambot.handler.state.step.PartnerRegistrationStep.DISCOUNT_DATE;
-import static net.dunice.mk.rsmtelegrambot.handler.state.step.PartnerRegistrationStep.DISCOUNT_PERCENT;
-import static net.dunice.mk.rsmtelegrambot.handler.state.step.PartnerRegistrationStep.FINISH;
-import static net.dunice.mk.rsmtelegrambot.handler.state.step.PartnerRegistrationStep.LOGO;
-import static net.dunice.mk.rsmtelegrambot.handler.state.step.PartnerRegistrationStep.PARTNER_INFO;
-import static net.dunice.mk.rsmtelegrambot.handler.state.step.PartnerRegistrationStep.PHONE_NUMBER;
-import static net.dunice.mk.rsmtelegrambot.handler.state.step.PartnerRegistrationStep.VALIDATE_PARTNER_NAME;
+import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.PartnerRegistrationState.PartnerRegistrationStep.CATEGORY;
+import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.PartnerRegistrationState.PartnerRegistrationStep.DISCOUNT_DATE;
+import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.PartnerRegistrationState.PartnerRegistrationStep.DISCOUNT_PERCENT;
+import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.PartnerRegistrationState.PartnerRegistrationStep.LOGO;
+import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.PartnerRegistrationState.PartnerRegistrationStep.PARTNER_INFO;
+import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.PartnerRegistrationState.PartnerRegistrationStep.PHONE_NUMBER;
+import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.PartnerRegistrationState.PartnerRegistrationStep.VALIDATE_PARTNER_NAME;
 
 import lombok.RequiredArgsConstructor;
 import net.dunice.mk.rsmtelegrambot.constant.Menu;
+import net.dunice.mk.rsmtelegrambot.dto.MessageDto;
 import net.dunice.mk.rsmtelegrambot.entity.Category;
 import net.dunice.mk.rsmtelegrambot.entity.Partner;
-import net.dunice.mk.rsmtelegrambot.events.PartnerRegisteredEvent;
+import net.dunice.mk.rsmtelegrambot.event.PartnerRegisteredEvent;
 import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
 import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.PartnerRegistrationState;
 import net.dunice.mk.rsmtelegrambot.repository.CategoryRepository;
@@ -46,10 +47,14 @@ public class PartnerRegistrationHandler implements MessageHandler {
 
 
     @Override
-    public SendMessage handle(String message, Long telegramId) {
+    public SendMessage handle(MessageDto messageDto, Long telegramId) {
+        String text = messageDto.getText();
         PartnerRegistrationState state = partnerRegistrationStates.get(telegramId);
         if (state == null) {
             partnerRegistrationStates.put(telegramId, (state = new PartnerRegistrationState()));
+        }
+        if (TO_MAIN_MENU.equals(text)) {
+            return goToMainMenu(telegramId);
         }
         return switch (state.getStep()) {
             case REQUEST_PARTNER_NAME -> {
@@ -57,18 +62,18 @@ public class PartnerRegistrationHandler implements MessageHandler {
                 yield generateSendMessage(telegramId, "Введите название партнёра:");
             }
             case VALIDATE_PARTNER_NAME -> {
-                state.setName(message.trim());
+                state.setName(text.strip());
                 state.setStep(PHONE_NUMBER);
                 yield generateSendMessage(telegramId, "Введите номер телефона:");
             }
             case PHONE_NUMBER -> {
-                state.setPhoneNumber(message.trim());
+                state.setPhoneNumber(text.strip());
                 state.setStep(DISCOUNT_PERCENT);
                 yield generateSendMessage(telegramId, "Введите процент скидки:");
             }
             case DISCOUNT_PERCENT -> {
                 try {
-                    state.setDiscountPercent(Short.parseShort(message.strip()));
+                    state.setDiscountPercent(Short.parseShort(text.strip()));
                     state.setStep(CATEGORY);
                     yield generateSendMessage(telegramId, "Введите название категории:");
                 } catch (NumberFormatException e) {
@@ -77,7 +82,7 @@ public class PartnerRegistrationHandler implements MessageHandler {
             }
             case CATEGORY -> {
                 try {
-                    Category category = categoryRepository.findByCategoryName(message);
+                    Category category = categoryRepository.findByCategoryName(text);
                     state.setCategory(category);
                     state.setStep(LOGO);
                     yield generateSendMessage(telegramId, "Отправьте ваш логотип (изображение):");
@@ -86,8 +91,8 @@ public class PartnerRegistrationHandler implements MessageHandler {
                 }
             }
             case LOGO -> {
-                if (isImageMessage(message)) {
-                    state.setLogo(message.getBytes());
+                if (messageDto.getImage() != null) {
+                    state.setLogo(messageDto.getImage());
                     state.setStep(DISCOUNT_DATE);
                     yield generateSendMessage(telegramId, "Введите дату конца действия скидки (ДД.ММ.ГГГГ):");
                 } else {
@@ -96,7 +101,7 @@ public class PartnerRegistrationHandler implements MessageHandler {
             }
             case DISCOUNT_DATE -> {
                 try {
-                    state.setDiscountDate(LocalDate.parse(message.trim(), DateTimeFormatter.ofPattern("dd.MM.yyyy")));
+                    state.setDiscountDate(LocalDate.parse(text.trim(), DateTimeFormatter.ofPattern("dd.MM.yyyy")));
                     state.setStep(PARTNER_INFO);
                     yield generateSendMessage(telegramId, "Введите дополнительную информацию о партнёре:");
                 } catch (DateTimeParseException e) {
@@ -104,25 +109,14 @@ public class PartnerRegistrationHandler implements MessageHandler {
                 }
             }
             case PARTNER_INFO -> {
-                if (message.length() <= 255) {
-                    state.setInfo(message.trim());
+                if (text.length() <= 255) {
+                    state.setInfo(text.trim());
                     savePartner(state, telegramId);
-                    state.setStep(FINISH);
                     yield generateSendMessage(telegramId, "Данные добавлены и отправлены на проверку.",
                         menus.get(GO_TO_MAIN_MENU));
                 } else {
                     yield generateSendMessage(telegramId,
                         "Информация слишком длинная. Повторите ввод (до 255 символов):");
-                }
-            }
-            case FINISH -> {
-                if (TO_MAIN_MENU.equalsIgnoreCase(message)) {
-                    partnerRegistrationStates.remove(telegramId);
-                    basicStates.remove(telegramId);
-                    yield generateSendMessage(telegramId,
-                        "Регистрация завершена, профиль партнера станет доступен после проверки администратором");
-                } else {
-                    yield generateSendMessage(telegramId, "Неверная команда");
                 }
             }
         };
@@ -144,13 +138,16 @@ public class PartnerRegistrationHandler implements MessageHandler {
         eventPublisher.publishEvent(new PartnerRegisteredEvent(partner));
     }
 
-    private boolean isImageMessage(String message) {
-        return message.startsWith("image:");
-    }
-
     @Override
     public BasicState getState() {
         return PARTNER_REGISTRATION;
+    }
+
+    private SendMessage goToMainMenu(Long telegramId) {
+        partnerRegistrationStates.remove(telegramId);
+        basicStates.put(telegramId, IN_MAIN_MENU);
+        return generateSendMessage(telegramId,
+            "Регистрация завершена, профиль партнера станет доступен после проверки администратором");
     }
 }
 

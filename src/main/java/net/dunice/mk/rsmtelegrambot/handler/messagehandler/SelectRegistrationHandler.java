@@ -9,13 +9,14 @@ import static net.dunice.mk.rsmtelegrambot.constant.Menu.TRY_AGAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.PARTNER_REGISTRATION;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.USER_REGISTRATION;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.SELECT_REGISTRATION_TYPE;
-import static net.dunice.mk.rsmtelegrambot.handler.state.step.SelectRegistrationStep.CONFIRM;
+import static net.dunice.mk.rsmtelegrambot.handler.state.step.SelectRegistrationStep.CHECK_CONFIRMATION;
 import static net.dunice.mk.rsmtelegrambot.handler.state.step.SelectRegistrationStep.REQUEST_REGISTRATION;
 import static net.dunice.mk.rsmtelegrambot.handler.state.step.SelectRegistrationStep.RETRY_REGISTRATION;
 import static net.dunice.mk.rsmtelegrambot.handler.state.step.SelectRegistrationStep.SWITCH_REGISTRATION_TYPE;
 
 import lombok.RequiredArgsConstructor;
 import net.dunice.mk.rsmtelegrambot.constant.Menu;
+import net.dunice.mk.rsmtelegrambot.dto.MessageDto;
 import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
 import net.dunice.mk.rsmtelegrambot.handler.state.step.SelectRegistrationStep;
 import org.springframework.stereotype.Service;
@@ -36,23 +37,24 @@ public class SelectRegistrationHandler implements MessageHandler {
     private final PartnerRegistrationHandler partnerRegistrationHandler;
 
     @Override
-    public SendMessage handle(String message, Long telegramId) {
+    public SendMessage handle(MessageDto messageDto, Long telegramId) {
+        String text = messageDto.getText();
         SelectRegistrationStep step = selectRegistrationSteps.get(telegramId);
         if (step == null) {
             selectRegistrationSteps.put(telegramId, (step = REQUEST_REGISTRATION));
         }
         return switch (step) {
             case REQUEST_REGISTRATION -> {
-                selectRegistrationSteps.put(telegramId, CONFIRM);
+                selectRegistrationSteps.put(telegramId, CHECK_CONFIRMATION);
                 yield generateSendMessage(telegramId,
                     "Добро пожаловать! Вы не зарегистрированы, желаете пройти регистрацию? Ответьте 'Да' или 'Нет'.",
                     menus.get(SELECTION_MENU));
             }
-            case CONFIRM -> {
-                if ("Да".equalsIgnoreCase(message)) {
+            case CHECK_CONFIRMATION -> {
+                if ("Да".equalsIgnoreCase(text)) {
                     selectRegistrationSteps.put(telegramId, SWITCH_REGISTRATION_TYPE);
                     yield generateSendMessage(telegramId, "Кто вы?", menus.get(SELECTION_USER_TYPE_MENU));
-                } else if ("Нет".equalsIgnoreCase(message)) {
+                } else if ("Нет".equalsIgnoreCase(text)) {
                     selectRegistrationSteps.put(telegramId, RETRY_REGISTRATION);
                     yield generateSendMessage(telegramId, "Регистрация отменена.", menus.get(TRY_AGAIN_MENU));
                 } else {
@@ -62,15 +64,15 @@ public class SelectRegistrationHandler implements MessageHandler {
                 }
             }
             case SWITCH_REGISTRATION_TYPE -> {
-                if (RSM_MEMBER.equals(message)) {
+                if (RSM_MEMBER.equals(text)) {
                     selectRegistrationSteps.remove(telegramId);
                     basicStates.put(telegramId, USER_REGISTRATION);
-                    yield userRegistrationHandler.handle(message, telegramId);
+                    yield userRegistrationHandler.handle(messageDto, telegramId);
                 }
-                else if (RSM_PARTNER.equals(message)) {
+                else if (RSM_PARTNER.equals(text)) {
                     selectRegistrationSteps.remove(telegramId);
                     basicStates.put(telegramId, PARTNER_REGISTRATION);
-                    yield partnerRegistrationHandler.handle(message, telegramId);
+                    yield partnerRegistrationHandler.handle(messageDto, telegramId);
                 }
                 else {
                     selectRegistrationSteps.put(telegramId, RETRY_REGISTRATION);
@@ -79,9 +81,9 @@ public class SelectRegistrationHandler implements MessageHandler {
                 }
             }
             case RETRY_REGISTRATION -> {
-                if (TRY_AGAIN.equalsIgnoreCase(message)) {
+                if (TRY_AGAIN.equalsIgnoreCase(text)) {
                     selectRegistrationSteps.put(telegramId, REQUEST_REGISTRATION);
-                    yield handle(message, telegramId);
+                    yield handle(messageDto, telegramId);
                 } else {
                     yield generateSendMessage(telegramId, "Неверная команда");
                 }

@@ -4,11 +4,11 @@ import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TO_EVENTS_LIST;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.IN_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.SHOW_EVENTS;
-import static net.dunice.mk.rsmtelegrambot.handler.state.step.ShowEventsStep.FINISH;
 import static net.dunice.mk.rsmtelegrambot.handler.state.step.ShowEventsStep.SHOW_EVENTS_LIST;
 import static net.dunice.mk.rsmtelegrambot.handler.state.step.ShowEventsStep.SHOW_EVENT_DETAILS;
 
 import lombok.RequiredArgsConstructor;
+import net.dunice.mk.rsmtelegrambot.dto.MessageDto;
 import net.dunice.mk.rsmtelegrambot.entity.Event;
 import net.dunice.mk.rsmtelegrambot.handler.MenuGenerator;
 import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
@@ -37,11 +37,11 @@ public class ShowEventsHandler implements MessageHandler {
     private final Map<Long, BasicState> basicStates;
     private final UserRepository userRepository;
     private final Map<Long, ShowEventsStep> showEventSteps;
-    private static final String DESCRIPTION_TEMPLATE = """
-        Мероприятие - %s
-        Описание - %s
-        Ссылка - %s
-        Дата - %s  |  Время - %s
+    private static final String EVENT_INFO_TEMPLATE = """
+        Мероприятие: %s
+        Описание: %s
+        Ссылка: %s
+        Дата: %s  |  Время: %s
         """;
 
     @Override
@@ -50,11 +50,19 @@ public class ShowEventsHandler implements MessageHandler {
     }
 
     @Override
-    public SendMessage handle(String message, Long telegramId) {
-
+    public SendMessage handle(MessageDto messageDto, Long telegramId) {
+        String text = messageDto.getText();
         ShowEventsStep step = showEventSteps.get(telegramId);
         if (step == null) {
             showEventSteps.put(telegramId, (step = SHOW_EVENTS_LIST));
+        }
+
+        if (TO_MAIN_MENU.equalsIgnoreCase(text)) {
+            return goToMainMenu(telegramId);
+        }
+        else if (TO_EVENTS_LIST.equalsIgnoreCase(text)) {
+            showEventSteps.put(telegramId, SHOW_EVENTS_LIST);
+            step = SHOW_EVENTS_LIST;
         }
 
         return switch (step) {
@@ -65,39 +73,18 @@ public class ShowEventsHandler implements MessageHandler {
                     generateEventListKeyboard(events));
             }
             case SHOW_EVENT_DETAILS -> {
-                if (TO_MAIN_MENU.equalsIgnoreCase(message)) {
-                    showEventSteps.remove(telegramId);
-                    basicStates.put(telegramId, IN_MAIN_MENU);
-                    yield menuGenerator.generateRoleSpecificMainMenu(telegramId,
-                        userRepository.findByTelegramId(telegramId).get().getUserRole());
+                Optional<Event> eventOptional = eventRepository.findByTitle(text);
+                if (eventOptional.isPresent()) {
+                    Event event = eventOptional.get();
+                    String eventDescription = EVENT_INFO_TEMPLATE.formatted(
+                        event.getTitle(),
+                        event.getText(),
+                        event.getLink(),
+                        event.getEventDate().toLocalDate(),
+                        event.getEventDate().toLocalTime());
+                    yield generateSendMessage(telegramId, eventDescription, generateGoBackKeyboard());
                 } else {
-                    Optional<Event> eventOptional = eventRepository.findByTitle(message);
-                    if (eventOptional.isPresent()) {
-                        Event event = eventOptional.get();
-                        String eventDescription = String.format(DESCRIPTION_TEMPLATE,
-                            event.getTitle(),
-                            event.getText(),
-                            event.getLink(),
-                            event.getEventDate().toLocalDate(),
-                            event.getEventDate().toLocalTime());
-                        showEventSteps.put(telegramId, FINISH);
-                        yield generateSendMessage(telegramId, eventDescription, generateGoBackKeyboard());
-                    } else {
-                        yield generateSendMessage(telegramId, "Нет мероприятия с таким названием");
-                    }
-                }
-            }
-            case FINISH -> {
-                if (TO_MAIN_MENU.equalsIgnoreCase(message)) {
-                    showEventSteps.remove(telegramId);
-                    basicStates.put(telegramId, IN_MAIN_MENU);
-                    yield menuGenerator.generateRoleSpecificMainMenu(telegramId,
-                        userRepository.findByTelegramId(telegramId).get().getUserRole());
-                } else if (TO_EVENTS_LIST.equalsIgnoreCase(message)) {
-                    showEventSteps.put(telegramId, SHOW_EVENTS_LIST);
-                    yield handle(message, telegramId);
-                } else {
-                    yield generateSendMessage(telegramId, "Неверная команда");
+                    yield generateSendMessage(telegramId, "Нет мероприятия с таким названием");
                 }
             }
         };
@@ -131,5 +118,12 @@ public class ShowEventsHandler implements MessageHandler {
         keyboard.add(List.of(toEventsButton));
         inlineKeyboardMarkup.setKeyboard(keyboard);
         return inlineKeyboardMarkup;
+    }
+
+    private SendMessage goToMainMenu(Long telegramId) {
+        showEventSteps.remove(telegramId);
+        basicStates.put(telegramId, IN_MAIN_MENU);
+        return menuGenerator.generateRoleSpecificMainMenu(telegramId,
+            userRepository.findByTelegramId(telegramId).get().getUserRole());
     }
 }
