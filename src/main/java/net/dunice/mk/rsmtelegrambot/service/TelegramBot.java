@@ -40,7 +40,6 @@ public class TelegramBot extends TelegramLongPollingBot implements MessageGenera
     private final Set<MessageHandler> messageHandlers;
     private final Map<Long, Integer> lastBotMessageIdMap;
     private final List<Map<Long, ?>> allStatesMap;
-    private final GoogleSheetDownloader downloader;
 
     @Value("${bot.name}")
     private String BOT_NAME;
@@ -60,7 +59,8 @@ public class TelegramBot extends TelegramLongPollingBot implements MessageGenera
 
     @Override
     public void onUpdateReceived(Update update) {
-        if (update.hasMessage() && (update.getMessage().hasText() || update.getMessage().hasPhoto())) {
+        MessageDto messageDto = new MessageDto();
+        if (update.hasMessage()) {
             Message message = update.getMessage();
             Long telegramId = message.getFrom().getId();
             Integer userMessageId = message.getMessageId();
@@ -74,12 +74,15 @@ public class TelegramBot extends TelegramLongPollingBot implements MessageGenera
             if (Command.isValidCommand(text)) {
                 basicStates.remove(telegramId);
                 allStatesMap.forEach(map -> map.remove(telegramId));
-                sendMessage(commandHandler.handle(new MessageDto(text), telegramId));
+                messageDto.setText(text);
+                sendMessage(commandHandler.handle(messageDto, telegramId));
             } else {
                 byte[] image = downloadImageIfPresent(message);
                 Optional<MessageHandler> handler = getMessageHandlerForState(currentState);
+                messageDto.setText(text);
+                messageDto.setImage(image);
                 sendMessage(handler.isPresent()
-                    ? handler.get().handle(new MessageDto(text, image), telegramId)
+                    ? handler.get().handle(messageDto, telegramId)
                     : generateSendMessage(telegramId, "Обработчик команды не найден"));
             }
         } else if (update.hasCallbackQuery()) {
@@ -88,8 +91,9 @@ public class TelegramBot extends TelegramLongPollingBot implements MessageGenera
             deleteMessage(telegramId, lastBotMessageIdMap.remove(telegramId));
             BasicState currentState = basicStates.get(telegramId);
             Optional<MessageHandler> handler = getMessageHandlerForState(currentState);
+            messageDto.setText(text);
             sendMessage(handler.isPresent()
-                ? handler.get().handle(new MessageDto(text), telegramId)
+                ? handler.get().handle(messageDto, telegramId)
                 : generateSendMessage(telegramId, "Обработчик команды не найден"));
         }
     }

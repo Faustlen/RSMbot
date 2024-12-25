@@ -58,6 +58,7 @@ public class CreateEventHandler implements MessageHandler {
         if (TO_MAIN_MENU.equals(text)) {
             return goToMainMenu(telegramId);
         }
+
         return switch (state.getStep()) {
             case REQUEST_EVENT_NAME -> {
                 state.setStep(VERIFY_EVENT_NAME);

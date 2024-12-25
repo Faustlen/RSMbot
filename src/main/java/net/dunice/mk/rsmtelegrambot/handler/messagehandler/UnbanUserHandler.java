@@ -4,15 +4,14 @@ import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.GO_TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.SELECTION_MENU;
 import static net.dunice.mk.rsmtelegrambot.entity.Role.USER;
-import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BAN_USER;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.IN_MAIN_MENU;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.UNBAN_USER;
 import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.BanUserState.BanUserStep.CONFIRM_USER_TO_BAN;
 import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.BanUserState.BanUserStep.VERIFY_USER_TO_BAN;
 
 import lombok.RequiredArgsConstructor;
 import net.dunice.mk.rsmtelegrambot.constant.Menu;
 import net.dunice.mk.rsmtelegrambot.dto.MessageDto;
-import net.dunice.mk.rsmtelegrambot.entity.Role;
 import net.dunice.mk.rsmtelegrambot.entity.User;
 import net.dunice.mk.rsmtelegrambot.handler.MenuGenerator;
 import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
@@ -30,7 +29,7 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-public class BanUserHandler implements MessageHandler {
+public class UnbanUserHandler implements MessageHandler {
 
     private final UserRepository userRepository;
     private final Map<Long, BasicState> basicStates;
@@ -40,7 +39,7 @@ public class BanUserHandler implements MessageHandler {
 
     @Override
     public BasicState getState() {
-        return BAN_USER;
+        return UNBAN_USER;
     }
 
     @Override
@@ -50,7 +49,6 @@ public class BanUserHandler implements MessageHandler {
         if (state == null) {
             banUserStates.put(telegramId, (state = new BanUserState()));
         }
-        ReplyKeyboard mainMenu = menus.get(GO_TO_MAIN_MENU);
 
         if (TO_MAIN_MENU.equals(text)) {
             return goToMainMenu(telegramId);
@@ -59,25 +57,24 @@ public class BanUserHandler implements MessageHandler {
             case REQUEST_USER_ID -> {
                 state.setStep(VERIFY_USER_TO_BAN);
                 yield generateSendMessage(telegramId,
-                    "Введите ID пользователя, которого хотите забанить");
+                    "Введите ID пользователя, которого хотите разбанить");
             }
             case VERIFY_USER_TO_BAN -> {
                 try {
                     Long targetUserId = Long.parseLong(text);
                     Optional<User> targetUser = userRepository.findById(targetUserId);
                     if (targetUser.isPresent()) {
-                        Role targetUserRole = targetUser.get().getUserRole();
                         if (targetUserId.equals(telegramId)) {
                             yield generateSendMessage(telegramId, "Вы ввели собственный ID. Повторите ввод:");
-                        } else if (targetUserRole != USER) {
+                        } else if (!targetUser.get().isBanned()) {
                             yield generateSendMessage(telegramId,
-                                "Команда на бан пользователя '%s' отклонена, т.к пользователь имеет роль '%s'. Повторите ввод:".formatted(
-                                    targetUser.get().getFullName(), targetUserRole));
+                                "Пользователь '%s' не находится в бане. Повторите ввод:".formatted(
+                                    targetUser.get().getFullName()));
                         }
                         state.setTargetUser(targetUser.get());
                         state.setStep(CONFIRM_USER_TO_BAN);
                         yield generateSendMessage(telegramId,
-                            String.format("Хотите забанить пользователя '%s'?", targetUser.get().getFullName()),
+                            String.format("Хотите разбанить пользователя '%s'?", targetUser.get().getFullName()),
                             menus.get(SELECTION_MENU));
                     } else {
                         yield generateSendMessage(telegramId, "Пользователь с таким ID не найден. Повторите ввод:");
@@ -90,17 +87,17 @@ public class BanUserHandler implements MessageHandler {
             case CONFIRM_USER_TO_BAN -> {
                 if ("Да".equalsIgnoreCase(text)) {
                     User targetUser = state.getTargetUser();
-                    targetUser.setBanned(true);
+                    targetUser.setBanned(false);
+                    targetUser.setUserRole(USER);
                     userRepository.save(targetUser);
-                    banUserStates.remove(targetUser.getTelegramId());
                     yield generateSendMessage(telegramId,
-                        String.format("Пользователь '%s' забанен.", targetUser.getFullName()),
+                        String.format("Пользователь '%s' разбанен.", targetUser.getFullName()),
                         menus.get(GO_TO_MAIN_MENU));
                 } else if ("Нет".equalsIgnoreCase(text)) {
-                    yield generateSendMessage(telegramId, "Бан пользователя отменен.",
+                    yield generateSendMessage(telegramId, "Разбан пользователя отменен.",
                         menus.get(GO_TO_MAIN_MENU));
                 } else {
-                    yield generateSendMessage(telegramId, "Неверная команда. Бан пользователя отменен.",
+                    yield generateSendMessage(telegramId, "Неверная команда. Разбан пользователя отменен.",
                         menus.get(GO_TO_MAIN_MENU));
                 }
             }
@@ -114,3 +111,4 @@ public class BanUserHandler implements MessageHandler {
             userRepository.findByTelegramId(telegramId).get().getUserRole());
     }
 }
+

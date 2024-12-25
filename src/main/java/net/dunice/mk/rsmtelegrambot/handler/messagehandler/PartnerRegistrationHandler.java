@@ -1,6 +1,7 @@
 package net.dunice.mk.rsmtelegrambot.handler.messagehandler;
 
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TO_MAIN_MENU;
+import static net.dunice.mk.rsmtelegrambot.constant.Menu.CATEGORY_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.GO_TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.IN_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.PARTNER_REGISTRATION;
@@ -75,7 +76,7 @@ public class PartnerRegistrationHandler implements MessageHandler {
                 try {
                     state.setDiscountPercent(Short.parseShort(text.strip()));
                     state.setStep(CATEGORY);
-                    yield generateSendMessage(telegramId, "Введите название категории:");
+                    yield generateSendMessage(telegramId, "Выберите название категории:", menus.get(CATEGORY_MENU));
                 } catch (NumberFormatException e) {
                     yield generateSendMessage(telegramId, "Процент скидки должен быть числом. Повторите ввод:");
                 }
@@ -134,7 +135,6 @@ public class PartnerRegistrationHandler implements MessageHandler {
         partner.setPartnersInfo(state.getInfo());
         partner.setValid(false);
         partnerRepository.save(partner);
-
         eventPublisher.publishEvent(new PartnerRegisteredEvent(partner));
     }
 

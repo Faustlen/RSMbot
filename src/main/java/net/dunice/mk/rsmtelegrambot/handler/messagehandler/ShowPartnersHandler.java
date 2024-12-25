@@ -1,13 +1,15 @@
 package net.dunice.mk.rsmtelegrambot.handler.messagehandler;
 
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.PARTNERS_LIST;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TO_MAIN_MENU;
-import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TO_PARTNERS_LIST;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.IN_MAIN_MENU;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.IN_PARTNER_MENU;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.SHOW_PARTNERS;
 import static net.dunice.mk.rsmtelegrambot.handler.state.step.ShowPartnersStep.SHOW_PARTNERS_LIST;
 import static net.dunice.mk.rsmtelegrambot.handler.state.step.ShowPartnersStep.SHOW_PARTNER_DETAILS;
 
 import lombok.RequiredArgsConstructor;
+import net.dunice.mk.rsmtelegrambot.constant.Menu;
 import net.dunice.mk.rsmtelegrambot.dto.MessageDto;
 import net.dunice.mk.rsmtelegrambot.entity.Partner;
 import net.dunice.mk.rsmtelegrambot.handler.MenuGenerator;
@@ -36,16 +38,23 @@ public class ShowPartnersHandler implements MessageHandler {
 
     private final PartnerRepository partnerRepository;
     private final MenuGenerator menuGenerator;
+    private final Map<Menu, ReplyKeyboard> menus;
     private final Map<Long, BasicState> basicStates;
     private final UserRepository userRepository;
     private final Map<Long, ShowPartnersStep> showPartnerSteps;
-    private static final String PARTNER_INFO_TEMPLATE = """
+    private static final String PARTNER_INFO_FOR_USERS = """
         Партнер: %s
         Категория: %s
         Информация о партнере: %s
         Номер телефона: %s
         Процент скидки: %s%%
         Дата окончания скидки: %s
+        """;
+    private static final String PARTNER_INFO_FOR_PARTNERS = """
+        Партнер: %s
+        Категория: %s
+        Информация о партнере: %s
+        Номер телефона: %s
         """;
 
     @Override
@@ -64,7 +73,7 @@ public class ShowPartnersHandler implements MessageHandler {
         if (TO_MAIN_MENU.equalsIgnoreCase(text)) {
             return goToMainMenu(telegramId);
         }
-        else if (TO_PARTNERS_LIST.equalsIgnoreCase(text)) {
+        else if (PARTNERS_LIST.equalsIgnoreCase(text)) {
             showPartnerSteps.put(telegramId, SHOW_PARTNERS_LIST);
             step = SHOW_PARTNERS_LIST;
         }
@@ -73,20 +82,23 @@ public class ShowPartnersHandler implements MessageHandler {
             case SHOW_PARTNERS_LIST -> {
                 List<Partner> partners = partnerRepository.findValidPartnersWithPresentDiscount();
                 showPartnerSteps.put(telegramId, SHOW_PARTNER_DETAILS);
-                yield generateSendMessage(telegramId, "Партнеры: ",
+                yield generateSendMessage(telegramId, "Партнеры РСМ: ",
                     getPartnersListKeyboard(partners));
             }
             case SHOW_PARTNER_DETAILS -> {
-                if (TO_MAIN_MENU.equalsIgnoreCase(text)) {
-                    showPartnerSteps.remove(telegramId);
-                    basicStates.put(telegramId, IN_MAIN_MENU);
-                    yield menuGenerator.generateRoleSpecificMainMenu(telegramId,
-                        userRepository.findByTelegramId(telegramId).get().getUserRole());
-                } else {
-                    Optional<Partner> partnerOptional = partnerRepository.findByName(text);
-                    if (partnerOptional.isPresent()) {
-                        Partner partner = partnerOptional.get();
-                        String partnerDescription = PARTNER_INFO_TEMPLATE.formatted(
+                Optional<Partner> partnerOptional = partnerRepository.findByName(text);
+                if (partnerOptional.isPresent()) {
+                    Partner partner = partnerOptional.get();
+                    String partnerDescription = null;
+                    if (isTgUserPartner(telegramId)) {
+                        partnerDescription = PARTNER_INFO_FOR_PARTNERS.formatted(
+                            partner.getName(),
+                            partner.getCategory().getCategoryName(),
+                            partner.getPartnersInfo(),
+                            partner.getPhoneNumber());
+                    }
+                    else {
+                        partnerDescription = PARTNER_INFO_FOR_USERS.formatted(
                             partner.getName(),
                             partner.getCategory().getCategoryName(),
                             partner.getPartnersInfo(),
@@ -94,13 +106,13 @@ public class ShowPartnersHandler implements MessageHandler {
                             partner.getDiscountPercent(),
                             partner.getDiscountDate() == null ? "Неограниченно" :
                                 partner.getDiscountDate().toLocalDate());
-                        byte[] logo = partner.getLogo();
-                        yield isLogoPresent(logo)
-                            ? generateImageMessage(telegramId, partnerDescription, getGoBackKeyboard(), logo)
-                            : generateSendMessage(telegramId, partnerDescription, getGoBackKeyboard());
-                    } else {
-                        yield generateSendMessage(telegramId, "Нет мероприятия с таким названием");
                     }
+                    byte[] logo = partner.getLogo();
+                    yield isLogoPresent(logo)
+                        ? generateImageMessage(telegramId, partnerDescription, getGoBackKeyboard(), logo)
+                        : generateSendMessage(telegramId, partnerDescription, getGoBackKeyboard());
+                } else {
+                    yield generateSendMessage(telegramId, "Нет мероприятия с таким названием");
                 }
             }
         };
@@ -128,7 +140,7 @@ public class ShowPartnersHandler implements MessageHandler {
         List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
         InlineKeyboardButton toMainMenuButton = new InlineKeyboardButton(TO_MAIN_MENU);
         toMainMenuButton.setCallbackData(toMainMenuButton.getText());
-        InlineKeyboardButton toPartnersButton = new InlineKeyboardButton(TO_PARTNERS_LIST);
+        InlineKeyboardButton toPartnersButton = new InlineKeyboardButton(PARTNERS_LIST);
         toPartnersButton.setCallbackData(toPartnersButton.getText());
         keyboard.add(List.of(toMainMenuButton));
         keyboard.add(List.of(toPartnersButton));
@@ -138,12 +150,22 @@ public class ShowPartnersHandler implements MessageHandler {
 
     private SendMessage goToMainMenu(Long telegramId) {
         showPartnerSteps.remove(telegramId);
-        basicStates.put(telegramId, IN_MAIN_MENU);
-        return menuGenerator.generateRoleSpecificMainMenu(telegramId,
-            userRepository.findByTelegramId(telegramId).get().getUserRole());
+        if (isTgUserPartner(telegramId)) {
+            basicStates.put(telegramId, IN_PARTNER_MENU);
+            return generateSendMessage(telegramId, "Партнеры РСМ:", menus.get(Menu.PARTNER_MAIN_MENU));
+        }
+        else {
+            basicStates.put(telegramId, IN_MAIN_MENU);
+            return menuGenerator.generateRoleSpecificMainMenu(telegramId,
+                userRepository.findByTelegramId(telegramId).get().getUserRole());
+        }
     }
 
     private boolean isLogoPresent(byte[] logo) {
         return logo != null && logo.length > 0;
+    }
+
+    private boolean isTgUserPartner(Long telegramId) {
+        return partnerRepository.existsById(telegramId);
     }
 }

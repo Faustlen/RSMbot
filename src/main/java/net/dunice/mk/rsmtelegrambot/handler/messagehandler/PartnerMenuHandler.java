@@ -1,0 +1,44 @@
+package net.dunice.mk.rsmtelegrambot.handler.messagehandler;
+
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.PARTNERS_LIST;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.IN_PARTNER_MENU;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.SHOW_PARTNERS;
+
+import lombok.RequiredArgsConstructor;
+import net.dunice.mk.rsmtelegrambot.dto.MessageDto;
+import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
+import org.springframework.stereotype.Service;
+import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
+import org.telegram.telegrambots.meta.api.objects.Message;
+
+import java.util.Map;
+import java.util.Optional;
+
+@Service
+@RequiredArgsConstructor
+public class PartnerMenuHandler implements MessageHandler {
+
+    private final Map<Long, BasicState> basicStates;
+    private final ShowPartnersHandler showPartnersHandler;
+
+    @Override
+    public BasicState getState() {
+        return IN_PARTNER_MENU;
+    }
+
+    @Override
+    public PartialBotApiMethod<Message> handle(MessageDto messageDto, Long telegramId) {
+        String text = messageDto.getText();
+        Optional<PartialBotApiMethod<Message>> sendMessage = Optional.ofNullable(
+            switch (text) {
+                case PARTNERS_LIST -> {
+                    basicStates.put(telegramId, SHOW_PARTNERS);
+                    yield showPartnersHandler.handle(messageDto, telegramId);
+                }
+                default -> null;
+            }
+        );
+        return sendMessage.orElseGet(() ->
+            generateSendMessage(telegramId, "Неверная команда - " + text));
+    }
+}

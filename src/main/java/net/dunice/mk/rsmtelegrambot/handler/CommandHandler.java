@@ -1,7 +1,9 @@
 package net.dunice.mk.rsmtelegrambot.handler;
 
+import static net.dunice.mk.rsmtelegrambot.constant.Menu.PARTNER_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.entity.Role.SUPER_USER;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.IN_MAIN_MENU;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.IN_PARTNER_MENU;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.SELECT_REGISTRATION_TYPE;
 
 import lombok.RequiredArgsConstructor;
@@ -18,7 +20,6 @@ import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 
-import java.util.EnumMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -28,30 +29,44 @@ public class CommandHandler implements BaseHandler {
 
     private final UserRepository userRepository;
     private final PartnerRepository partnerRepository;
-    private final EnumMap<Menu, ReplyKeyboard> menus;
     private final SelectRegistrationHandler selectRegistrationHandler;
     private final MenuGenerator menuGenerator;
+    private final Map<Menu, ReplyKeyboard> menus;
     private final Map<Long, BasicState> basicStates;
 
     @Override
     public SendMessage handle(MessageDto messageDto, Long telegramId) {
-        Optional<User> user = userRepository.findById(telegramId);
-        if (user.isPresent()) {
-            return switch (Command.getCommandByString(messageDto.getText())) {
+        Optional<User> userOptional = userRepository.findById(telegramId);
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            if (user.isBanned()) {
+                return generateSendMessage(telegramId, """
+                        К сожалению, вы находитесь в списке пользователей, которым ограничен доступ к этому боту.
+                        Если вы считаете, что это ошибка, обратитесь к своему руководителю РСМ.
+                        """);
+            }
+            else return switch (Command.getCommandByString(messageDto.getText())) {
                 case START -> {
                     basicStates.put(telegramId, IN_MAIN_MENU);
-                    yield menuGenerator.generateRoleSpecificMainMenu(telegramId, user.get().getUserRole());
+                    yield menuGenerator.generateRoleSpecificMainMenu(telegramId, user.getUserRole());
                 }
                 case SUSTART -> {
-                    user.get().setUserRole(SUPER_USER);
-                    userRepository.save(user.get());
-                    yield generateSendMessage(user.get().getTelegramId(), "Вы авторизованы как супер пользователь");
+                    userOptional = userRepository.findFirstByUserRole(SUPER_USER);
+                    if (userOptional.isPresent() && !userOptional.get().getTelegramId().equals(user.getTelegramId())) {
+                        yield generateSendMessage(user.getTelegramId(), "Назначение отклонено: супер пользователь уже существует.");
+                    }
+                    else {
+                        user.setUserRole(SUPER_USER);
+                        userRepository.save(user);
+                        yield generateSendMessage(user.getTelegramId(), "Вы авторизованы как супер пользователь");
+                    }
                 }
             };
         } else {
             Optional<Partner> partner = partnerRepository.findById(telegramId);
             if (partner.isPresent()) {
-                return generateSendMessage(telegramId, "Функционал меню партнера не реализован");
+                basicStates.put(telegramId, IN_PARTNER_MENU);
+                return generateSendMessage(telegramId, "Выберите раздел:", menus.get(PARTNER_MAIN_MENU));
             } else {
                 basicStates.put(telegramId, SELECT_REGISTRATION_TYPE);
                 return selectRegistrationHandler.handle(messageDto, telegramId);

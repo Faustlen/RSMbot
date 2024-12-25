@@ -5,6 +5,7 @@ import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.BanUserState;
 import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.EventCreationState;
 import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.GrantAdminState;
 import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.PartnerRegistrationState;
+import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.ShowAdminsState;
 import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.UpdateProfileState;
 import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.UserRegistrationState;
 import net.dunice.mk.rsmtelegrambot.handler.state.step.SelectRegistrationStep;
@@ -55,6 +56,9 @@ public class StatesConfig {
         return new ConcurrentHashMap<>();
     }
 
+    @Bean("showAdminsStates")
+    public Map<Long, ShowAdminsState> getShowAdminsStatesMap() {return new ConcurrentHashMap<>();}
+
     @Bean("showEventSteps")
     public Map<Long, ShowEventsStep> getShowEventsStepMap() {
         return new ConcurrentHashMap<>();
@@ -82,8 +86,9 @@ public class StatesConfig {
                                               Map<Long, ShowPartnersStep> showPartnerSteps,
                                               Map<Long, BanUserState> banUserStates,
                                               Map<Long, EventCreationState> eventCreationStates,
-                                              Map<Long, PartnerRegistrationState> partnerRegistrationStates) {
+                                              Map<Long, PartnerRegistrationState> partnerRegistrationStates,
+                                              Map<Long, ShowAdminsState> showAdminsStates) {
         return List.of(grantAdminStates, registrationStates, updateProfileStates, showEventSteps, showPartnerSteps,
-            banUserStates, eventCreationStates, partnerRegistrationStates);
+            banUserStates, eventCreationStates, partnerRegistrationStates, showAdminsStates);
     }
 }

@@ -59,10 +59,7 @@ public class UserRegistrationHandler implements MessageHandler {
         }
 
         if (TO_MAIN_MENU.equalsIgnoreCase(text)) {
-            userRegistrationStates.remove(telegramId);
-            basicStates.put(telegramId, IN_MAIN_MENU);
-            return menuGenerator.generateRoleSpecificMainMenu(telegramId,
-                userRepository.findByTelegramId(telegramId).get().getUserRole());
+            return goToMainMenu(telegramId);
         }
 
         return switch (state.getStep()) {

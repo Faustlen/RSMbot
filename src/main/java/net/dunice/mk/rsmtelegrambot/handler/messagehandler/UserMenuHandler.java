@@ -1,5 +1,14 @@
 package net.dunice.mk.rsmtelegrambot.handler.messagehandler;
 
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.ADD_EVENT;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.ADD_PARTNER;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.ADMINS_LIST;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.BAN;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.EVENTS_LIST;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.PARTNERS_LIST;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.SET_ADMIN;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.UNBAN;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.UPDATE_PROFILE;
 import static net.dunice.mk.rsmtelegrambot.entity.Role.SUPER_USER;
 import static net.dunice.mk.rsmtelegrambot.entity.Role.USER;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BAN_USER;
@@ -7,8 +16,10 @@ import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.CHANGE_PROFI
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.CREATE_EVENT;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.GRANT_ADMIN;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.IN_MAIN_MENU;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.SHOW_ADMINS;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.SHOW_EVENTS;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.SHOW_PARTNERS;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.UNBAN_USER;
 
 import lombok.RequiredArgsConstructor;
 import net.dunice.mk.rsmtelegrambot.dto.MessageDto;
@@ -32,6 +43,7 @@ public class UserMenuHandler implements MessageHandler {
     private final BanUserHandler banUserHandler;
     private final ShowEventsHandler showEventsHandler;
     private final ShowPartnersHandler showPartnersHandler;
+    private final ShowAdminsHandler showAdminsHandler;
     private final CreateEventHandler createEventHandler;
     private final Map<Long, BasicState> basicStates;
 
@@ -41,15 +53,15 @@ public class UserMenuHandler implements MessageHandler {
         String text = messageDto.getText();
         Optional<PartialBotApiMethod<Message>> sendMessage = Optional.ofNullable(
             switch (text) {
-                case "Изменить профиль" -> {
+                case UPDATE_PROFILE -> {
                     basicStates.put(telegramId, CHANGE_PROFILE);
                     yield updateProfileHandler.handle(messageDto, telegramId);
                 }
-                case "Партнеры" -> {
+                case PARTNERS_LIST -> {
                     basicStates.put(telegramId, SHOW_PARTNERS);
                     yield showPartnersHandler.handle(messageDto, telegramId);
                 }
-                case "Мероприятия" -> {
+                case EVENTS_LIST -> {
                     basicStates.put(telegramId, SHOW_EVENTS);
                     yield showEventsHandler.handle(messageDto, telegramId);
                 }
@@ -59,13 +71,17 @@ public class UserMenuHandler implements MessageHandler {
         if (sendMessage.isEmpty() && role != USER) {
             sendMessage = Optional.ofNullable(
                 switch (text) {
-                    case "Добавить партнера" -> generateSendMessage(telegramId, "Вы выбрали: Добавить партнера");
-                    case "Добавить мероприятие" -> {
+                    case ADD_PARTNER -> generateSendMessage(telegramId, "Вы выбрали: Добавить партнера");
+                    case ADD_EVENT -> {
                         basicStates.put(telegramId, CREATE_EVENT);
                         yield createEventHandler.handle(messageDto, telegramId);
                     }
-                    case "Забанить пользователя" -> {
+                    case BAN -> {
                         basicStates.put(telegramId, BAN_USER);
+                        yield banUserHandler.handle(messageDto, telegramId);
+                    }
+                    case UNBAN -> {
+                        basicStates.put(telegramId, UNBAN_USER);
                         yield banUserHandler.handle(messageDto, telegramId);
                     }
                     default -> null;
@@ -73,9 +89,13 @@ public class UserMenuHandler implements MessageHandler {
             if (sendMessage.isEmpty() && role == SUPER_USER) {
                 sendMessage = Optional.ofNullable(
                     switch (text) {
-                        case "Назначить админа" -> {
+                        case SET_ADMIN -> {
                             basicStates.put(telegramId, GRANT_ADMIN);
                             yield grantAdminHandler.handle(messageDto, telegramId);
+                        }
+                        case ADMINS_LIST -> {
+                            basicStates.put(telegramId, SHOW_ADMINS);
+                            yield showAdminsHandler.handle(messageDto, telegramId);
                         }
                         default -> null;
                     });

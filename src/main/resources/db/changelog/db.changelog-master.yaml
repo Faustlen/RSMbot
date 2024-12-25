@@ -7,3 +7,7 @@ databaseChangeLog:
       file: classpath:/db/changelog/changes/V003_alter_schema_partners_checks.sql
   - include:
       file: classpath:/db/changelog/changes/V004_alter_all_tables_pk_generation_to_identity.sql
+  - include:
+      file: classpath:/db/changelog/changes/V005_alter_table_partners.sql
+  - include:
+      file: classpath:/db/changelog/changes/V006_fill_table_category_with_values.sql
