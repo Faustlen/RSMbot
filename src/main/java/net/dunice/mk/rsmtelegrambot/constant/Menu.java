@@ -12,4 +12,5 @@ public enum Menu {
     TRY_AGAIN_OR_GO_TO_MAIN_MENU,
     CANCEL_MENU,
     CATEGORY_MENU,
+    EVENT_FIELDS_MENU,
 }

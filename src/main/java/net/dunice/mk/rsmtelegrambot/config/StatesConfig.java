@@ -1,16 +1,16 @@
 package net.dunice.mk.rsmtelegrambot.config;
 
 import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
-import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.BanUserState;
 import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.EventCreationState;
 import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.GrantAdminState;
 import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.PartnerRegistrationState;
 import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.ShowAdminsState;
+import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.ShowEventsState;
+import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.ShowPartnersState;
+import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.ShowUsersState;
 import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.UpdateProfileState;
 import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.UserRegistrationState;
 import net.dunice.mk.rsmtelegrambot.handler.state.step.SelectRegistrationStep;
-import net.dunice.mk.rsmtelegrambot.handler.state.step.ShowEventsStep;
-import net.dunice.mk.rsmtelegrambot.handler.state.step.ShowPartnersStep;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -23,11 +23,6 @@ public class StatesConfig {
 
     @Bean
     public Map<Long, BasicState> getInteractionStatesMap() {
-        return new ConcurrentHashMap<>();
-    }
-
-    @Bean("banUserStates")
-    public Map<Long, BanUserState> getBanUserStatesMap() {
         return new ConcurrentHashMap<>();
     }
 
@@ -59,36 +54,35 @@ public class StatesConfig {
     @Bean("showAdminsStates")
     public Map<Long, ShowAdminsState> getShowAdminsStatesMap() {return new ConcurrentHashMap<>();}
 
-    @Bean("showEventSteps")
-    public Map<Long, ShowEventsStep> getShowEventsStepMap() {
+    @Bean("showUsersStates")
+    public Map<Long, ShowUsersState> getShowUsersStatesMap() {return new ConcurrentHashMap<>();}
+
+    @Bean("showEventStates")
+    public Map<Long, ShowEventsState> getShowEventsStatesMap() {
         return new ConcurrentHashMap<>();
     }
 
-    @Bean("showPartnerSteps")
-    public Map<Long, ShowPartnersStep> getShowPartnersStepMap() {
+    @Bean("showPartnersStates")
+    public Map<Long, ShowPartnersState> getShowPartnersStatesMap() {
         return new ConcurrentHashMap<>();
     }
-
-    ;
 
     @Bean("selectRegistrationSteps")
     public Map<Long, SelectRegistrationStep> getSelectRegistrationStepsMap() {
         return new ConcurrentHashMap<>();
     }
 
-    ;
-
     @Bean("allStatesMap")
     public List<Map<Long, ?>> getAllStatesMap(Map<Long, GrantAdminState> grantAdminStates,
                                               Map<Long, UserRegistrationState> registrationStates,
                                               Map<Long, UpdateProfileState> updateProfileStates,
-                                              Map<Long, ShowEventsStep> showEventSteps,
-                                              Map<Long, ShowPartnersStep> showPartnerSteps,
-                                              Map<Long, BanUserState> banUserStates,
+                                              Map<Long, ShowEventsState> showEventStates,
+                                              Map<Long, ShowPartnersState> showPartnersStates,
                                               Map<Long, EventCreationState> eventCreationStates,
                                               Map<Long, PartnerRegistrationState> partnerRegistrationStates,
-                                              Map<Long, ShowAdminsState> showAdminsStates) {
-        return List.of(grantAdminStates, registrationStates, updateProfileStates, showEventSteps, showPartnerSteps,
-            banUserStates, eventCreationStates, partnerRegistrationStates, showAdminsStates);
+                                              Map<Long, ShowAdminsState> showAdminsStates,
+                                              Map<Long, ShowUsersState> showUsersStates) {
+        return List.of(grantAdminStates, registrationStates, updateProfileStates, showEventStates, showPartnersStates,
+            eventCreationStates, partnerRegistrationStates, showAdminsStates, showUsersStates);
     }
 }

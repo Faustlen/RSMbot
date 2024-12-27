@@ -3,7 +3,6 @@ package net.dunice.mk.rsmtelegrambot.config;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.ADD_EVENT;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.ADD_PARTNER;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.ADMINS_LIST;
-import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.BAN;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CANCEL;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.EVENTS_LIST;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.NO;
@@ -13,12 +12,13 @@ import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.RSM_PARTNER;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.SET_ADMIN;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TRY_AGAIN;
-import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.UNBAN;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.UPDATE_PROFILE;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.USERS_LIST;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.YES;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.ADMIN_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.CANCEL_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.CATEGORY_MENU;
+import static net.dunice.mk.rsmtelegrambot.constant.Menu.EVENT_FIELDS_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.GO_TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.PARTNER_MAIN_MENU;
@@ -47,17 +47,12 @@ public class MenuConfig {
 
     @Bean
     public EnumMap<Menu, ReplyKeyboard> getReplyKeyboardMenus(
-        ReplyKeyboard userMainMenu,
-        ReplyKeyboard selectionMenu,
-        ReplyKeyboard superUserMainMenu,
-        ReplyKeyboard adminMainMenu,
-        ReplyKeyboard goToMainMenu,
-        ReplyKeyboard tryAgainMenu,
-        ReplyKeyboard tryAgainOrGoToMainMenu,
-        ReplyKeyboard selectionUserTypeMenu,
-        ReplyKeyboard partnerMainMenu,
-        ReplyKeyboard cancelMenu,
-        ReplyKeyboard categoryMenu) {
+        ReplyKeyboard userMainMenu, ReplyKeyboard selectionMenu,
+        ReplyKeyboard superUserMainMenu, ReplyKeyboard adminMainMenu,
+        ReplyKeyboard goToMainMenu, ReplyKeyboard tryAgainMenu,
+        ReplyKeyboard tryAgainOrGoToMainMenu, ReplyKeyboard selectionUserTypeMenu,
+        ReplyKeyboard partnerMainMenu, ReplyKeyboard cancelMenu,
+        ReplyKeyboard categoryMenu, ReplyKeyboard eventFieldsMenu) {
         EnumMap<Menu, ReplyKeyboard> menus = new EnumMap<>(Menu.class);
         menus.put(SELECTION_MENU, selectionMenu);
         menus.put(SELECTION_USER_TYPE_MENU, selectionUserTypeMenu);
@@ -70,6 +65,7 @@ public class MenuConfig {
         menus.put(TRY_AGAIN_OR_GO_TO_MAIN_MENU, tryAgainOrGoToMainMenu);
         menus.put(CANCEL_MENU, cancelMenu);
         menus.put(CATEGORY_MENU, categoryMenu);
+        menus.put(EVENT_FIELDS_MENU, eventFieldsMenu);
         return menus;
     }
 
@@ -85,10 +81,7 @@ public class MenuConfig {
         KeyboardRow row = new KeyboardRow();
         row.add(ADD_PARTNER);
         row.add(ADD_EVENT);
-        row.add(BAN);
-        keyboard.add(row);
-        row = new KeyboardRow();
-        row.add(UNBAN);
+        row.add(USERS_LIST);
         keyboard.add(row);
         return replyMarkup;
     }
@@ -103,9 +96,8 @@ public class MenuConfig {
         row.add(ADD_EVENT);
         keyboard.add(row);
         row = new KeyboardRow();
-        row.add(BAN);
-        row.add(UNBAN);
         row.add(ADMINS_LIST);
+        row.add(USERS_LIST);
         keyboard.add(row);
         return replyMarkup;
     }
@@ -228,6 +220,28 @@ public class MenuConfig {
         replyMarkup.setResizeKeyboard(true);
         replyMarkup.setOneTimeKeyboard(false);
         return replyMarkup;
+    }
+
+    @Bean("eventFieldsMenu")
+    public ReplyKeyboard getEventFieldsMenu() {
+        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
+        InlineKeyboardButton[] buttons = Stream.of("Название", "Дата и Время", "Описание", "Ссылка")
+            .map(category -> {
+                InlineKeyboardButton button = new InlineKeyboardButton(category);
+                button.setCallbackData(button.getText());
+                return button;})
+            .toArray(InlineKeyboardButton[]::new);
+        for (int i = 0; i < buttons.length; i++) {
+            List<InlineKeyboardButton> row = new ArrayList<>();
+            row.add(buttons[i]);
+            if (++i < buttons.length) {
+                row.add(buttons[i]);
+            }
+            keyboard.add(row);
+        }
+        inlineKeyboardMarkup.setKeyboard(keyboard);
+        return inlineKeyboardMarkup;
     }
 
     private ReplyKeyboardMarkup getBaseUserMenu() {

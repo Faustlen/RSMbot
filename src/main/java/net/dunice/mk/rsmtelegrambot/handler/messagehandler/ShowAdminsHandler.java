@@ -18,6 +18,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMar
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -61,10 +62,10 @@ public class ShowAdminsHandler implements MessageHandler {
         KeyboardRow firstRow = new KeyboardRow();
         firstRow.add(TO_MAIN_MENU);
         keyboard.add(firstRow);
-
+        admins.sort(Comparator.comparing(User::getFullName));
         for (User admin : admins) {
             KeyboardRow row = new KeyboardRow();
-            row.add("%s | ID: %s".formatted(admin.getFullName(), admin.getTelegramId()));
+            row.add("%s | Номер билета: %s | TelegramID: %s".formatted(admin.getFullName(), admin.getUserCard(), admin.getTelegramId()));
             keyboard.add(row);
         }
 

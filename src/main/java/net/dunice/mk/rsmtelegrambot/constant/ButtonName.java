@@ -12,11 +12,14 @@ public class ButtonName {
         ADD_PARTNER = "Добавить партнера",
         ADD_EVENT = "Добавить мероприятие",
         TO_MAIN_MENU = "⌂ В главное меню",
-        EVENTS_LIST = "☰ Список мероприятий",
-        PARTNERS_LIST = "☰ Список партнеров",
+        EVENTS_LIST = "☰ Мероприятия",
+        PARTNERS_LIST = "☰ Партнеры",
+        USERS_LIST = "☰ Пользователи",
         TRY_AGAIN = "\uD83D\uDD01 Попробовать eще раз",
         RSM_MEMBER = "Член РСМ",
         RSM_PARTNER = "Партнер РСМ",
         CANCEL = "❌ Отмена",
-        DELETE = "Удалить мероприятие";
+        DELETE = "Удалить мероприятие",
+        CHANGE_DISCOUNT = "Изменить скидку",
+        EDIT_EVENT = "Редактировать мероприятие";
 }
