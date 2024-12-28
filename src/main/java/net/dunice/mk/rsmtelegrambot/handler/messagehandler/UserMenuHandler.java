@@ -69,7 +69,6 @@ public class UserMenuHandler implements MessageHandler {
         if (sendMessage.isEmpty() && role != USER) {
             sendMessage = Optional.ofNullable(
                 switch (text) {
-                    case ADD_PARTNER -> generateSendMessage(telegramId, "Вы выбрали: Добавить партнера");
                     case ADD_EVENT -> {
                         basicStates.put(telegramId, CREATE_EVENT);
                         yield createEventHandler.handle(messageDto, telegramId);

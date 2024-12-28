@@ -5,6 +5,7 @@ import lombok.Setter;
 import net.dunice.mk.rsmtelegrambot.entity.Category;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Setter
 @Getter
@@ -15,7 +16,7 @@ public class PartnerRegistrationState {
     private Short discountPercent;
     private Category category;
     private byte[] logo;
-    private LocalDate discountDate;
+    private LocalDateTime discountDate;
     private String info;
 
     public enum PartnerRegistrationStep {
@@ -27,5 +28,6 @@ public class PartnerRegistrationState {
         LOGO,
         DISCOUNT_DATE,
         PARTNER_INFO,
+        FINISH
     }
 }

@@ -1,15 +1,14 @@
 package net.dunice.mk.rsmtelegrambot.handler.messagehandler;
 
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CANCEL;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TO_MAIN_MENU;
-import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TRY_AGAIN;
+import static net.dunice.mk.rsmtelegrambot.constant.Menu.CANCEL_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.GO_TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.SELECTION_MENU;
-import static net.dunice.mk.rsmtelegrambot.constant.Menu.TRY_AGAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.IN_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.USER_REGISTRATION;
 import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.UserRegistrationState.UserRegistrationStep.CHECK_CONFIRMATION;
-import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.UserRegistrationState.UserRegistrationStep.REQUEST_MEMBERSHIP_NUMBER;
-import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.UserRegistrationState.UserRegistrationStep.RETRY_REGISTRATION;
+import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.UserRegistrationState.UserRegistrationStep.FINISH;
 import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.UserRegistrationState.UserRegistrationStep.VALIDATE_INFO;
 import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.UserRegistrationState.UserRegistrationStep.VALIDATE_MEMBERSHIP_NUMBER;
 
@@ -43,12 +42,13 @@ public class UserRegistrationHandler implements MessageHandler {
     private final UserRepository userRepository;
     private final GoogleSheetDownloader sheetDownloader;
     private final static String USER_DATA_TEMPLATE = """
+        Данные верны?
+        ⬇
         ФИО: %s
         Дата рождения: %s
         Номер телефона: %s
         Номер членского билета: %s
         """;
-
 
     @Override
     public SendMessage handle(MessageDto messageDto, Long telegramId) {
@@ -58,62 +58,69 @@ public class UserRegistrationHandler implements MessageHandler {
             userRegistrationStates.put(telegramId, (state = new UserRegistrationState()));
         }
 
-        if (TO_MAIN_MENU.equalsIgnoreCase(text)) {
-            return goToMainMenu(telegramId);
+        if (CANCEL.equals(text)) {
+            basicStates.remove(telegramId);
+            userRegistrationStates.remove(telegramId);
+            return generateSendMessage(telegramId,
+                "Регистрация отменена, введите /start, если хотите попробовать заново:");
         }
 
         return switch (state.getStep()) {
             case REQUEST_MEMBERSHIP_NUMBER -> {
                 state.setStep(VALIDATE_MEMBERSHIP_NUMBER);
-                yield generateSendMessage(telegramId, "Введите номер членского билета РСМ:");
+                yield generateSendMessage(telegramId, "Введите номер членского билета РСМ:", menus.get(CANCEL_MENU));
             }
             case VALIDATE_MEMBERSHIP_NUMBER -> {
                 List<String[]> sheet = sheetDownloader.downloadSheet();
                 String[] userRow = findUserRowByMembershipNumber(sheet, text);
-                if (userRow == null) {
-                    state.setStep(RETRY_REGISTRATION);
-                    yield generateSendMessage(telegramId,
-                        "Член РСМ не найден, если вы ввели неправильной номер попробуйте повторить регистрацию," +
-                        " если же номер правильный обратитесь к своему руководителю РСМ для актуализации данных в таблице членов РСМ.",
-                        menus.get(TRY_AGAIN_MENU));
-                } else {
+                if (userRow != null) {
                     fillRegistrationState(state, userRow);
                     state.setStep(CHECK_CONFIRMATION);
-                    yield generateSendMessage(telegramId, "Данные верны?\n" + getUserData(state),
+                    yield generateSendMessage(telegramId, getUserData(state),
                         menus.get(SELECTION_MENU));
+                } else {
+                    yield generateSendMessage(telegramId,
+                        """
+                            Член РСМ не найден.
+                            Если вы ввели правильный номер обратитесь к своему руководителю РСМ для актуализации данных в таблице членов РСМ.
+                            Если же номер неправильной - повторите ввод с правильным номером:""",
+                        menus.get(CANCEL_MENU));
                 }
             }
             case CHECK_CONFIRMATION -> {
                 if ("Да".equalsIgnoreCase(text)) {
                     state.setStep(VALIDATE_INFO);
-                    yield generateSendMessage(telegramId, "Введите дополнительное описание (до 255 символов):");
+                    yield generateSendMessage(telegramId, "Введите дополнительное описание (до 255 символов):",
+                        menus.get(CANCEL_MENU));
                 } else if ("Нет".equalsIgnoreCase(text)) {
-                    state.setStep(VALIDATE_INFO);
+                    basicStates.remove(telegramId);
+                    userRegistrationStates.remove(telegramId);
                     yield generateSendMessage(telegramId,
-                        "Если данные неверны обратитесь к своему руководителю РСМ для актуализации данных в таблице членов РСМ.");
+                        """
+                            Регистрация отменена.
+                            Если данные неверны обратитесь к своему руководителю РСМ для актуализации данных в таблице членов РСМ.
+                            Или же введите /start, если хотите попробовать заново:""");
                 } else {
-                    state.setStep(RETRY_REGISTRATION);
-                    yield generateSendMessage(telegramId, "Неверная команда, регистрация отменена",
-                        menus.get(TRY_AGAIN_MENU));
+                    yield generateSendMessage(telegramId, "Неверная команда, выберите 'Да' или 'Нет'",
+                        menus.get(SELECTION_MENU));
                 }
             }
             case VALIDATE_INFO -> {
                 if (text.length() <= 255) {
                     state.setInfo(text);
                     saveUser(state, telegramId);
+                    state.setStep(FINISH);
                     yield generateSendMessage(telegramId, "Вы успешно зарегистрированы!", menus.get(GO_TO_MAIN_MENU));
                 } else {
-                    state.setStep(RETRY_REGISTRATION);
-                    yield generateSendMessage(telegramId, "Описание слишком длинное, регистрация отменена.",
-                        menus.get(TRY_AGAIN_MENU));
+                    yield generateSendMessage(telegramId, "Описание слишком длинное, повторите ввод:",
+                        menus.get(CANCEL_MENU));
                 }
             }
-            case RETRY_REGISTRATION -> {
-                if (TRY_AGAIN.equalsIgnoreCase(text)) {
-                    state.setStep(REQUEST_MEMBERSHIP_NUMBER);
-                    yield handle(messageDto, telegramId);
+            case FINISH -> {
+                if (TO_MAIN_MENU.equalsIgnoreCase(text)) {
+                    yield goToMainMenu(telegramId);
                 } else {
-                    yield generateSendMessage(telegramId, "Неверная команда");
+                    yield generateSendMessage(telegramId, "Неверная команда.", menus.get(GO_TO_MAIN_MENU));
                 }
             }
         };

@@ -96,7 +96,7 @@ public class CreateEventHandler implements MessageHandler {
                     yield generateSendMessage(telegramId, "Введите ссылку на мероприятие (не более 250 символов):");
                 } catch (DateTimeParseException e) {
                     yield generateSendMessage(telegramId,
-                        "Дата и время должны быть в формате (ДД.ММ.ГГГГ-ЧЧ.ММ). Повторите ввод:");
+                        "Дата и время должны быть в формате (ДД.ММ.ГГГГ-ЧЧ:ММ). Повторите ввод:");
                 }
             }
             case VERIFY_EVENT_LINK -> {

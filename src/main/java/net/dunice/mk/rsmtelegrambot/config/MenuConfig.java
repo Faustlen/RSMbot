@@ -79,7 +79,6 @@ public class MenuConfig {
         ReplyKeyboardMarkup replyMarkup = getBaseUserMenu();
         List<KeyboardRow> keyboard = replyMarkup.getKeyboard();
         KeyboardRow row = new KeyboardRow();
-        row.add(ADD_PARTNER);
         row.add(ADD_EVENT);
         row.add(USERS_LIST);
         keyboard.add(row);
@@ -91,13 +90,12 @@ public class MenuConfig {
         ReplyKeyboardMarkup replyMarkup = getBaseUserMenu();
         List<KeyboardRow> keyboard = replyMarkup.getKeyboard();
         KeyboardRow row = new KeyboardRow();
-        row.add(SET_ADMIN);
-        row.add(ADD_PARTNER);
         row.add(ADD_EVENT);
+        row.add(USERS_LIST);
         keyboard.add(row);
         row = new KeyboardRow();
+        row.add(SET_ADMIN);
         row.add(ADMINS_LIST);
-        row.add(USERS_LIST);
         keyboard.add(row);
         return replyMarkup;
     }

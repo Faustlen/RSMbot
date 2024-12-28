@@ -23,6 +23,5 @@ public class ShowPartnersState {
         VERIFY_NEW_DISCOUNT_PERCENT,
         VERIFY_NEW_DISCOUNT_DATE,
         CONFIRM_CHANGE,
-        FINISH
     }
 }

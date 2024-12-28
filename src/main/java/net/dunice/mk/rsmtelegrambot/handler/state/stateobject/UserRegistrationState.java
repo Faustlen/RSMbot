@@ -23,6 +23,6 @@ public class UserRegistrationState {
         VALIDATE_MEMBERSHIP_NUMBER,
         CHECK_CONFIRMATION,
         VALIDATE_INFO,
-        RETRY_REGISTRATION,
+        FINISH,
     }
 }

@@ -1,9 +1,13 @@
 package net.dunice.mk.rsmtelegrambot.handler.messagehandler;
 
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CANCEL;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.DELETE;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.EDIT_EVENT;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.EVENTS_LIST;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.NO;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TO_MAIN_MENU;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.YES;
+import static net.dunice.mk.rsmtelegrambot.constant.Menu.CANCEL_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.EVENT_FIELDS_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.GO_TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.SELECTION_MENU;
@@ -12,7 +16,6 @@ import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.IN_MAIN_MENU
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.SHOW_EVENTS;
 import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.ShowEventsState.ShowEventsStep.CONFIRM_EVENT_EDIT;
 import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.ShowEventsState.ShowEventsStep.EDIT_EVENT_FIELD;
-import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.ShowEventsState.ShowEventsStep.FINISH;
 import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.ShowEventsState.ShowEventsStep.HANDLE_USER_ACTION;
 import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.ShowEventsState.ShowEventsStep.SELECT_EVENT_FIELD;
 import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.ShowEventsState.ShowEventsStep.SHOW_EVENTS_LIST;
@@ -28,6 +31,7 @@ import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
 import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.ShowEventsState;
 import net.dunice.mk.rsmtelegrambot.repository.EventRepository;
 import net.dunice.mk.rsmtelegrambot.repository.UserRepository;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
@@ -55,7 +59,6 @@ public class ShowEventsHandler implements MessageHandler {
     private final Map<Long, ShowEventsState> showEventStates;
     private final Map<Menu, ReplyKeyboard> menus;
     private static final String EVENT_INFO_TEMPLATE = """
-        
         Мероприятие: %s
         Описание: %s
         Ссылка: %s
@@ -75,13 +78,6 @@ public class ShowEventsHandler implements MessageHandler {
             showEventStates.put(telegramId, (state = new ShowEventsState()));
         }
 
-        if (TO_MAIN_MENU.equalsIgnoreCase(text)) {
-            return goToMainMenu(telegramId);
-        }
-        else if (EVENTS_LIST.equalsIgnoreCase(text)) {
-            state.setStep(SHOW_EVENTS_LIST);
-        }
-
         return switch (state.getStep()) {
             case SHOW_EVENTS_LIST -> {
                 List<Event> events = eventRepository.findAll();
@@ -90,8 +86,11 @@ public class ShowEventsHandler implements MessageHandler {
                     generateEventListKeyboard(events));
             }
             case SHOW_EVENT_DETAILS -> {
+                if (TO_MAIN_MENU.equalsIgnoreCase(text)) {
+                    yield goToMainMenu(telegramId);
+                }
                 try {
-                    Integer eventId = Integer.valueOf(text.substring(text.lastIndexOf(' ')+1));
+                    Integer eventId = Integer.valueOf(text.substring(text.lastIndexOf(' ') + 1));
                     Optional<Event> eventOptional = eventRepository.findById(eventId);
                     if (eventOptional.isPresent()) {
                         Optional<User> userOptional = userRepository.findById(telegramId);
@@ -119,7 +118,8 @@ public class ShowEventsHandler implements MessageHandler {
                     yield handle(messageDto, telegramId);
                 } else if (text.equals(EDIT_EVENT)) {
                     state.setStep(SELECT_EVENT_FIELD);
-                    yield generateSendMessage(telegramId, "Выберите поле, которое хотите отредактировать:", menus.get(EVENT_FIELDS_MENU));
+                    yield generateSendMessage(telegramId, "Выберите поле, которое хотите отредактировать:",
+                        menus.get(EVENT_FIELDS_MENU));
                 } else {
                     yield generateSendMessage(telegramId, "Неверная команда", menus.get(GO_TO_MAIN_MENU));
                 }
@@ -129,25 +129,34 @@ public class ShowEventsHandler implements MessageHandler {
                 if (text.equalsIgnoreCase("Название")) {
                     state.setStep(EDIT_EVENT_FIELD);
                     state.setEditingFieldName(text);
-                    yield generateSendMessage(telegramId, "Введите новое значение для поля: Название");
+                    yield generateSendMessage(telegramId, "Введите новое название мероприятия:",
+                        menus.get(CANCEL_MENU));
                 } else if (text.equalsIgnoreCase("Описание")) {
                     state.setStep(EDIT_EVENT_FIELD);
                     state.setEditingFieldName(text);
-                    yield generateSendMessage(telegramId, "Введите новое значение для поля: Текст");
+                    yield generateSendMessage(telegramId, "Введите новое описание мероприятиям",
+                        menus.get(CANCEL_MENU));
                 } else if (text.equalsIgnoreCase("Дата и Время")) {
                     state.setStep(EDIT_EVENT_FIELD);
                     state.setEditingFieldName(text);
-                    yield generateSendMessage(telegramId, "Введите новую дату мероприятия в формате (ДД.ММ.ГГГГ-ЧЧ:ММ):");
+                    yield generateSendMessage(telegramId,
+                        "Введите новую дату мероприятия в формате (ДД.ММ.ГГГГ-ЧЧ:ММ) :", menus.get(CANCEL_MENU));
                 } else if (text.equalsIgnoreCase("Ссылка")) {
                     state.setStep(EDIT_EVENT_FIELD);
                     state.setEditingFieldName(text);
-                    yield generateSendMessage(telegramId, "Введите новое значение для поля: Ссылка");
+                    yield generateSendMessage(telegramId, "Введите новую ссылку:", menus.get(CANCEL_MENU));
                 } else {
-                    yield generateSendMessage(telegramId, "Неверное поле. Выберите одно из доступных.", menus.get(EVENT_FIELDS_MENU));
+                    yield generateSendMessage(telegramId, "Неверное поле. Выберите одно из доступных.",
+                        menus.get(EVENT_FIELDS_MENU));
                 }
             }
 
             case EDIT_EVENT_FIELD -> {
+                if (CANCEL.equalsIgnoreCase(text)) {
+                    state.setStep(SHOW_EVENT_DETAILS);
+                    messageDto.setText(" " + state.getTargetEvent().getEventId());
+                    yield handle(messageDto, telegramId);
+                }
                 try {
                     Event targetEvent = state.getTargetEvent();
                     switch (state.getEditingFieldName()) {
@@ -162,32 +171,30 @@ public class ShowEventsHandler implements MessageHandler {
                         "Мероприятие с новыми данными:\n" + getEventDescription(targetEvent) + "\nСохранить изменения?",
                         menus.get(SELECTION_MENU));
                 } catch (DateTimeParseException e) {
-                    yield generateSendMessage(telegramId, "Дата должна быть в формате (ДД.ММ.ГГГГ-ЧЧ:ММ). Повторите ввод:");
+                    yield generateSendMessage(telegramId,
+                        "Дата должна быть в формате (ДД.ММ.ГГГГ-ЧЧ:ММ). Повторите ввод:");
                 } catch (Exception e) {
                     yield generateSendMessage(telegramId, "Ошибка при редактировании поля. Повторите ввод:");
                 }
             }
 
             case CONFIRM_EVENT_EDIT -> {
-                String responseMessage;
-                if ("Да".equalsIgnoreCase(text)) {
-                    eventRepository.save(state.getTargetEvent());
-                    responseMessage = "Мероприятие успешно изменено.";
-                } else if ("Нет".equalsIgnoreCase(text)) {
-                    responseMessage = "Изменение мероприятия отменено.";
-                } else {
-                    responseMessage = "Неверная команда.";
+                if (StringUtils.equalsAny(text, YES, NO)) {
+                    if (YES.equalsIgnoreCase(text)) {
+                        eventRepository.save(state.getTargetEvent());
+                    }
+                    state.setStep(SHOW_EVENT_DETAILS);
+                    messageDto.setText(" " + state.getTargetEvent().getEventId());
+                    yield handle(messageDto, telegramId);
                 }
-                state.setStep(FINISH);
-                yield generateSendMessage(telegramId, responseMessage, menus.get(GO_TO_MAIN_MENU));
+                else {
+                    yield generateSendMessage(telegramId, "Неверная команда.", menus.get(SELECTION_MENU));
+                }
             }
 
             case FINISH -> {
                 if (TO_MAIN_MENU.equalsIgnoreCase(text)) {
                     yield goToMainMenu(telegramId);
-                } else if (EVENTS_LIST.equalsIgnoreCase(text)) {
-                    state.setStep(SHOW_EVENTS_LIST);
-                    yield handle(messageDto, telegramId);
                 } else {
                     yield generateSendMessage(telegramId, "Неверная команда", menus.get(GO_TO_MAIN_MENU));
                 }

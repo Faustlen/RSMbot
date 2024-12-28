@@ -68,7 +68,6 @@ public class ShowAdminsHandler implements MessageHandler {
             row.add("%s | Номер билета: %s | TelegramID: %s".formatted(admin.getFullName(), admin.getUserCard(), admin.getTelegramId()));
             keyboard.add(row);
         }
-
         replyMarkup.setKeyboard(keyboard);
         replyMarkup.setResizeKeyboard(true);
         replyMarkup.setOneTimeKeyboard(false);

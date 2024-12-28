@@ -1,8 +1,10 @@
 package net.dunice.mk.rsmtelegrambot.handler.messagehandler;
 
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CANCEL;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CHANGE_DISCOUNT;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.PARTNERS_LIST;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TO_MAIN_MENU;
+import static net.dunice.mk.rsmtelegrambot.constant.Menu.CANCEL_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.GO_TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.SELECTION_MENU;
 import static net.dunice.mk.rsmtelegrambot.entity.Role.USER;
@@ -10,7 +12,6 @@ import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.IN_MAIN_MENU
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.IN_PARTNER_MENU;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.SHOW_PARTNERS;
 import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.ShowPartnersState.ShowPartnersStep.CONFIRM_CHANGE;
-import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.ShowPartnersState.ShowPartnersStep.FINISH;
 import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.ShowPartnersState.ShowPartnersStep.HANDLE_USER_ACTION;
 import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.ShowPartnersState.ShowPartnersStep.SHOW_PARTNERS_LIST;
 import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.ShowPartnersState.ShowPartnersStep.SHOW_PARTNER_DETAILS;
@@ -27,6 +28,7 @@ import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
 import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.ShowPartnersState;
 import net.dunice.mk.rsmtelegrambot.repository.PartnerRepository;
 import net.dunice.mk.rsmtelegrambot.repository.UserRepository;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -88,13 +90,9 @@ public class ShowPartnersHandler implements MessageHandler {
         if (state == null) {
             showPartnersStates.put(telegramId, (state = new ShowPartnersState()));
         }
-
-        if (TO_MAIN_MENU.equalsIgnoreCase(text)) {
+        if (StringUtils.equalsAny(text, TO_MAIN_MENU, CANCEL)) {
             return goToMainMenu(telegramId);
-        } else if (PARTNERS_LIST.equalsIgnoreCase(text)) {
-            state.setStep(SHOW_PARTNERS_LIST);
         }
-
         return switch (state.getStep()) {
             case SHOW_PARTNERS_LIST -> {
                 List<Partner> partners = partnerRepository.findValidPartnersWithPresentDiscount();
@@ -103,9 +101,6 @@ public class ShowPartnersHandler implements MessageHandler {
                     getPartnersListKeyboard(partners));
             }
             case SHOW_PARTNER_DETAILS -> {
-                if (TO_MAIN_MENU.equalsIgnoreCase(text)) {
-                    yield goToMainMenu(telegramId);
-                }
                 Optional<Partner> partnerOptional = partnerRepository.findByName(text);
                 if (partnerOptional.isPresent()) {
                     Partner targetPartner = partnerOptional.get();
@@ -131,24 +126,24 @@ public class ShowPartnersHandler implements MessageHandler {
                     state.setStep(HANDLE_USER_ACTION);
                     state.setTargetPartner(targetPartner);
                     yield isLogoPresent(logo)
-                        ? generateImageMessage(telegramId, partnerDescription, getUserActionKeyboard(userOptional), logo)
+                        ?
+                        generateImageMessage(telegramId, partnerDescription, getUserActionKeyboard(userOptional), logo)
                         : generateSendMessage(telegramId, partnerDescription, getUserActionKeyboard(userOptional));
                 } else {
                     yield generateSendMessage(telegramId, "Нет мероприятия с таким названием");
                 }
             }
             case HANDLE_USER_ACTION -> {
-                if (TO_MAIN_MENU.equalsIgnoreCase(text)) {
-                    yield goToMainMenu(telegramId);
-                } else if (PARTNERS_LIST.equalsIgnoreCase(text)) {
+                if (PARTNERS_LIST.equalsIgnoreCase(text)) {
                     state.setStep(SHOW_PARTNERS_LIST);
                     yield handle(messageDto, telegramId);
                 } else if (CHANGE_DISCOUNT.equalsIgnoreCase(text) &&
                            userRepository.findById(telegramId).get().getUserRole() != USER) {
                     state.setStep(VERIFY_NEW_DISCOUNT_PERCENT);
-                    yield generateSendMessage(telegramId, "Пожалуйста, введите новый процент скидки (от 0 до 100): ");
+                    yield generateSendMessage(telegramId, "Пожалуйста, введите новый процент скидки (от 0 до 100):",
+                        menus.get(CANCEL_MENU));
                 } else {
-                    yield generateSendMessage(telegramId, "Неверная команда");
+                    yield goToMainMenu(telegramId);
                 }
             }
             case VERIFY_NEW_DISCOUNT_PERCENT -> {
@@ -156,53 +151,48 @@ public class ShowPartnersHandler implements MessageHandler {
                     Short discountPercent = Short.parseShort(text);
                     if (discountPercent >= 100 || discountPercent < 0) {
                         yield generateSendMessage(telegramId,
-                            "Процент скидки должен быть от 0 до 100. Повторите ввод:");
+                            "Процент скидки должен быть от 0 до 100. Повторите ввод:", menus.get(CANCEL_MENU));
                     }
                     state.setDiscountPercent(discountPercent);
                     state.setStep(VERIFY_NEW_DISCOUNT_DATE);
                     yield generateSendMessage(telegramId,
-                        "Пожалуйста, введите дату конца действия скидки в формате (ДД.ММ.ГГГГ-ЧЧ:ММ)");
+                        "Пожалуйста, введите дату конца действия скидки в формате (ДД.ММ.ГГГГ-ЧЧ:ММ)",
+                        menus.get(CANCEL_MENU));
                 } catch (NumberFormatException e) {
-                    yield generateSendMessage(telegramId, "Процент скидки должен быть числом. Повторите ввод:");
+                    yield generateSendMessage(telegramId, "Процент скидки должен быть числом. Повторите ввод:",
+                        menus.get(CANCEL_MENU));
                 }
             }
             case VERIFY_NEW_DISCOUNT_DATE -> {
                 try {
-                    state.setDiscountDate(LocalDateTime.parse(text.trim(), DateTimeFormatter.ofPattern("dd.MM.yyyy-HH:mm")));
+                    state.setDiscountDate(
+                        LocalDateTime.parse(text.trim(), DateTimeFormatter.ofPattern("dd.MM.yyyy-HH:mm")));
                     state.setStep(CONFIRM_CHANGE);
                     yield generateSendMessage(telegramId,
                         CHANGE_DISCOUNT_INFO.formatted(state.getTargetPartner().getName(),
-                            state.getDiscountPercent(), state.getDiscountDate().format(DateTimeFormatter.ofPattern("dd.MM.yyyy | HH:mm"))), menus.get(SELECTION_MENU));
+                            state.getDiscountPercent(),
+                            state.getDiscountDate().format(DateTimeFormatter.ofPattern("dd.MM.yyyy | HH:mm"))),
+                        menus.get(SELECTION_MENU));
                 } catch (DateTimeParseException e) {
                     yield generateSendMessage(telegramId,
-                        "Дата должна быть в формате (ДД.ММ.ГГГГ-ЧЧ:ММ). Повторите ввод:");
+                        "Дата должна быть в формате (ДД.ММ.ГГГГ-ЧЧ:ММ). Повторите ввод:", menus.get(CANCEL_MENU));
                 }
             }
             case CONFIRM_CHANGE -> {
                 String responseMessage;
-                state.setStep(FINISH);
                 if ("Да".equalsIgnoreCase(text)) {
                     Partner currentPartner = state.getTargetPartner();
                     currentPartner.setDiscountPercent(state.getDiscountPercent());
                     currentPartner.setDiscountDate(state.getDiscountDate());
                     partnerRepository.save(currentPartner);
                     responseMessage = "Данные партнера успешно изменены.";
-                }
-                else if ("Нет".equalsIgnoreCase(text)) {
+                } else if ("Нет".equalsIgnoreCase(text)) {
                     responseMessage = "Изменение данных партнера отменено.";
+                } else {
+                    responseMessage = "Неверная команда.";
                 }
-                else responseMessage = "Неверная команда.";
                 yield generateSendMessage(telegramId, responseMessage,
                     menus.get(GO_TO_MAIN_MENU));
-            }
-            case FINISH -> {
-                if (TO_MAIN_MENU.equalsIgnoreCase(text)) {
-                    yield goToMainMenu(telegramId);
-                } else if (PARTNERS_LIST.equalsIgnoreCase(text)) {
-                    state.setStep(SHOW_PARTNERS_LIST);
-                    yield handle(messageDto, telegramId);
-                }
-                else yield generateSendMessage(telegramId, "Неверная команда", menus.get(GO_TO_MAIN_MENU));
             }
         };
     }

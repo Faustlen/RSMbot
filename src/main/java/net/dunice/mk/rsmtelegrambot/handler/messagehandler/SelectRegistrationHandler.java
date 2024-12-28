@@ -47,7 +47,7 @@ public class SelectRegistrationHandler implements MessageHandler {
             case REQUEST_REGISTRATION -> {
                 selectRegistrationSteps.put(telegramId, CHECK_CONFIRMATION);
                 yield generateSendMessage(telegramId,
-                    "Добро пожаловать! Вы не зарегистрированы, желаете пройти регистрацию? Ответьте 'Да' или 'Нет'.",
+                    "Добро пожаловать! Вы не зарегистрированы, желаете пройти регистрацию? Ответьте 'Да' или 'Нет':",
                     menus.get(SELECTION_MENU));
             }
             case CHECK_CONFIRMATION -> {

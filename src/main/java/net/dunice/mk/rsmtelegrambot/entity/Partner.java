@@ -27,20 +27,20 @@ public class Partner {
     @Column(nullable = false, unique = true, name = "phone_number")
     private String phoneNumber;
 
-    @Column(nullable = false, name = "discount_percent")
+    @Column(name = "discount_percent")
     private Short discountPercent;
 
     @ManyToOne
     @JoinColumn(nullable = false, name = "category_id")
     private Category category;
 
-    @Column(nullable = false)
+    @Column
     private byte[] logo;
 
-    @Column(nullable = false, name = "partners_info")
+    @Column(name = "partners_info")
     private String partnersInfo;
 
-    @Column(nullable = false, name = "discount_date")
+    @Column(name = "discount_date")
     private LocalDateTime discountDate;
 
     @Column(nullable = false, name = "is_valid")
