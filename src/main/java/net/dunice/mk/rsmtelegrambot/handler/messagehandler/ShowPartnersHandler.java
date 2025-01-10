@@ -203,9 +203,9 @@ public class ShowPartnersHandler implements MessageHandler {
         KeyboardRow firstRow = new KeyboardRow();
         firstRow.add(TO_MAIN_MENU);
         keyboard.add(firstRow);
-        for (int i = 0; i < partners.size(); i++) {
+        for (Partner partner : partners) {
             KeyboardRow row = new KeyboardRow();
-            row.add(partners.get(i).getName());
+            row.add(partner.getName());
             keyboard.add(row);
         }
         replyMarkup.setKeyboard(keyboard);

@@ -32,6 +32,7 @@ import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.ShowEventsState;
 import net.dunice.mk.rsmtelegrambot.repository.EventRepository;
 import net.dunice.mk.rsmtelegrambot.repository.UserRepository;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
@@ -80,7 +81,7 @@ public class ShowEventsHandler implements MessageHandler {
 
         return switch (state.getStep()) {
             case SHOW_EVENTS_LIST -> {
-                List<Event> events = eventRepository.findAll();
+                List<Event> events = eventRepository.findAll(Sort.by(Sort.Direction.ASC, "title"));
                 state.setStep(SHOW_EVENT_DETAILS);
                 yield generateSendMessage(telegramId, "Выберите интересующее вас мероприятие: ",
                     generateEventListKeyboard(events));
@@ -189,14 +190,6 @@ public class ShowEventsHandler implements MessageHandler {
                 }
                 else {
                     yield generateSendMessage(telegramId, "Неверная команда.", menus.get(SELECTION_MENU));
-                }
-            }
-
-            case FINISH -> {
-                if (TO_MAIN_MENU.equalsIgnoreCase(text)) {
-                    yield goToMainMenu(telegramId);
-                } else {
-                    yield generateSendMessage(telegramId, "Неверная команда", menus.get(GO_TO_MAIN_MENU));
                 }
             }
         };

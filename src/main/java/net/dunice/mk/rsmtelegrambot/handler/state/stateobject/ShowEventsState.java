@@ -19,6 +19,5 @@ public class ShowEventsState {
         SELECT_EVENT_FIELD,
         EDIT_EVENT_FIELD,
         CONFIRM_EVENT_EDIT,
-        FINISH
     }
 }

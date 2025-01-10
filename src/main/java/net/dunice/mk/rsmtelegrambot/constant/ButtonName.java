@@ -21,5 +21,7 @@ public class ButtonName {
         CANCEL = "❌ Отмена",
         DELETE = "Удалить мероприятие",
         CHANGE_DISCOUNT = "Изменить скидку",
-        EDIT_EVENT = "Редактировать мероприятие";
+        EDIT_EVENT = "Редактировать мероприятие",
+        PREVIOUS_PAGE = "⬅ Предыдущая страница",
+        NEXT_PAGE = "Следующая страница ➡";
 }
