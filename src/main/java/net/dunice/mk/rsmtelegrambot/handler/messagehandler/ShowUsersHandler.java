@@ -54,11 +54,6 @@ import java.util.regex.Pattern;
 @RequiredArgsConstructor
 public class ShowUsersHandler implements MessageHandler {
 
-    private final UserRepository userRepository;
-    private final MenuGenerator menuGenerator;
-    private final Map<Long, BasicState> basicStates;
-    private final Map<Long, ShowUsersState> showUsersStates;
-    private final EnumMap<Menu, ReplyKeyboard> menus;
     private static final String USER_INFO_TEMPLATE = """
         Телеграм ID: %s
         ФИО: %s
@@ -68,6 +63,11 @@ public class ShowUsersHandler implements MessageHandler {
         Забанен: %s
         Роль: %s
         """;
+    private final UserRepository userRepository;
+    private final MenuGenerator menuGenerator;
+    private final Map<Long, BasicState> basicStates;
+    private final Map<Long, ShowUsersState> showUsersStates;
+    private final EnumMap<Menu, ReplyKeyboard> menus;
 
     @Override
     public BasicStep getStep() {

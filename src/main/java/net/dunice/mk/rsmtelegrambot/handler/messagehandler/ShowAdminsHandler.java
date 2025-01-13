@@ -66,7 +66,8 @@ public class ShowAdminsHandler implements MessageHandler {
         admins.sort(Comparator.comparing(User::getFullName));
         for (User admin : admins) {
             KeyboardRow row = new KeyboardRow();
-            row.add("%s | Номер билета: %s | TelegramID: %s".formatted(admin.getFullName(), admin.getUserCard(), admin.getTelegramId()));
+            row.add("%s | Номер билета: %s | TelegramID: %s".formatted(admin.getFullName(), admin.getUserCard(),
+                admin.getTelegramId()));
             keyboard.add(row);
         }
         replyMarkup.setKeyboard(keyboard);

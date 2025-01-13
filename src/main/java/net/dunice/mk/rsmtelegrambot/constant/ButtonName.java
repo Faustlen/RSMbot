@@ -24,5 +24,6 @@ public class ButtonName {
         CHANGE_DISCOUNT = "Изменить скидку",
         EDIT_EVENT = "Редактировать мероприятие",
         PREVIOUS_PAGE = "⬅ Предыдущая страница",
-        NEXT_PAGE = "Следующая страница ➡";
+        NEXT_PAGE = "Следующая страница ➡",
+        SEND_MESSAGE_TO_EVERYONE = "✉ Сообщение всем";
 }

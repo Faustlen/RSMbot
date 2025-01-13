@@ -41,27 +41,30 @@ public class CommandHandler implements BaseHandler {
             User user = userOptional.get();
             if (user.isBanned()) {
                 return generateSendMessage(telegramId, """
-                        К сожалению, вы находитесь в списке пользователей, которым ограничен доступ к этому боту.
-                        Если вы считаете, что это ошибка, обратитесь к своему руководителю РСМ.
-                        """);
+                    К сожалению, вы находитесь в списке пользователей, которым ограничен доступ к этому боту.
+                    Если вы считаете, что это ошибка, обратитесь к своему руководителю РСМ.
+                    """);
             }
-            else return switch (Command.getCommandByString(messageDto.getText())) {
-                case START -> {
-                    basicStates.put(telegramId, new BasicState(user, IN_MAIN_MENU));
-                    yield menuGenerator.generateRoleSpecificMainMenu(telegramId, user.getUserRole());
-                }
-                case SUSTART -> {
-                    userOptional = userRepository.findFirstByUserRole(SUPER_USER);
-                    if (userOptional.isPresent() && !userOptional.get().getTelegramId().equals(user.getTelegramId())) {
-                        yield generateSendMessage(user.getTelegramId(), "Назначение отклонено: супер пользователь уже существует.");
+            else {
+                return switch (Command.getCommandByString(messageDto.getText())) {
+                    case START -> {
+                        basicStates.put(telegramId, new BasicState(user, IN_MAIN_MENU));
+                        yield menuGenerator.generateRoleSpecificMainMenu(telegramId, user.getUserRole());
                     }
-                    else {
-                        user.setUserRole(SUPER_USER);
-                        userRepository.save(user);
-                        yield generateSendMessage(user.getTelegramId(), "Вы авторизованы как супер пользователь");
+                    case SUSTART -> {
+                        userOptional = userRepository.findFirstByUserRole(SUPER_USER);
+                        if (userOptional.isPresent() &&
+                            !userOptional.get().getTelegramId().equals(user.getTelegramId())) {
+                            yield generateSendMessage(user.getTelegramId(),
+                                "Назначение отклонено: супер пользователь уже существует.");
+                        } else {
+                            user.setUserRole(SUPER_USER);
+                            userRepository.save(user);
+                            yield generateSendMessage(user.getTelegramId(), "Вы авторизованы как супер пользователь");
+                        }
                     }
-                }
-            };
+                };
+            }
         } else {
             Optional<Partner> partner = partnerRepository.findById(telegramId);
             BasicState basicState = new BasicState();

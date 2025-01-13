@@ -4,6 +4,7 @@ import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.ADD_EVENT;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.ADMINS_LIST;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.EVENTS_LIST;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.PARTNERS_LIST;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.SEND_MESSAGE_TO_EVERYONE;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.UPDATE_PROFILE;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.USERS_LIST;
 import static net.dunice.mk.rsmtelegrambot.entity.Role.SUPER_USER;
@@ -12,6 +13,7 @@ import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.CHANGE_PROFILE;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.CREATE_EVENT;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_MAIN_MENU;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.SEND_MESSAGE_TO_EVERYBODY;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.SHOW_ADMINS;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.SHOW_EVENTS;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.SHOW_PARTNERS;
@@ -37,6 +39,7 @@ public class UserMenuHandler implements MessageHandler {
     private final ShowAdminsHandler showAdminsHandler;
     private final CreateEventHandler createEventHandler;
     private final ShowUsersHandler showUsersHandler;
+    private final MessageBroadcastHandler messageBroadcastHandler;
     private final Map<Long, BasicState> basicStates;
 
     @Override
@@ -70,6 +73,10 @@ public class UserMenuHandler implements MessageHandler {
                     case USERS_LIST -> {
                         state.setStep(SHOW_USERS);
                         yield showUsersHandler.handle(messageDto, telegramId);
+                    }
+                    case SEND_MESSAGE_TO_EVERYONE -> {
+                        state.setStep(SEND_MESSAGE_TO_EVERYBODY);
+                        yield messageBroadcastHandler.handle(messageDto, telegramId);
                     }
                     default -> null;
                 });

@@ -36,12 +36,6 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 public class UserRegistrationHandler implements MessageHandler {
-    private final Map<Long, UserRegistrationState> userRegistrationStates;
-    private final Map<Long, BasicState> basicStates;
-    private final EnumMap<Menu, ReplyKeyboard> menus;
-    private final MenuGenerator menuGenerator;
-    private final UserRepository userRepository;
-    private final GoogleSheetDownloader sheetDownloader;
     private final static String USER_DATA_TEMPLATE = """
         Данные верны?
         ⬇
@@ -50,6 +44,12 @@ public class UserRegistrationHandler implements MessageHandler {
         Номер телефона: %s
         Номер членского билета: %s
         """;
+    private final Map<Long, UserRegistrationState> userRegistrationStates;
+    private final Map<Long, BasicState> basicStates;
+    private final EnumMap<Menu, ReplyKeyboard> menus;
+    private final MenuGenerator menuGenerator;
+    private final UserRepository userRepository;
+    private final GoogleSheetDownloader sheetDownloader;
 
     @Override
     public SendMessage handle(MessageDto messageDto, Long telegramId) {

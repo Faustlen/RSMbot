@@ -25,6 +25,6 @@ public class MenuGenerator implements MessageGenerator {
         Menu menu = role == USER ? MAIN_MENU :
             role == ADMIN ? ADMIN_MAIN_MENU :
                 SUPERUSER_MAIN_MENU;
-        return generateSendMessage(telegramId,"Выберите раздел:", menus.get(menu));
+        return generateSendMessage(telegramId, "Выберите раздел:", menus.get(menu));
     }
 }

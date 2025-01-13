@@ -39,19 +39,18 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 public class CreateEventHandler implements MessageHandler {
-    private final Map<Long, EventCreationState> eventCreationStates;
-    private final Map<Long, BasicState> basicStates;
-    private final EventRepository eventRepository;
-    private final EnumMap<Menu, ReplyKeyboard> menus;
-    private final MenuGenerator menuGenerator;
-    private final UserRepository userRepository;
-
     private static final String EVENT_INFO_TEMPLATE = """
         Название: %s
         Описание: %s
         Дата и время: %s
         Ссылка: %s
         """;
+    private final Map<Long, EventCreationState> eventCreationStates;
+    private final Map<Long, BasicState> basicStates;
+    private final EventRepository eventRepository;
+    private final EnumMap<Menu, ReplyKeyboard> menus;
+    private final MenuGenerator menuGenerator;
+    private final UserRepository userRepository;
 
     @Override
     public SendMessage handle(MessageDto messageDto, Long telegramId) {
@@ -68,60 +67,65 @@ public class CreateEventHandler implements MessageHandler {
         return switch (state.getStep()) {
             case REQUEST_EVENT_NAME -> {
                 state.setStep(VALIDATE_EVENT_NAME);
-                yield generateSendMessage(telegramId, "Введите название мероприятия (не более 100 символов):", menus.get(CANCEL_MENU));
+                yield generateSendMessage(telegramId, "Введите название мероприятия (не более 100 символов):",
+                    menus.get(CANCEL_MENU));
             }
             case VALIDATE_EVENT_NAME -> {
                 if (CANCEL.equalsIgnoreCase(text)) {
                     yield goToMainMenu(telegramId);
-                }
-                else if (text.strip().length() > 100) {
+                } else if (text.strip().length() > 100) {
                     yield generateSendMessage(telegramId,
-                        "Название мероприятия не должно превышать 100 символов. Повторите ввод:", menus.get(CANCEL_MENU));
+                        "Название мероприятия не должно превышать 100 символов. Повторите ввод:",
+                        menus.get(CANCEL_MENU));
                 }
                 state.setEventName(text.strip());
                 state.setStep(VALIDATE_EVENT_DESCRIPTION);
-                yield generateSendMessage(telegramId, "Введите описание мероприятия (не более 250 символов):", menus.get(CANCEL_MENU));
+                yield generateSendMessage(telegramId, "Введите описание мероприятия (не более 250 символов):",
+                    menus.get(CANCEL_MENU));
             }
             case VALIDATE_EVENT_DESCRIPTION -> {
                 if (CANCEL.equalsIgnoreCase(text)) {
                     yield goToMainMenu(telegramId);
-                }
-                else if (text.strip().length() > 250) {
+                } else if (text.strip().length() > 250) {
                     yield generateSendMessage(telegramId,
-                        "Описание мероприятия не должно превышать 250 символов. Повторите ввод:", menus.get(CANCEL_MENU));
+                        "Описание мероприятия не должно превышать 250 символов. Повторите ввод:",
+                        menus.get(CANCEL_MENU));
                 }
                 state.setEventDescription(text.strip());
                 state.setStep(VALIDATE_EVENT_DATE_TIME);
                 yield generateSendMessage(telegramId,
-                    "Введите дату и время проведения мероприятия в следующем формате (ДД.ММ.ГГГГ-ЧЧ:ММ)", menus.get(CANCEL_MENU));
+                    "Введите дату и время проведения мероприятия в следующем формате (ДД.ММ.ГГГГ-ЧЧ:ММ)",
+                    menus.get(CANCEL_MENU));
             }
             case VALIDATE_EVENT_DATE_TIME -> {
                 try {
                     if (CANCEL.equalsIgnoreCase(text)) {
                         yield goToMainMenu(telegramId);
-                    }
-                    else {
+                    } else {
                         LocalDateTime eventDateTime =
                             LocalDateTime.parse(text.trim(), DateTimeFormatter.ofPattern("dd.MM.yyyy-HH:mm"));
                         if (eventDateTime.isBefore(LocalDateTime.now())) {
                             yield generateSendMessage(telegramId,
-                                "Дата и время мероприятия не могут быть в прошлом. Повторите ввод:", menus.get(CANCEL_MENU));
+                                "Дата и время мероприятия не могут быть в прошлом. Повторите ввод:",
+                                menus.get(CANCEL_MENU));
                         }
                         state.setEventDateTime(eventDateTime);
                         state.setStep(VALIDATE_EVENT_LINK);
-                        yield generateSendMessage(telegramId, "Введите ссылку на мероприятие (не более 250 символов):", menus.get(CANCEL_MENU));
+                        yield generateSendMessage(telegramId, "Введите ссылку на мероприятие (не более 250 символов):",
+                            menus.get(CANCEL_MENU));
                     }
                 } catch (DateTimeParseException e) {
                     yield generateSendMessage(telegramId,
-                        "Дата и время должны быть в формате (ДД.ММ.ГГГГ-ЧЧ:ММ). Повторите ввод:", menus.get(CANCEL_MENU));
+                        "Дата и время должны быть в формате (ДД.ММ.ГГГГ-ЧЧ:ММ). Повторите ввод:",
+                        menus.get(CANCEL_MENU));
                 }
             }
             case VALIDATE_EVENT_LINK -> {
                 if (CANCEL.equalsIgnoreCase(text)) {
                     yield goToMainMenu(telegramId);
-                }
-                else if (text.strip().length() > 250) {
-                    yield generateSendMessage(telegramId, "Ссылка не должна превышать 250 символов. Повторите ввод:", menus.get(CANCEL_MENU));
+                } else if (text.strip().length() > 250) {
+                    yield generateSendMessage(telegramId, "Ссылка не должна превышать 250 символов. Повторите ввод:",
+                        menus.get(CANCEL_MENU));
                 }
                 state.setEventLink(text.strip());
                 state.setStep(CONFIRM_EVENT);
@@ -130,20 +134,19 @@ public class CreateEventHandler implements MessageHandler {
                                                           state.getEventName(),
                                                           state.getEventDescription(),
                                                           state.getEventDateTime()
-                                                              .format(DateTimeFormatter.ofPattern("dd.MM.yyyy | HH:mm")),
-                                                          state.getEventLink()), menus.get(SELECTION_MENU));
+                                                              .format(
+                                                                  DateTimeFormatter.ofPattern("dd.MM.yyyy | HH:mm")),
+                                                          state.getEventLink()), menus.get(Menu.SELECTION_MENU));
             }
             case CONFIRM_EVENT -> {
                 if (YES.equalsIgnoreCase(text)) {
                     saveEvent(state);
                     state.setStep(FINISH);
                     yield generateSendMessage(telegramId, "Мероприятие успешно создано!", menus.get(GO_TO_MAIN_MENU));
-                }
-                else if (NO.equalsIgnoreCase(text)) {
+                } else if (NO.equalsIgnoreCase(text)) {
                     state.setStep(FINISH);
                     yield generateSendMessage(telegramId, "Создание мероприятия отменено.", menus.get(GO_TO_MAIN_MENU));
-                }
-                else {
+                } else {
                     yield generateSendMessage(telegramId, "Неверная команда.", menus.get(SELECTION_MENU));
                 }
             }

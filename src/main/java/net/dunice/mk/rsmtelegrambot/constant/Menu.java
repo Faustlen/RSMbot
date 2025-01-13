@@ -13,4 +13,5 @@ public enum Menu {
     CANCEL_MENU,
     CATEGORY_MENU,
     EVENT_FIELDS_MENU,
+    BROADCAST_MESSAGE_MENU
 }

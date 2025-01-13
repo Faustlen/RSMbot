@@ -70,13 +70,11 @@ public class SelectRegistrationHandler implements MessageHandler {
                     selectRegistrationStates.remove(telegramId);
                     basicStates.get(telegramId).setStep(USER_REGISTRATION);
                     yield userRegistrationHandler.handle(messageDto, telegramId);
-                }
-                else if (RSM_PARTNER.equals(text)) {
+                } else if (RSM_PARTNER.equals(text)) {
                     selectRegistrationStates.remove(telegramId);
                     basicStates.get(telegramId).setStep(PARTNER_REGISTRATION);
                     yield partnerRegistrationHandler.handle(messageDto, telegramId);
-                }
-                else {
+                } else {
                     state.setStep(RETRY_REGISTRATION);
                     yield generateSendMessage(telegramId, "Неверная команда, регистрация отменена",
                         menus.get(TRY_AGAIN_MENU));

@@ -54,9 +54,11 @@ public class UpdateProfileHandler implements MessageHandler {
             case VERIFY_USER_INFO -> {
                 if (text.length() <= 255) {
                     userRepository.updateInfoById(telegramId, text);
-                    yield generateSendMessage(telegramId, "Вы успешно изменили свои данные!", menus.get(GO_TO_MAIN_MENU));
+                    yield generateSendMessage(telegramId, "Вы успешно изменили свои данные!",
+                        menus.get(GO_TO_MAIN_MENU));
                 } else {
-                    yield generateSendMessage(telegramId, "Описание слишком длинное. Попробуйте снова:", menus.get(CANCEL_MENU));
+                    yield generateSendMessage(telegramId, "Описание слишком длинное. Попробуйте снова:",
+                        menus.get(CANCEL_MENU));
                 }
             }
         };

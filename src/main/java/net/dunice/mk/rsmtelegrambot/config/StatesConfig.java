@@ -3,6 +3,7 @@ package net.dunice.mk.rsmtelegrambot.config;
 import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
 import net.dunice.mk.rsmtelegrambot.handler.state.EventCreationState;
 import net.dunice.mk.rsmtelegrambot.handler.state.GrantAdminState;
+import net.dunice.mk.rsmtelegrambot.handler.state.MessageBroadcastState;
 import net.dunice.mk.rsmtelegrambot.handler.state.PartnerRegistrationState;
 import net.dunice.mk.rsmtelegrambot.handler.state.SelectRegistrationState;
 import net.dunice.mk.rsmtelegrambot.handler.state.ShowAdminsState;
@@ -52,10 +53,14 @@ public class StatesConfig {
     }
 
     @Bean("showAdminsStates")
-    public Map<Long, ShowAdminsState> getShowAdminsStatesMap() {return new ConcurrentHashMap<>();}
+    public Map<Long, ShowAdminsState> getShowAdminsStatesMap() {
+        return new ConcurrentHashMap<>();
+    }
 
     @Bean("showUsersStates")
-    public Map<Long, ShowUsersState> getShowUsersStatesMap() {return new ConcurrentHashMap<>();}
+    public Map<Long, ShowUsersState> getShowUsersStatesMap() {
+        return new ConcurrentHashMap<>();
+    }
 
     @Bean("showEventStates")
     public Map<Long, ShowEventsState> getShowEventsStatesMap() {
@@ -72,6 +77,11 @@ public class StatesConfig {
         return new ConcurrentHashMap<>();
     }
 
+    @Bean("messageBroadcastStates")
+    public Map<Long, MessageBroadcastState> getMessageBroadcastStatesMap() {
+        return new ConcurrentHashMap<>();
+    }
+
     @Bean("allStatesMap")
     public List<Map<Long, ?>> getAllStatesMap(Map<Long, GrantAdminState> grantAdminStates,
                                               Map<Long, UserRegistrationState> registrationStates,
@@ -82,8 +92,10 @@ public class StatesConfig {
                                               Map<Long, PartnerRegistrationState> partnerRegistrationStates,
                                               Map<Long, ShowAdminsState> showAdminsStates,
                                               Map<Long, ShowUsersState> showUsersStates,
-                                              Map<Long, SelectRegistrationState> selectRegistrationStates) {
+                                              Map<Long, SelectRegistrationState> selectRegistrationStates,
+                                              Map<Long, MessageBroadcastState> messageBroadcastStates) {
         return List.of(grantAdminStates, registrationStates, updateProfileStates, showEventStates, showPartnersStates,
-            eventCreationStates, partnerRegistrationStates, showAdminsStates, showUsersStates, selectRegistrationStates);
+            eventCreationStates, partnerRegistrationStates, showAdminsStates, showUsersStates, selectRegistrationStates,
+            messageBroadcastStates);
     }
 }
