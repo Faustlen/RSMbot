@@ -7,14 +7,15 @@ import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.YES;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.CANCEL_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.GO_TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.SELECTION_MENU;
-import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.CREATE_EVENT;
-import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.IN_MAIN_MENU;
-import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.EventCreationState.EventCreationStep.CONFIRM_EVENT;
-import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.EventCreationState.EventCreationStep.FINISH;
-import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.EventCreationState.EventCreationStep.VALIDATE_EVENT_DATE_TIME;
-import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.EventCreationState.EventCreationStep.VALIDATE_EVENT_DESCRIPTION;
-import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.EventCreationState.EventCreationStep.VALIDATE_EVENT_LINK;
-import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.EventCreationState.EventCreationStep.VALIDATE_EVENT_NAME;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.CREATE_EVENT;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_MAIN_MENU;
+import static net.dunice.mk.rsmtelegrambot.handler.state.EventCreationState.EventCreationStep.CONFIRM_EVENT;
+import static net.dunice.mk.rsmtelegrambot.handler.state.EventCreationState.EventCreationStep.FINISH;
+import static net.dunice.mk.rsmtelegrambot.handler.state.EventCreationState.EventCreationStep.VALIDATE_EVENT_DATE_TIME;
+import static net.dunice.mk.rsmtelegrambot.handler.state.EventCreationState.EventCreationStep.VALIDATE_EVENT_DESCRIPTION;
+import static net.dunice.mk.rsmtelegrambot.handler.state.EventCreationState.EventCreationStep.VALIDATE_EVENT_LINK;
+import static net.dunice.mk.rsmtelegrambot.handler.state.EventCreationState.EventCreationStep.VALIDATE_EVENT_NAME;
 
 import lombok.RequiredArgsConstructor;
 import net.dunice.mk.rsmtelegrambot.constant.Menu;
@@ -22,7 +23,7 @@ import net.dunice.mk.rsmtelegrambot.dto.MessageDto;
 import net.dunice.mk.rsmtelegrambot.entity.Event;
 import net.dunice.mk.rsmtelegrambot.handler.MenuGenerator;
 import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
-import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.EventCreationState;
+import net.dunice.mk.rsmtelegrambot.handler.state.EventCreationState;
 import net.dunice.mk.rsmtelegrambot.repository.EventRepository;
 import net.dunice.mk.rsmtelegrambot.repository.UserRepository;
 import org.springframework.stereotype.Service;
@@ -166,14 +167,15 @@ public class CreateEventHandler implements MessageHandler {
     }
 
     @Override
-    public BasicState getState() {
+    public BasicStep getStep() {
         return CREATE_EVENT;
     }
 
     private SendMessage goToMainMenu(Long telegramId) {
+        BasicState state = basicStates.get(telegramId);
         eventCreationStates.remove(telegramId);
-        basicStates.put(telegramId, IN_MAIN_MENU);
+        state.setStep(IN_MAIN_MENU);
         return menuGenerator.generateRoleSpecificMainMenu(telegramId,
-            userRepository.findByTelegramId(telegramId).get().getUserRole());
+            state.getUser().getUserRole());
     }
 }

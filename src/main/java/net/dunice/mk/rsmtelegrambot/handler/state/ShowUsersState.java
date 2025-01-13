@@ -1,4 +1,4 @@
-package net.dunice.mk.rsmtelegrambot.handler.state.stateobject;
+package net.dunice.mk.rsmtelegrambot.handler.state;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -20,7 +20,10 @@ public class ShowUsersState {
         SHOW_USERS_LIST,
         SHOW_USER_DETAILS,
         BAN_OR_UNBAN,
-        HANDLE_USER_ACTION
+        DELETE_USER,
+        GRANT_OR_REVOKE_ADMIN_RIGHTS,
+        HANDLE_USER_ACTION,
+        FINISH
     }
     public void incrementPage() {
         if (page * 10 + 10 <= allUsers.size()) {

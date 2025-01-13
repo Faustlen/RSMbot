@@ -4,19 +4,18 @@ import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CANCEL;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.CANCEL_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.GO_TO_MAIN_MENU;
-import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.CHANGE_PROFILE;
-import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.IN_MAIN_MENU;
-import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.UpdateProfileState.UpdateProfileStep.VERIFY_USER_INFO;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.CHANGE_PROFILE;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_MAIN_MENU;
+import static net.dunice.mk.rsmtelegrambot.handler.state.UpdateProfileState.UpdateProfileStep.VERIFY_USER_INFO;
 
 import lombok.RequiredArgsConstructor;
 import net.dunice.mk.rsmtelegrambot.constant.Menu;
 import net.dunice.mk.rsmtelegrambot.dto.MessageDto;
-import net.dunice.mk.rsmtelegrambot.entity.User;
 import net.dunice.mk.rsmtelegrambot.handler.MenuGenerator;
 import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
-import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.UpdateProfileState;
+import net.dunice.mk.rsmtelegrambot.handler.state.UpdateProfileState;
 import net.dunice.mk.rsmtelegrambot.repository.UserRepository;
-import net.dunice.mk.rsmtelegrambot.service.UserService;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -64,14 +63,15 @@ public class UpdateProfileHandler implements MessageHandler {
     }
 
     @Override
-    public BasicState getState() {
+    public BasicStep getStep() {
         return CHANGE_PROFILE;
     }
 
     private SendMessage goToMainMenu(Long telegramId) {
+        BasicState state = basicStates.get(telegramId);
         updateProfileStates.remove(telegramId);
-        basicStates.put(telegramId, IN_MAIN_MENU);
+        state.setStep(IN_MAIN_MENU);
         return menuGenerator.generateRoleSpecificMainMenu(telegramId,
-            userRepository.findByTelegramId(telegramId).get().getUserRole());
+            state.getUser().getUserRole());
     }
 }

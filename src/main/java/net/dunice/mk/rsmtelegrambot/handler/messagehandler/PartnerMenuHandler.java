@@ -1,8 +1,9 @@
 package net.dunice.mk.rsmtelegrambot.handler.messagehandler;
 
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.PARTNERS_LIST;
-import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.IN_PARTNER_MENU;
-import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.SHOW_PARTNERS;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_PARTNER_MENU;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.SHOW_PARTNERS;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep;
 
 import lombok.RequiredArgsConstructor;
 import net.dunice.mk.rsmtelegrambot.dto.MessageDto;
@@ -22,7 +23,7 @@ public class PartnerMenuHandler implements MessageHandler {
     private final ShowPartnersHandler showPartnersHandler;
 
     @Override
-    public BasicState getState() {
+    public BasicStep getStep() {
         return IN_PARTNER_MENU;
     }
 
@@ -32,7 +33,7 @@ public class PartnerMenuHandler implements MessageHandler {
         Optional<PartialBotApiMethod<Message>> sendMessage = Optional.ofNullable(
             switch (text) {
                 case PARTNERS_LIST -> {
-                    basicStates.put(telegramId, SHOW_PARTNERS);
+                    basicStates.get(telegramId).setStep(SHOW_PARTNERS);
                     yield showPartnersHandler.handle(messageDto, telegramId);
                 }
                 default -> null;

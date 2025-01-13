@@ -1,4 +1,4 @@
-package net.dunice.mk.rsmtelegrambot.handler.state.stateobject;
+package net.dunice.mk.rsmtelegrambot.handler.state;
 
 import lombok.Getter;
 import lombok.Setter;

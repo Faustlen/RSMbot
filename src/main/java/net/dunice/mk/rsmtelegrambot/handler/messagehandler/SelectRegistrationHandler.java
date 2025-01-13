@@ -6,19 +6,20 @@ import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TRY_AGAIN;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.SELECTION_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.SELECTION_USER_TYPE_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.TRY_AGAIN_MENU;
-import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.PARTNER_REGISTRATION;
-import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.USER_REGISTRATION;
-import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.SELECT_REGISTRATION_TYPE;
-import static net.dunice.mk.rsmtelegrambot.handler.state.step.SelectRegistrationStep.CHECK_CONFIRMATION;
-import static net.dunice.mk.rsmtelegrambot.handler.state.step.SelectRegistrationStep.REQUEST_REGISTRATION;
-import static net.dunice.mk.rsmtelegrambot.handler.state.step.SelectRegistrationStep.RETRY_REGISTRATION;
-import static net.dunice.mk.rsmtelegrambot.handler.state.step.SelectRegistrationStep.SWITCH_REGISTRATION_TYPE;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.PARTNER_REGISTRATION;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.SELECT_REGISTRATION_TYPE;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.USER_REGISTRATION;
+import static net.dunice.mk.rsmtelegrambot.handler.state.SelectRegistrationState.SelectRegistrationStep.CHECK_CONFIRMATION;
+import static net.dunice.mk.rsmtelegrambot.handler.state.SelectRegistrationState.SelectRegistrationStep.REQUEST_REGISTRATION;
+import static net.dunice.mk.rsmtelegrambot.handler.state.SelectRegistrationState.SelectRegistrationStep.RETRY_REGISTRATION;
+import static net.dunice.mk.rsmtelegrambot.handler.state.SelectRegistrationState.SelectRegistrationStep.SWITCH_REGISTRATION_TYPE;
 
 import lombok.RequiredArgsConstructor;
 import net.dunice.mk.rsmtelegrambot.constant.Menu;
 import net.dunice.mk.rsmtelegrambot.dto.MessageDto;
 import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
-import net.dunice.mk.rsmtelegrambot.handler.state.step.SelectRegistrationStep;
+import net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep;
+import net.dunice.mk.rsmtelegrambot.handler.state.SelectRegistrationState;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
@@ -31,7 +32,7 @@ import java.util.Map;
 public class SelectRegistrationHandler implements MessageHandler {
 
     private final EnumMap<Menu, ReplyKeyboard> menus;
-    private final Map<Long, SelectRegistrationStep> selectRegistrationSteps;
+    private final Map<Long, SelectRegistrationState> selectRegistrationStates;
     private final Map<Long, BasicState> basicStates;
     private final UserRegistrationHandler userRegistrationHandler;
     private final PartnerRegistrationHandler partnerRegistrationHandler;
@@ -39,50 +40,51 @@ public class SelectRegistrationHandler implements MessageHandler {
     @Override
     public SendMessage handle(MessageDto messageDto, Long telegramId) {
         String text = messageDto.getText();
-        SelectRegistrationStep step = selectRegistrationSteps.get(telegramId);
-        if (step == null) {
-            selectRegistrationSteps.put(telegramId, (step = REQUEST_REGISTRATION));
+
+        SelectRegistrationState state = selectRegistrationStates.get(telegramId);
+        if (state == null) {
+            selectRegistrationStates.put(telegramId, (state = new SelectRegistrationState()));
         }
-        return switch (step) {
+        return switch (state.getStep()) {
             case REQUEST_REGISTRATION -> {
-                selectRegistrationSteps.put(telegramId, CHECK_CONFIRMATION);
+                state.setStep(CHECK_CONFIRMATION);
                 yield generateSendMessage(telegramId,
                     "Добро пожаловать! Вы не зарегистрированы, желаете пройти регистрацию? Ответьте 'Да' или 'Нет':",
                     menus.get(SELECTION_MENU));
             }
             case CHECK_CONFIRMATION -> {
                 if ("Да".equalsIgnoreCase(text)) {
-                    selectRegistrationSteps.put(telegramId, SWITCH_REGISTRATION_TYPE);
+                    state.setStep(SWITCH_REGISTRATION_TYPE);
                     yield generateSendMessage(telegramId, "Кто вы?", menus.get(SELECTION_USER_TYPE_MENU));
                 } else if ("Нет".equalsIgnoreCase(text)) {
-                    selectRegistrationSteps.put(telegramId, RETRY_REGISTRATION);
+                    state.setStep(RETRY_REGISTRATION);
                     yield generateSendMessage(telegramId, "Регистрация отменена.", menus.get(TRY_AGAIN_MENU));
                 } else {
-                    selectRegistrationSteps.put(telegramId, RETRY_REGISTRATION);
+                    state.setStep(RETRY_REGISTRATION);
                     yield generateSendMessage(telegramId, "Неверная команда, регистрация отменена",
                         menus.get(TRY_AGAIN_MENU));
                 }
             }
             case SWITCH_REGISTRATION_TYPE -> {
                 if (RSM_MEMBER.equals(text)) {
-                    selectRegistrationSteps.remove(telegramId);
-                    basicStates.put(telegramId, USER_REGISTRATION);
+                    selectRegistrationStates.remove(telegramId);
+                    basicStates.get(telegramId).setStep(USER_REGISTRATION);
                     yield userRegistrationHandler.handle(messageDto, telegramId);
                 }
                 else if (RSM_PARTNER.equals(text)) {
-                    selectRegistrationSteps.remove(telegramId);
-                    basicStates.put(telegramId, PARTNER_REGISTRATION);
+                    selectRegistrationStates.remove(telegramId);
+                    basicStates.get(telegramId).setStep(PARTNER_REGISTRATION);
                     yield partnerRegistrationHandler.handle(messageDto, telegramId);
                 }
                 else {
-                    selectRegistrationSteps.put(telegramId, RETRY_REGISTRATION);
+                    state.setStep(RETRY_REGISTRATION);
                     yield generateSendMessage(telegramId, "Неверная команда, регистрация отменена",
                         menus.get(TRY_AGAIN_MENU));
                 }
             }
             case RETRY_REGISTRATION -> {
                 if (TRY_AGAIN.equalsIgnoreCase(text)) {
-                    selectRegistrationSteps.put(telegramId, REQUEST_REGISTRATION);
+                    state.setStep(REQUEST_REGISTRATION);
                     yield handle(messageDto, telegramId);
                 } else {
                     yield generateSendMessage(telegramId, "Неверная команда");
@@ -92,7 +94,7 @@ public class SelectRegistrationHandler implements MessageHandler {
     }
 
     @Override
-    public BasicState getState() {
+    public BasicStep getStep() {
         return SELECT_REGISTRATION_TYPE;
     }
 }

@@ -2,15 +2,16 @@ package net.dunice.mk.rsmtelegrambot.handler.messagehandler;
 
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.entity.Role.ADMIN;
-import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.IN_MAIN_MENU;
-import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.SHOW_ADMINS;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_MAIN_MENU;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.SHOW_ADMINS;
 
 import lombok.RequiredArgsConstructor;
 import net.dunice.mk.rsmtelegrambot.dto.MessageDto;
 import net.dunice.mk.rsmtelegrambot.entity.User;
 import net.dunice.mk.rsmtelegrambot.handler.MenuGenerator;
 import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
-import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.ShowAdminsState;
+import net.dunice.mk.rsmtelegrambot.handler.state.ShowAdminsState;
 import net.dunice.mk.rsmtelegrambot.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -32,7 +33,7 @@ public class ShowAdminsHandler implements MessageHandler {
     private final Map<Long, ShowAdminsState> showAdminStates;
 
     @Override
-    public BasicState getState() {
+    public BasicStep getStep() {
         return SHOW_ADMINS;
     }
 
@@ -75,10 +76,11 @@ public class ShowAdminsHandler implements MessageHandler {
     }
 
     private SendMessage goToMainMenu(Long telegramId) {
+        BasicState state = basicStates.get(telegramId);
         showAdminStates.remove(telegramId);
-        basicStates.put(telegramId, IN_MAIN_MENU);
+        state.setStep(IN_MAIN_MENU);
         return menuGenerator.generateRoleSpecificMainMenu(telegramId,
-            userRepository.findByTelegramId(telegramId).get().getUserRole());
+            state.getUser().getUserRole());
     }
 }
 

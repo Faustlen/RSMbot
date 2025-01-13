@@ -11,3 +11,5 @@ databaseChangeLog:
       file: classpath:/db/changelog/changes/V005_alter_table_partners.sql
   - include:
       file: classpath:/db/changelog/changes/V006_fill_table_category_with_values.sql
+  - include:
+      file: classpath:/db/changelog/changes/V007_alter_table_partners_partners_info_600_chars.sql
