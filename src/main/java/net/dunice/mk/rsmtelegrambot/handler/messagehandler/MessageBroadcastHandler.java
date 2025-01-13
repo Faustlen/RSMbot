@@ -61,9 +61,12 @@ public class MessageBroadcastHandler implements MessageHandler {
             case VERIFY_MESSAGE_TEXT -> {
                 state.setStep(CONFIRM_MESSAGE_TEXT);
                 state.setText(messageText);
-                yield generateSendMessage(telegramId,
-                    "Вы хотите отправить следующее сообщение: \n\n" + state.getText() + "\n\nПодтвердите отправку.",
-                    menus.get(SELECTION_MENU));
+                String formattedMessage = String.format(
+                    "Вы хотите отправить следующее сообщение:\n\n" +
+                    "---------------\n%s\n---------------\n\nПодтвердите отправку.",
+                    state.getText()
+                );
+                yield generateSendMessage(telegramId, formattedMessage, menus.get(SELECTION_MENU));
             }
             case CONFIRM_MESSAGE_TEXT -> {
                 if ("Да".equalsIgnoreCase(messageText)) {

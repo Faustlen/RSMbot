@@ -7,8 +7,8 @@ import static net.dunice.mk.rsmtelegrambot.constant.Menu.SELECTION_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.SELECTION_USER_TYPE_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.TRY_AGAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.PARTNER_REGISTRATION;
-import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.USER_REGISTRATION;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.SELECT_REGISTRATION_TYPE;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.USER_REGISTRATION;
 import static net.dunice.mk.rsmtelegrambot.handler.state.step.SelectRegistrationStep.CHECK_CONFIRMATION;
 import static net.dunice.mk.rsmtelegrambot.handler.state.step.SelectRegistrationStep.REQUEST_REGISTRATION;
 import static net.dunice.mk.rsmtelegrambot.handler.state.step.SelectRegistrationStep.RETRY_REGISTRATION;
@@ -68,13 +68,11 @@ public class SelectRegistrationHandler implements MessageHandler {
                     selectRegistrationSteps.remove(telegramId);
                     basicStates.put(telegramId, USER_REGISTRATION);
                     yield userRegistrationHandler.handle(messageDto, telegramId);
-                }
-                else if (RSM_PARTNER.equals(text)) {
+                } else if (RSM_PARTNER.equals(text)) {
                     selectRegistrationSteps.remove(telegramId);
                     basicStates.put(telegramId, PARTNER_REGISTRATION);
                     yield partnerRegistrationHandler.handle(messageDto, telegramId);
-                }
-                else {
+                } else {
                     selectRegistrationSteps.put(telegramId, RETRY_REGISTRATION);
                     yield generateSendMessage(telegramId, "Неверная команда, регистрация отменена",
                         menus.get(TRY_AGAIN_MENU));

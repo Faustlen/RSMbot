@@ -79,6 +79,10 @@ public class UserMenuHandler implements MessageHandler {
                         basicStates.put(telegramId, SHOW_USERS);
                         yield showUsersHandler.handle(messageDto, telegramId);
                     }
+                    case SEND_MESSAGE_TO_EVERYONE -> {
+                        basicStates.put(telegramId, SEND_MESSAGE_TO_EVERYBODY);
+                        yield messageBroadcastHandler.handle(messageDto, telegramId);
+                    }
                     default -> null;
                 });
             if (sendMessage.isEmpty() && role == SUPER_USER) {

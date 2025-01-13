@@ -11,12 +11,10 @@ import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.UpdateProfi
 import lombok.RequiredArgsConstructor;
 import net.dunice.mk.rsmtelegrambot.constant.Menu;
 import net.dunice.mk.rsmtelegrambot.dto.MessageDto;
-import net.dunice.mk.rsmtelegrambot.entity.User;
 import net.dunice.mk.rsmtelegrambot.handler.MenuGenerator;
 import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
 import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.UpdateProfileState;
 import net.dunice.mk.rsmtelegrambot.repository.UserRepository;
-import net.dunice.mk.rsmtelegrambot.service.UserService;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -55,9 +53,11 @@ public class UpdateProfileHandler implements MessageHandler {
             case VERIFY_USER_INFO -> {
                 if (text.length() <= 255) {
                     userRepository.updateInfoById(telegramId, text);
-                    yield generateSendMessage(telegramId, "Вы успешно изменили свои данные!", menus.get(GO_TO_MAIN_MENU));
+                    yield generateSendMessage(telegramId, "Вы успешно изменили свои данные!",
+                        menus.get(GO_TO_MAIN_MENU));
                 } else {
-                    yield generateSendMessage(telegramId, "Описание слишком длинное. Попробуйте снова:", menus.get(CANCEL_MENU));
+                    yield generateSendMessage(telegramId, "Описание слишком длинное. Попробуйте снова:",
+                        menus.get(CANCEL_MENU));
                 }
             }
         };
