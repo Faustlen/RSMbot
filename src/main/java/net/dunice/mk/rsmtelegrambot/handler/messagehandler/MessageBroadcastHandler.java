@@ -60,7 +60,8 @@ public class MessageBroadcastHandler implements MessageHandler {
             }
             case VERIFY_MESSAGE_TEXT -> {
                 state.setStep(CONFIRM_MESSAGE_TEXT);
-                state.setText(messageText);
+                String sender = userRepository.findByTelegramId(telegramId).get().getFullName();
+                state.setText(messageText + "\n\nОтправлено пользователем: " + sender);
                 String formattedMessage = String.format(
                     "Вы хотите отправить следующее сообщение:\n\n" +
                     "---------------\n%s\n---------------\n\nПодтвердите отправку.",
