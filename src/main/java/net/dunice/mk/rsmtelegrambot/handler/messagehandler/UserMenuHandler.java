@@ -1,10 +1,10 @@
 package net.dunice.mk.rsmtelegrambot.handler.messagehandler;
 
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.ADD_EVENT;
-import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.ADD_PARTNER;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.ADMINS_LIST;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.EVENTS_LIST;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.PARTNERS_LIST;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.SEND_MESSAGE_TO_EVERYONE;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.SET_ADMIN;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.UPDATE_PROFILE;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.USERS_LIST;
@@ -14,6 +14,7 @@ import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.CHANGE_PROFI
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.CREATE_EVENT;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.GRANT_ADMIN;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.IN_MAIN_MENU;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.SEND_MESSAGE_TO_EVERYBODY;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.SHOW_ADMINS;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.SHOW_EVENTS;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.SHOW_PARTNERS;
@@ -43,6 +44,7 @@ public class UserMenuHandler implements MessageHandler {
     private final ShowAdminsHandler showAdminsHandler;
     private final CreateEventHandler createEventHandler;
     private final ShowUsersHandler showUsersHandler;
+    private final MessageBroadcastHandler messageBroadcastHandler;
     private final Map<Long, BasicState> basicStates;
 
     @Override
@@ -77,6 +79,10 @@ public class UserMenuHandler implements MessageHandler {
                         basicStates.put(telegramId, SHOW_USERS);
                         yield showUsersHandler.handle(messageDto, telegramId);
                     }
+                    case SEND_MESSAGE_TO_EVERYONE -> {
+                        basicStates.put(telegramId, SEND_MESSAGE_TO_EVERYBODY);
+                        yield messageBroadcastHandler.handle(messageDto, telegramId);
+                    }
                     default -> null;
                 });
             if (sendMessage.isEmpty() && role == SUPER_USER) {
@@ -89,6 +95,10 @@ public class UserMenuHandler implements MessageHandler {
                         case ADMINS_LIST -> {
                             basicStates.put(telegramId, SHOW_ADMINS);
                             yield showAdminsHandler.handle(messageDto, telegramId);
+                        }
+                        case SEND_MESSAGE_TO_EVERYONE -> {
+                            basicStates.put(telegramId, SEND_MESSAGE_TO_EVERYBODY);
+                            yield messageBroadcastHandler.handle(messageDto, telegramId);
                         }
                         default -> null;
                     });

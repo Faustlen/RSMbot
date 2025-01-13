@@ -1,7 +1,6 @@
 package net.dunice.mk.rsmtelegrambot.config;
 
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.ADD_EVENT;
-import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.ADD_PARTNER;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.ADMINS_LIST;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CANCEL;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.EVENTS_LIST;
@@ -9,6 +8,7 @@ import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.NO;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.PARTNERS_LIST;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.RSM_MEMBER;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.RSM_PARTNER;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.SEND_MESSAGE_TO_EVERYONE;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.SET_ADMIN;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TRY_AGAIN;
@@ -81,6 +81,7 @@ public class MenuConfig {
         KeyboardRow row = new KeyboardRow();
         row.add(ADD_EVENT);
         row.add(USERS_LIST);
+        row.add(SEND_MESSAGE_TO_EVERYONE);
         keyboard.add(row);
         return replyMarkup;
     }
@@ -92,6 +93,7 @@ public class MenuConfig {
         KeyboardRow row = new KeyboardRow();
         row.add(ADD_EVENT);
         row.add(USERS_LIST);
+        row.add(SEND_MESSAGE_TO_EVERYONE);
         keyboard.add(row);
         row = new KeyboardRow();
         row.add(SET_ADMIN);
@@ -145,7 +147,8 @@ public class MenuConfig {
             .map(category -> {
                 InlineKeyboardButton button = new InlineKeyboardButton(category);
                 button.setCallbackData(button.getText());
-                return button;})
+                return button;
+            })
             .toArray(InlineKeyboardButton[]::new);
 
         for (int i = 0; i < buttons.length; i++) {
@@ -228,7 +231,8 @@ public class MenuConfig {
             .map(category -> {
                 InlineKeyboardButton button = new InlineKeyboardButton(category);
                 button.setCallbackData(button.getText());
-                return button;})
+                return button;
+            })
             .toArray(InlineKeyboardButton[]::new);
         for (int i = 0; i < buttons.length; i++) {
             List<InlineKeyboardButton> row = new ArrayList<>();

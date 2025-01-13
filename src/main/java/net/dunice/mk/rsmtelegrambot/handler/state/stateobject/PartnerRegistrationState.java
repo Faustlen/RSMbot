@@ -4,7 +4,6 @@ import lombok.Getter;
 import lombok.Setter;
 import net.dunice.mk.rsmtelegrambot.entity.Category;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Setter

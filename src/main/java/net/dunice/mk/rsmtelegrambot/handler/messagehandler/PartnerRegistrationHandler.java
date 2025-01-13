@@ -31,9 +31,7 @@ import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.EnumMap;
@@ -87,8 +85,7 @@ public class PartnerRegistrationHandler implements MessageHandler {
                     if (discountPercent >= 100 || discountPercent < 0) {
                         yield generateSendMessage(telegramId,
                             "Процент скидки должен быть от 0 до 100. Повторите ввод:", menus.get(CANCEL_MENU));
-                    }
-                    else {
+                    } else {
                         state.setDiscountPercent(discountPercent);
                         state.setStep(CATEGORY);
                         yield generateSendMessage(telegramId, "Выберите название категории:", menus.get(CATEGORY_MENU));
@@ -114,7 +111,8 @@ public class PartnerRegistrationHandler implements MessageHandler {
                 if (messageDto.getImage() != null) {
                     state.setLogo(messageDto.getImage());
                     state.setStep(DISCOUNT_DATE);
-                    yield generateSendMessage(telegramId, "Пожалуйста, введите дату и время конца действия скидки в формате (ДД.ММ.ГГГГ-ЧЧ:ММ) :",
+                    yield generateSendMessage(telegramId,
+                        "Пожалуйста, введите дату и время конца действия скидки в формате (ДД.ММ.ГГГГ-ЧЧ:ММ) :",
                         menus.get(CANCEL_MENU));
                 } else {
                     yield generateSendMessage(telegramId, "Логотип должен быть изображением. Повторите ввод:",
@@ -123,12 +121,14 @@ public class PartnerRegistrationHandler implements MessageHandler {
             }
             case DISCOUNT_DATE -> {
                 try {
-                    state.setDiscountDate(LocalDateTime.parse(text.trim(), DateTimeFormatter.ofPattern("dd.MM.yyyy-HH:mm")));
+                    state.setDiscountDate(
+                        LocalDateTime.parse(text.trim(), DateTimeFormatter.ofPattern("dd.MM.yyyy-HH:mm")));
                     state.setStep(PARTNER_INFO);
                     yield generateSendMessage(telegramId, "Введите дополнительную информацию о партнёре:",
                         menus.get(CANCEL_MENU));
                 } catch (DateTimeParseException e) {
-                    yield generateSendMessage(telegramId, "Дата должна быть в формате (ДД.ММ.ГГГГ-ЧЧ:ММ) . Повторите ввод:",
+                    yield generateSendMessage(telegramId,
+                        "Дата должна быть в формате (ДД.ММ.ГГГГ-ЧЧ:ММ) . Повторите ввод:",
                         menus.get(CANCEL_MENU));
                 }
             }

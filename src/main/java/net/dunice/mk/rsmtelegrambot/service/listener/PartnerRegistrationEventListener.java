@@ -18,10 +18,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PartnerRegistrationEventListener implements MessageGenerator {
 
-    private final TelegramBot telegramBot;
-
-    private final UserRepository userRepository;
-
     private static final String PARTNER_INFO_TEMPLATE = """
         Новая заявка на регистрацию партнёра:
         ID партнера: %s
@@ -32,6 +28,8 @@ public class PartnerRegistrationEventListener implements MessageGenerator {
         Дата окончания скидки: %s
         Информация о партнере: %s
         """;
+    private final TelegramBot telegramBot;
+    private final UserRepository userRepository;
 
     @EventListener
     public void handlePartnerRegistrationEvent(PartnerRegisteredEvent event) {

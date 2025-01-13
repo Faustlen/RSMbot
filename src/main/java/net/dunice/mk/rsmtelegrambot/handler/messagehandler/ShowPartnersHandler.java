@@ -51,12 +51,6 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class ShowPartnersHandler implements MessageHandler {
 
-    private final PartnerRepository partnerRepository;
-    private final MenuGenerator menuGenerator;
-    private final Map<Menu, ReplyKeyboard> menus;
-    private final Map<Long, BasicState> basicStates;
-    private final UserRepository userRepository;
-    private final Map<Long, ShowPartnersState> showPartnersStates;
     private static final String PARTNER_INFO_FOR_USERS = """
         Партнер: %s
         Категория: %s
@@ -77,6 +71,12 @@ public class ShowPartnersHandler implements MessageHandler {
         Процент скидки: %s%%
         Дата окончания скидки: %s
         """;
+    private final PartnerRepository partnerRepository;
+    private final MenuGenerator menuGenerator;
+    private final Map<Menu, ReplyKeyboard> menus;
+    private final Map<Long, BasicState> basicStates;
+    private final UserRepository userRepository;
+    private final Map<Long, ShowPartnersState> showPartnersStates;
 
     @Override
     public BasicState getState() {

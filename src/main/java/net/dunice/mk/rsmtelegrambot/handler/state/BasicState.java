@@ -13,4 +13,5 @@ public enum BasicState {
     SHOW_USERS,
     SHOW_ADMINS,
     CREATE_EVENT,
+    SEND_MESSAGE_TO_EVERYBODY
 }

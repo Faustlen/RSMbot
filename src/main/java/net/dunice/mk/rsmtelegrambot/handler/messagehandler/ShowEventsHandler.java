@@ -52,18 +52,18 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class ShowEventsHandler implements MessageHandler {
 
-    private final EventRepository eventRepository;
-    private final MenuGenerator menuGenerator;
-    private final Map<Long, BasicState> basicStates;
-    private final UserRepository userRepository;
-    private final Map<Long, ShowEventsState> showEventStates;
-    private final Map<Menu, ReplyKeyboard> menus;
     private static final String EVENT_INFO_TEMPLATE = """
         Мероприятие: %s
         Описание: %s
         Ссылка: %s
         Дата: %s  |  Время: %s
         """;
+    private final EventRepository eventRepository;
+    private final MenuGenerator menuGenerator;
+    private final Map<Long, BasicState> basicStates;
+    private final UserRepository userRepository;
+    private final Map<Long, ShowEventsState> showEventStates;
+    private final Map<Menu, ReplyKeyboard> menus;
 
     @Override
     public BasicState getState() {
@@ -186,8 +186,7 @@ public class ShowEventsHandler implements MessageHandler {
                     state.setStep(SHOW_EVENT_DETAILS);
                     messageDto.setText(" " + state.getTargetEvent().getEventId());
                     yield handle(messageDto, telegramId);
-                }
-                else {
+                } else {
                     yield generateSendMessage(telegramId, "Неверная команда.", menus.get(SELECTION_MENU));
                 }
             }

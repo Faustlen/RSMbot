@@ -32,19 +32,18 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 public class CreateEventHandler implements MessageHandler {
-    private final Map<Long, EventCreationState> eventCreationStates;
-    private final Map<Long, BasicState> basicStates;
-    private final EventRepository eventRepository;
-    private final EnumMap<Menu, ReplyKeyboard> menus;
-    private final MenuGenerator menuGenerator;
-    private final UserRepository userRepository;
-
     private static final String EVENT_INFO_TEMPLATE = """
         Название: %s
         Описание: %s
         Дата и время: %s
         Ссылка: %s
         """;
+    private final Map<Long, EventCreationState> eventCreationStates;
+    private final Map<Long, BasicState> basicStates;
+    private final EventRepository eventRepository;
+    private final EnumMap<Menu, ReplyKeyboard> menus;
+    private final MenuGenerator menuGenerator;
+    private final UserRepository userRepository;
 
     @Override
     public SendMessage handle(MessageDto messageDto, Long telegramId) {
@@ -110,7 +109,8 @@ public class CreateEventHandler implements MessageHandler {
                                                           state.getEventName(),
                                                           state.getEventDescription(),
                                                           state.getEventDateTime()
-                                                              .format(DateTimeFormatter.ofPattern("dd.MM.yyyy | HH:mm")),
+                                                              .format(
+                                                                  DateTimeFormatter.ofPattern("dd.MM.yyyy | HH:mm")),
                                                           state.getEventLink()), menus.get(Menu.SELECTION_MENU));
             }
             case CONFIRM_EVENT -> {
