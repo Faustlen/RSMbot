@@ -27,11 +27,19 @@ public class GoogleSheetDownloader {
             connection.setRequestMethod("GET");
             connection.setDoOutput(true);
             InputStream inputStream = connection.getInputStream();
+
             if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
                 throw new IOException("Failed to download file: " + connection.getResponseMessage());
             }
+
             CSVReader reader = new CSVReader(new InputStreamReader(inputStream));
-            return reader.readAll();
+            List<String[]> allRows = reader.readAll();
+
+            // Пропускаем первые три лишние строки
+            return allRows.stream()
+                .skip(2)
+                .toList();
+
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage(), e);
         }
