@@ -99,9 +99,10 @@ public class StatesConfig {
                                               Map<Long, ShowAdminsState> showAdminsStates,
                                               Map<Long, ShowUsersState> showUsersStates,
                                               Map<Long, SelectRegistrationState> selectRegistrationStates,
-                                              Map<Long, MessageBroadcastState> messageBroadcastStates) {
+                                              Map<Long, MessageBroadcastState> messageBroadcastStates,
+                                              Map<Long, ShowAnalyticsState> showAnalyticsStates) {
         return List.of(grantAdminStates, registrationStates, updateProfileStates, showEventStates, showPartnersStates,
-            eventCreationStates, partnerRegistrationStates, showAdminsStates, showUsersStates, selectRegistrationStates,
-            messageBroadcastStates, showAnalyticsStates);
+                eventCreationStates, partnerRegistrationStates, showAdminsStates, showUsersStates, selectRegistrationStates,
+                messageBroadcastStates, showAnalyticsStates);
     }
 }

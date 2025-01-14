@@ -237,7 +237,7 @@ public class ShowPartnersHandler implements MessageHandler {
         showPartnersStates.remove(telegramId);
         if (isTgUserPartner(telegramId)) {
             basicStates.get(telegramId).setStep(IN_PARTNER_MENU);
-            return generateSendMessage(telegramId, "Партнеры РСМ:", menus.get(Menu.PARTNER_MAIN_MENU));
+            return generateSendMessage(telegramId, "Выберите раздел:", menus.get(Menu.PARTNER_MAIN_MENU));
         } else {
             basicStates.get(telegramId).setStep(IN_MAIN_MENU);
             return menuGenerator.generateRoleSpecificMainMenu(telegramId,

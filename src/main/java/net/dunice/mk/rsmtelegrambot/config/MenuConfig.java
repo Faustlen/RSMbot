@@ -27,7 +27,6 @@ import static net.dunice.mk.rsmtelegrambot.constant.Menu.SELECTION_USER_TYPE_MEN
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.SUPERUSER_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.TRY_AGAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.TRY_AGAIN_OR_GO_TO_MAIN_MENU;
-import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.SHOW_ANALYTICS;
 
 import net.dunice.mk.rsmtelegrambot.constant.Menu;
 import org.springframework.context.annotation.Bean;
