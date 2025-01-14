@@ -1,7 +1,9 @@
 package net.dunice.mk.rsmtelegrambot.handler.messagehandler;
 
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.PARTNERS_LIST;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.PERIOD_ANALYTICS;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.IN_PARTNER_MENU;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.SHOW_ANALYTICS;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.SHOW_PARTNERS;
 
 import lombok.RequiredArgsConstructor;
@@ -20,6 +22,7 @@ public class PartnerMenuHandler implements MessageHandler {
 
     private final Map<Long, BasicState> basicStates;
     private final ShowPartnersHandler showPartnersHandler;
+    private final ShowAnalyticsHandler showAnalyticsHandler;
 
     @Override
     public BasicState getState() {
@@ -34,6 +37,10 @@ public class PartnerMenuHandler implements MessageHandler {
                 case PARTNERS_LIST -> {
                     basicStates.put(telegramId, SHOW_PARTNERS);
                     yield showPartnersHandler.handle(messageDto, telegramId);
+                }
+                case PERIOD_ANALYTICS -> {
+                    basicStates.put(telegramId, SHOW_ANALYTICS);
+                    yield showAnalyticsHandler.handle(messageDto, telegramId);
                 }
                 default -> null;
             }

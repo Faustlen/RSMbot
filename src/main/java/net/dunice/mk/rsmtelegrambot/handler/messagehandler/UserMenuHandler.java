@@ -5,6 +5,7 @@ import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.ADD_PARTNER;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.ADMINS_LIST;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.EVENTS_LIST;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.PARTNERS_LIST;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.PERIOD_ANALYTICS;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.SET_ADMIN;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.UPDATE_PROFILE;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.USERS_LIST;
@@ -15,6 +16,7 @@ import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.CREATE_EVENT
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.GRANT_ADMIN;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.IN_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.SHOW_ADMINS;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.SHOW_ANALYTICS;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.SHOW_EVENTS;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.SHOW_PARTNERS;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.SHOW_USERS;
@@ -41,6 +43,7 @@ public class UserMenuHandler implements MessageHandler {
     private final ShowEventsHandler showEventsHandler;
     private final ShowPartnersHandler showPartnersHandler;
     private final ShowAdminsHandler showAdminsHandler;
+    private final ShowAnalyticsHandler showAnalyticsHandler;
     private final CreateEventHandler createEventHandler;
     private final ShowUsersHandler showUsersHandler;
     private final Map<Long, BasicState> basicStates;
@@ -89,6 +92,10 @@ public class UserMenuHandler implements MessageHandler {
                         case ADMINS_LIST -> {
                             basicStates.put(telegramId, SHOW_ADMINS);
                             yield showAdminsHandler.handle(messageDto, telegramId);
+                        }
+                        case PERIOD_ANALYTICS -> {
+                            basicStates.put(telegramId, SHOW_ANALYTICS);
+                            yield showAnalyticsHandler.handle(messageDto, telegramId);
                         }
                         default -> null;
                     });

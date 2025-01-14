@@ -5,6 +5,7 @@ import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.EventCreationState
 import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.GrantAdminState;
 import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.PartnerRegistrationState;
 import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.ShowAdminsState;
+import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.ShowAnalyticsState;
 import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.ShowEventsState;
 import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.ShowPartnersState;
 import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.ShowUsersState;
@@ -54,6 +55,11 @@ public class StatesConfig {
     @Bean("showAdminsStates")
     public Map<Long, ShowAdminsState> getShowAdminsStatesMap() {return new ConcurrentHashMap<>();}
 
+    @Bean("showAnalyticsStates")
+    public Map<Long, ShowAnalyticsState> getShowAnalyticsStatesMap() {
+        return new ConcurrentHashMap<>();
+    }
+
     @Bean("showUsersStates")
     public Map<Long, ShowUsersState> getShowUsersStatesMap() {return new ConcurrentHashMap<>();}
 
@@ -81,9 +87,11 @@ public class StatesConfig {
                                               Map<Long, EventCreationState> eventCreationStates,
                                               Map<Long, PartnerRegistrationState> partnerRegistrationStates,
                                               Map<Long, ShowAdminsState> showAdminsStates,
+                                              Map<Long, ShowAnalyticsState> showAnalyticsStates,
                                               Map<Long, ShowUsersState> showUsersStates,
                                               Map<Long, SelectRegistrationStep> selectRegistrationSteps) {
         return List.of(grantAdminStates, registrationStates, updateProfileStates, showEventStates, showPartnersStates,
-            eventCreationStates, partnerRegistrationStates, showAdminsStates, showUsersStates, selectRegistrationSteps);
+            eventCreationStates, partnerRegistrationStates, showAdminsStates, showAnalyticsStates, showUsersStates,
+                selectRegistrationSteps);
     }
 }

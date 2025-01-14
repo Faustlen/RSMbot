@@ -7,6 +7,7 @@ import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CANCEL;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.EVENTS_LIST;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.NO;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.PARTNERS_LIST;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.PERIOD_ANALYTICS;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.RSM_MEMBER;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.RSM_PARTNER;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.SET_ADMIN;
@@ -27,6 +28,7 @@ import static net.dunice.mk.rsmtelegrambot.constant.Menu.SELECTION_USER_TYPE_MEN
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.SUPERUSER_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.TRY_AGAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.TRY_AGAIN_OR_GO_TO_MAIN_MENU;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.SHOW_ANALYTICS;
 
 import net.dunice.mk.rsmtelegrambot.constant.Menu;
 import org.springframework.context.annotation.Bean;
@@ -96,6 +98,9 @@ public class MenuConfig {
         row = new KeyboardRow();
         row.add(SET_ADMIN);
         row.add(ADMINS_LIST);
+        keyboard.add(row);
+        row = new KeyboardRow();
+        row.add(PERIOD_ANALYTICS);
         keyboard.add(row);
         return replyMarkup;
     }
@@ -213,6 +218,9 @@ public class MenuConfig {
         List<KeyboardRow> keyboard = new ArrayList<>();
         KeyboardRow row = new KeyboardRow();
         row.add(PARTNERS_LIST);
+        keyboard.add(row);
+        row = new KeyboardRow();
+        row.add(PERIOD_ANALYTICS);
         keyboard.add(row);
         replyMarkup.setKeyboard(keyboard);
         replyMarkup.setResizeKeyboard(true);

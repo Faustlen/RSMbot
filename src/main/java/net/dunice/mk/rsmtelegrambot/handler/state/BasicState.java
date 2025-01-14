@@ -12,5 +12,6 @@ public enum BasicState {
     SHOW_PARTNERS,
     SHOW_USERS,
     SHOW_ADMINS,
+    SHOW_ANALYTICS,
     CREATE_EVENT,
 }
