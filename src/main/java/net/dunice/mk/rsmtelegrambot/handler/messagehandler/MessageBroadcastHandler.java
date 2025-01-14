@@ -3,10 +3,11 @@ package net.dunice.mk.rsmtelegrambot.handler.messagehandler;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.GO_TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.SELECTION_MENU;
-import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.IN_MAIN_MENU;
-import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.MessageBroadcastState.MessageBroadcastStep.CONFIRM_MESSAGE_TEXT;
-import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.MessageBroadcastState.MessageBroadcastStep.REQUEST_MESSAGE_TEXT;
-import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.MessageBroadcastState.MessageBroadcastStep.VERIFY_MESSAGE_TEXT;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_MAIN_MENU;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.SEND_MESSAGE_TO_EVERYBODY;
+import static net.dunice.mk.rsmtelegrambot.handler.state.MessageBroadcastState.MessageBroadcastStep.CONFIRM_MESSAGE_TEXT;
+import static net.dunice.mk.rsmtelegrambot.handler.state.MessageBroadcastState.MessageBroadcastStep.REQUEST_MESSAGE_TEXT;
+import static net.dunice.mk.rsmtelegrambot.handler.state.MessageBroadcastState.MessageBroadcastStep.VERIFY_MESSAGE_TEXT;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,7 +17,8 @@ import net.dunice.mk.rsmtelegrambot.entity.User;
 import net.dunice.mk.rsmtelegrambot.event.BroadcastEvent;
 import net.dunice.mk.rsmtelegrambot.handler.MenuGenerator;
 import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
-import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.MessageBroadcastState;
+import net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep;
+import net.dunice.mk.rsmtelegrambot.handler.state.MessageBroadcastState;
 import net.dunice.mk.rsmtelegrambot.repository.UserRepository;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -88,15 +90,16 @@ public class MessageBroadcastHandler implements MessageHandler {
     }
 
     @Override
-    public BasicState getState() {
-        return BasicState.SEND_MESSAGE_TO_EVERYBODY;
+    public BasicStep getStep() {
+        return SEND_MESSAGE_TO_EVERYBODY;
     }
 
     private SendMessage switchToMainMenu(Long telegramId) {
+        BasicState state = basicStates.get(telegramId);
         states.remove(telegramId);
-        basicStates.put(telegramId, IN_MAIN_MENU);
+        state.setStep(IN_MAIN_MENU);
         return menuGenerator.generateRoleSpecificMainMenu(telegramId,
-            userRepository.findByTelegramId(telegramId).get().getUserRole());
+            state.getUser().getUserRole());
     }
 
     public void broadcastMessage(String text) {

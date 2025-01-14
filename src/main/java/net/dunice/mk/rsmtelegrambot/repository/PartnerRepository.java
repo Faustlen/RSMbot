@@ -10,6 +10,6 @@ import java.util.Optional;
 public interface PartnerRepository extends JpaRepository<Partner, Long> {
     Optional<Partner> findByName(String name);
 
-    @Query("SELECT p FROM Partner p WHERE p.isValid = true AND p.discountDate > CURRENT_TIMESTAMP")
+    @Query("SELECT p FROM Partner p WHERE p.isValid = true AND p.discountDate > CURRENT_TIMESTAMP ORDER BY p.name")
     List<Partner> findValidPartnersWithPresentDiscount();
 }

@@ -13,12 +13,12 @@ public enum Command {
 
     private final String stringValue;
 
-    public static boolean isValidCommand(String command) {
-        return Arrays.stream(values()).anyMatch(c -> c.getStringValue().equals(command));
+    public static boolean isValidCommand(String stringValue) {
+        return Arrays.stream(values()).anyMatch(c -> c.getStringValue().equals(stringValue));
     }
 
     public static Command getCommandByString(String stringValue) {
-        return Arrays.stream(values()).filter(c -> c.getStringValue().equalsIgnoreCase(stringValue)).findFirst()
+        return Arrays.stream(values()).dropWhile(c -> !c.getStringValue().equals(stringValue)).findFirst()
             .orElse(null);
     }
 }

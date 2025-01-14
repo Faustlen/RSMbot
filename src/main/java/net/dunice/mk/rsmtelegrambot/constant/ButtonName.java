@@ -2,14 +2,15 @@ package net.dunice.mk.rsmtelegrambot.constant;
 
 public class ButtonName {
     public static final String
-        UPDATE_PROFILE = "Изменить профиль",
+        UPDATE_PROFILE = "⚙ Изменить профиль",
         YES = "Да",
         NO = "Нет",
-        SET_ADMIN = "Назначить админа",
+        GRANT_ADMIN = "Назначить админом",
+        REVOKE_ADMIN = "Отстранить админа",
         ADMINS_LIST = "☰ Список админов",
-        BAN = "Забанить пользователя",
-        UNBAN = "Разбанить пользователя",
-        ADD_PARTNER = "Добавить партнера",
+        BAN = "Забанить",
+        UNBAN = "Разбанить",
+        DELETE_USER = "Удалить пользователя",
         ADD_EVENT = "Добавить мероприятие",
         TO_MAIN_MENU = "⌂ В главное меню",
         EVENTS_LIST = "☰ Мероприятия",
@@ -19,8 +20,10 @@ public class ButtonName {
         RSM_MEMBER = "Член РСМ",
         RSM_PARTNER = "Партнер РСМ",
         CANCEL = "❌ Отмена",
-        DELETE = "Удалить мероприятие",
+        DELETE_EVENT = "Удалить мероприятие",
         CHANGE_DISCOUNT = "Изменить скидку",
         EDIT_EVENT = "Редактировать мероприятие",
+        PREVIOUS_PAGE = "⬅ Предыдущая страница",
+        NEXT_PAGE = "Следующая страница ➡",
         SEND_MESSAGE_TO_EVERYONE = "✉ Сообщение всем";
 }

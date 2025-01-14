@@ -8,15 +8,16 @@ import static net.dunice.mk.rsmtelegrambot.constant.Menu.CANCEL_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.GO_TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.SELECTION_MENU;
 import static net.dunice.mk.rsmtelegrambot.entity.Role.USER;
-import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.IN_MAIN_MENU;
-import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.IN_PARTNER_MENU;
-import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.SHOW_PARTNERS;
-import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.ShowPartnersState.ShowPartnersStep.CONFIRM_CHANGE;
-import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.ShowPartnersState.ShowPartnersStep.HANDLE_USER_ACTION;
-import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.ShowPartnersState.ShowPartnersStep.SHOW_PARTNERS_LIST;
-import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.ShowPartnersState.ShowPartnersStep.SHOW_PARTNER_DETAILS;
-import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.ShowPartnersState.ShowPartnersStep.VERIFY_NEW_DISCOUNT_DATE;
-import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.ShowPartnersState.ShowPartnersStep.VERIFY_NEW_DISCOUNT_PERCENT;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_MAIN_MENU;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_PARTNER_MENU;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.SHOW_PARTNERS;
+import static net.dunice.mk.rsmtelegrambot.handler.state.ShowPartnersState.ShowPartnersStep.CONFIRM_CHANGE;
+import static net.dunice.mk.rsmtelegrambot.handler.state.ShowPartnersState.ShowPartnersStep.HANDLE_USER_ACTION;
+import static net.dunice.mk.rsmtelegrambot.handler.state.ShowPartnersState.ShowPartnersStep.SHOW_PARTNERS_LIST;
+import static net.dunice.mk.rsmtelegrambot.handler.state.ShowPartnersState.ShowPartnersStep.SHOW_PARTNER_DETAILS;
+import static net.dunice.mk.rsmtelegrambot.handler.state.ShowPartnersState.ShowPartnersStep.VERIFY_NEW_DISCOUNT_DATE;
+import static net.dunice.mk.rsmtelegrambot.handler.state.ShowPartnersState.ShowPartnersStep.VERIFY_NEW_DISCOUNT_PERCENT;
 
 import lombok.RequiredArgsConstructor;
 import net.dunice.mk.rsmtelegrambot.constant.Menu;
@@ -25,7 +26,7 @@ import net.dunice.mk.rsmtelegrambot.entity.Partner;
 import net.dunice.mk.rsmtelegrambot.entity.User;
 import net.dunice.mk.rsmtelegrambot.handler.MenuGenerator;
 import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
-import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.ShowPartnersState;
+import net.dunice.mk.rsmtelegrambot.handler.state.ShowPartnersState;
 import net.dunice.mk.rsmtelegrambot.repository.PartnerRepository;
 import net.dunice.mk.rsmtelegrambot.repository.UserRepository;
 import org.apache.commons.lang3.StringUtils;
@@ -79,7 +80,7 @@ public class ShowPartnersHandler implements MessageHandler {
     private final Map<Long, ShowPartnersState> showPartnersStates;
 
     @Override
-    public BasicState getState() {
+    public BasicStep getStep() {
         return SHOW_PARTNERS;
     }
 
@@ -130,7 +131,7 @@ public class ShowPartnersHandler implements MessageHandler {
                         generateImageMessage(telegramId, partnerDescription, getUserActionKeyboard(userOptional), logo)
                         : generateSendMessage(telegramId, partnerDescription, getUserActionKeyboard(userOptional));
                 } else {
-                    yield generateSendMessage(telegramId, "Нет мероприятия с таким названием");
+                    yield generateSendMessage(telegramId, "Нет партнера с таким названием.");
                 }
             }
             case HANDLE_USER_ACTION -> {
@@ -203,9 +204,9 @@ public class ShowPartnersHandler implements MessageHandler {
         KeyboardRow firstRow = new KeyboardRow();
         firstRow.add(TO_MAIN_MENU);
         keyboard.add(firstRow);
-        for (int i = 0; i < partners.size(); i++) {
+        for (Partner partner : partners) {
             KeyboardRow row = new KeyboardRow();
-            row.add(partners.get(i).getName());
+            row.add(partner.getName());
             keyboard.add(row);
         }
         replyMarkup.setKeyboard(keyboard);
@@ -235,10 +236,10 @@ public class ShowPartnersHandler implements MessageHandler {
     private SendMessage goToMainMenu(Long telegramId) {
         showPartnersStates.remove(telegramId);
         if (isTgUserPartner(telegramId)) {
-            basicStates.put(telegramId, IN_PARTNER_MENU);
+            basicStates.get(telegramId).setStep(IN_PARTNER_MENU);
             return generateSendMessage(telegramId, "Партнеры РСМ:", menus.get(Menu.PARTNER_MAIN_MENU));
         } else {
-            basicStates.put(telegramId, IN_MAIN_MENU);
+            basicStates.get(telegramId).setStep(IN_MAIN_MENU);
             return menuGenerator.generateRoleSpecificMainMenu(telegramId,
                 userRepository.findByTelegramId(telegramId).get().getUserRole());
         }

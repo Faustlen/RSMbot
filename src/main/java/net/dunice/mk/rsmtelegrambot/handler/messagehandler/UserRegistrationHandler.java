@@ -5,12 +5,13 @@ import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.CANCEL_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.GO_TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.SELECTION_MENU;
-import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.IN_MAIN_MENU;
-import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.USER_REGISTRATION;
-import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.UserRegistrationState.UserRegistrationStep.CHECK_CONFIRMATION;
-import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.UserRegistrationState.UserRegistrationStep.FINISH;
-import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.UserRegistrationState.UserRegistrationStep.VALIDATE_INFO;
-import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.UserRegistrationState.UserRegistrationStep.VALIDATE_MEMBERSHIP_NUMBER;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_MAIN_MENU;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.USER_REGISTRATION;
+import static net.dunice.mk.rsmtelegrambot.handler.state.UserRegistrationState.UserRegistrationStep.CHECK_CONFIRMATION;
+import static net.dunice.mk.rsmtelegrambot.handler.state.UserRegistrationState.UserRegistrationStep.FINISH;
+import static net.dunice.mk.rsmtelegrambot.handler.state.UserRegistrationState.UserRegistrationStep.VALIDATE_INFO;
+import static net.dunice.mk.rsmtelegrambot.handler.state.UserRegistrationState.UserRegistrationStep.VALIDATE_MEMBERSHIP_NUMBER;
 
 import lombok.RequiredArgsConstructor;
 import net.dunice.mk.rsmtelegrambot.constant.Menu;
@@ -19,7 +20,7 @@ import net.dunice.mk.rsmtelegrambot.entity.Role;
 import net.dunice.mk.rsmtelegrambot.entity.User;
 import net.dunice.mk.rsmtelegrambot.handler.MenuGenerator;
 import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
-import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.UserRegistrationState;
+import net.dunice.mk.rsmtelegrambot.handler.state.UserRegistrationState;
 import net.dunice.mk.rsmtelegrambot.repository.UserRepository;
 import net.dunice.mk.rsmtelegrambot.service.GoogleSheetDownloader;
 import org.springframework.stereotype.Service;
@@ -177,7 +178,7 @@ public class UserRegistrationHandler implements MessageHandler {
     }
 
     @Override
-    public BasicState getState() {
+    public BasicStep getStep() {
         return USER_REGISTRATION;
     }
 
@@ -213,7 +214,7 @@ public class UserRegistrationHandler implements MessageHandler {
 
     private SendMessage goToMainMenu(Long telegramId) {
         userRegistrationStates.remove(telegramId);
-        basicStates.put(telegramId, IN_MAIN_MENU);
+        basicStates.get(telegramId).setStep(IN_MAIN_MENU);
         return menuGenerator.generateRoleSpecificMainMenu(telegramId,
             userRepository.findByTelegramId(telegramId).get().getUserRole());
     }
