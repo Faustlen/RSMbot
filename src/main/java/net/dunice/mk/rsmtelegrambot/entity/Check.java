@@ -35,10 +35,6 @@ public class Check {
     @Column(name = "discount_percent")
     private Short discountPercent;
 
-    @ManyToOne
-    @JoinColumn(name = "tg_id", referencedColumnName = "tg_id", nullable = false)
-    private User userTelegramId;
-
     @Column(nullable = false)
     private LocalDateTime date;
 }

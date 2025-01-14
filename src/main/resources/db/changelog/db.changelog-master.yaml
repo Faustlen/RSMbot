@@ -12,4 +12,6 @@ databaseChangeLog:
   - include:
       file: classpath:/db/changelog/changes/V006_fill_table_category_with_values.sql
   - include:
-      file: classpath:/db/changelog/changes/V007_alter_table_partners_partners_info_600_chars.sql
+      file: classpath:/db/changelog/changes/V007_create_users_list_alter_checks.sql
+  - include:
+      file: classpath:/db/changelog/changes/V008_alter_table_partners_partners_info_600_chars.sql
