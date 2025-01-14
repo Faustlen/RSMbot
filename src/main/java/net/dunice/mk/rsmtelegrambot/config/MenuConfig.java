@@ -9,7 +9,6 @@ import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.PARTNERS_LIST;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.RSM_MEMBER;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.RSM_PARTNER;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.SEND_MESSAGE_TO_EVERYONE;
-import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.SET_ADMIN;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TRY_AGAIN;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.UPDATE_PROFILE;
@@ -76,30 +75,12 @@ public class MenuConfig {
 
     @Bean("adminMainMenu")
     public ReplyKeyboard getAdminMainMenu() {
-        ReplyKeyboardMarkup replyMarkup = getBaseUserMenu();
-        List<KeyboardRow> keyboard = replyMarkup.getKeyboard();
-        KeyboardRow row = new KeyboardRow();
-        row.add(ADD_EVENT);
-        row.add(USERS_LIST);
-        row.add(SEND_MESSAGE_TO_EVERYONE);
-        keyboard.add(row);
-        return replyMarkup;
+        return getBaseAdminMenu();
     }
 
     @Bean("superUserMainMenu")
     public ReplyKeyboard getSuperUserMainMenu() {
-        ReplyKeyboardMarkup replyMarkup = getBaseUserMenu();
-        List<KeyboardRow> keyboard = replyMarkup.getKeyboard();
-        KeyboardRow row = new KeyboardRow();
-        row.add(ADD_EVENT);
-        row.add(USERS_LIST);
-        row.add(SEND_MESSAGE_TO_EVERYONE);
-        keyboard.add(row);
-        row = new KeyboardRow();
-        row.add(SET_ADMIN);
-        row.add(ADMINS_LIST);
-        keyboard.add(row);
-        return replyMarkup;
+        return getBaseSuperUserMenu();
     }
 
     @Bean("selectionMenu")
@@ -249,14 +230,33 @@ public class MenuConfig {
     private ReplyKeyboardMarkup getBaseUserMenu() {
         ReplyKeyboardMarkup replyMarkup = new ReplyKeyboardMarkup();
         List<KeyboardRow> keyboard = new ArrayList<>();
-        KeyboardRow row = new KeyboardRow();
-        row.add(PARTNERS_LIST);
-        row.add(EVENTS_LIST);
-        row.add(UPDATE_PROFILE);
-        keyboard.add(row);
+        keyboard.add(new KeyboardRow());
+        keyboard.get(0).addAll(List.of(
+            PARTNERS_LIST,
+            EVENTS_LIST,
+            UPDATE_PROFILE));
         replyMarkup.setKeyboard(keyboard);
         replyMarkup.setResizeKeyboard(true);
         replyMarkup.setOneTimeKeyboard(false);
+        return replyMarkup;
+    }
+
+    private ReplyKeyboardMarkup getBaseAdminMenu() {
+        ReplyKeyboardMarkup replyMarkup = getBaseUserMenu();
+        List<KeyboardRow> keyboard = replyMarkup.getKeyboard();
+        keyboard.add(new KeyboardRow());
+        keyboard.get(1).addAll(List.of(
+            ADD_EVENT,
+            USERS_LIST,
+            SEND_MESSAGE_TO_EVERYONE));
+        return replyMarkup;
+    }
+
+    private ReplyKeyboardMarkup getBaseSuperUserMenu() {
+        ReplyKeyboardMarkup replyMarkup = getBaseAdminMenu();
+        List<KeyboardRow> keyboard = replyMarkup.getKeyboard();
+        keyboard.add(new KeyboardRow());
+        keyboard.get(2).add(ADMINS_LIST);
         return replyMarkup;
     }
 }

@@ -109,22 +109,11 @@ public class TelegramBot extends TelegramLongPollingBot implements MessageGenera
         } catch (TelegramApiException e) {
             log.error("Не удалось отправить сообщение", e);
         }
-        /*try {
-            Message sentMessage = switch (message) {
-                case SendMessage sendMessage -> execute(sendMessage);
-                EditMessageMedia.builder().media(InputMedia)
-                case SendPhoto sendPhoto -> execute(sendPhoto);
-                default -> throw new IllegalStateException("Unexpected value: " + message);
-            };
-            lastBotMessageIdMap.put(sentMessage.getChatId(), sentMessage.getMessageId());
-        } catch (TelegramApiException e) {
-            log.error("Не удалось отправить сообщение", e);
-        }*/
     }
 
     private Optional<MessageHandler> getMessageHandlerForState(BasicState state) {
         return messageHandlers.stream()
-            .filter(handler -> handler.getState() == state)
+            .filter(handler -> handler.getStep() == state.getStep())
             .findFirst();
     }
 

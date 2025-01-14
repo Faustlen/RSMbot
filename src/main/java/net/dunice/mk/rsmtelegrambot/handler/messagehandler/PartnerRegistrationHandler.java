@@ -5,16 +5,16 @@ import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.CANCEL_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.CATEGORY_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.GO_TO_MAIN_MENU;
-import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.IN_MAIN_MENU;
-import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.PARTNER_REGISTRATION;
-import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.PartnerRegistrationState.PartnerRegistrationStep.CATEGORY;
-import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.PartnerRegistrationState.PartnerRegistrationStep.DISCOUNT_DATE;
-import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.PartnerRegistrationState.PartnerRegistrationStep.DISCOUNT_PERCENT;
-import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.PartnerRegistrationState.PartnerRegistrationStep.FINISH;
-import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.PartnerRegistrationState.PartnerRegistrationStep.LOGO;
-import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.PartnerRegistrationState.PartnerRegistrationStep.PARTNER_INFO;
-import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.PartnerRegistrationState.PartnerRegistrationStep.PHONE_NUMBER;
-import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.PartnerRegistrationState.PartnerRegistrationStep.VALIDATE_PARTNER_NAME;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.PARTNER_REGISTRATION;
+import static net.dunice.mk.rsmtelegrambot.handler.state.PartnerRegistrationState.PartnerRegistrationStep.CATEGORY;
+import static net.dunice.mk.rsmtelegrambot.handler.state.PartnerRegistrationState.PartnerRegistrationStep.DISCOUNT_DATE;
+import static net.dunice.mk.rsmtelegrambot.handler.state.PartnerRegistrationState.PartnerRegistrationStep.DISCOUNT_PERCENT;
+import static net.dunice.mk.rsmtelegrambot.handler.state.PartnerRegistrationState.PartnerRegistrationStep.FINISH;
+import static net.dunice.mk.rsmtelegrambot.handler.state.PartnerRegistrationState.PartnerRegistrationStep.LOGO;
+import static net.dunice.mk.rsmtelegrambot.handler.state.PartnerRegistrationState.PartnerRegistrationStep.PARTNER_INFO;
+import static net.dunice.mk.rsmtelegrambot.handler.state.PartnerRegistrationState.PartnerRegistrationStep.PHONE_NUMBER;
+import static net.dunice.mk.rsmtelegrambot.handler.state.PartnerRegistrationState.PartnerRegistrationStep.VALIDATE_PARTNER_NAME;
 
 import lombok.RequiredArgsConstructor;
 import net.dunice.mk.rsmtelegrambot.constant.Menu;
@@ -23,7 +23,7 @@ import net.dunice.mk.rsmtelegrambot.entity.Category;
 import net.dunice.mk.rsmtelegrambot.entity.Partner;
 import net.dunice.mk.rsmtelegrambot.event.PartnerRegisteredEvent;
 import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
-import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.PartnerRegistrationState;
+import net.dunice.mk.rsmtelegrambot.handler.state.PartnerRegistrationState;
 import net.dunice.mk.rsmtelegrambot.repository.CategoryRepository;
 import net.dunice.mk.rsmtelegrambot.repository.PartnerRepository;
 import org.springframework.context.ApplicationEventPublisher;
@@ -170,13 +170,13 @@ public class PartnerRegistrationHandler implements MessageHandler {
     }
 
     @Override
-    public BasicState getState() {
+    public BasicStep getStep() {
         return PARTNER_REGISTRATION;
     }
 
     private SendMessage goToMainMenu(Long telegramId) {
         partnerRegistrationStates.remove(telegramId);
-        basicStates.put(telegramId, IN_MAIN_MENU);
+        //basicStates.get(telegramId).setStep(IN_PARTNER_MENU);
         return generateSendMessage(telegramId,
             "Регистрация завершена, профиль партнера станет доступен после проверки администратором");
     }

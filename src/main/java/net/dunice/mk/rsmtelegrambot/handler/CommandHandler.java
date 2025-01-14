@@ -2,9 +2,9 @@ package net.dunice.mk.rsmtelegrambot.handler;
 
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.PARTNER_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.entity.Role.SUPER_USER;
-import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.IN_MAIN_MENU;
-import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.IN_PARTNER_MENU;
-import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.SELECT_REGISTRATION_TYPE;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_MAIN_MENU;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_PARTNER_MENU;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.SELECT_REGISTRATION_TYPE;
 
 import lombok.RequiredArgsConstructor;
 import net.dunice.mk.rsmtelegrambot.constant.Command;
@@ -44,10 +44,11 @@ public class CommandHandler implements BaseHandler {
                     К сожалению, вы находитесь в списке пользователей, которым ограничен доступ к этому боту.
                     Если вы считаете, что это ошибка, обратитесь к своему руководителю РСМ.
                     """);
-            } else {
+            }
+            else {
                 return switch (Command.getCommandByString(messageDto.getText())) {
                     case START -> {
-                        basicStates.put(telegramId, IN_MAIN_MENU);
+                        basicStates.put(telegramId, new BasicState(user, IN_MAIN_MENU));
                         yield menuGenerator.generateRoleSpecificMainMenu(telegramId, user.getUserRole());
                     }
                     case SUSTART -> {
@@ -66,11 +67,14 @@ public class CommandHandler implements BaseHandler {
             }
         } else {
             Optional<Partner> partner = partnerRepository.findById(telegramId);
+            BasicState basicState = new BasicState();
             if (partner.isPresent()) {
-                basicStates.put(telegramId, IN_PARTNER_MENU);
+                basicState.setStep(IN_PARTNER_MENU);
+                basicStates.put(telegramId, basicState);
                 return generateSendMessage(telegramId, "Выберите раздел:", menus.get(PARTNER_MAIN_MENU));
             } else {
-                basicStates.put(telegramId, SELECT_REGISTRATION_TYPE);
+                basicState.setStep(SELECT_REGISTRATION_TYPE);
+                basicStates.put(telegramId, basicState);
                 return selectRegistrationHandler.handle(messageDto, telegramId);
             }
         }
