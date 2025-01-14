@@ -1,7 +1,7 @@
 package net.dunice.mk.rsmtelegrambot.handler.messagehandler;
 
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CANCEL;
-import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.DELETE;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.DELETE_EVENT;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.EDIT_EVENT;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.EVENTS_LIST;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.NO;
@@ -12,14 +12,15 @@ import static net.dunice.mk.rsmtelegrambot.constant.Menu.EVENT_FIELDS_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.GO_TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.SELECTION_MENU;
 import static net.dunice.mk.rsmtelegrambot.entity.Role.USER;
-import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.IN_MAIN_MENU;
-import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.SHOW_EVENTS;
-import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.ShowEventsState.ShowEventsStep.CONFIRM_EVENT_EDIT;
-import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.ShowEventsState.ShowEventsStep.EDIT_EVENT_FIELD;
-import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.ShowEventsState.ShowEventsStep.HANDLE_USER_ACTION;
-import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.ShowEventsState.ShowEventsStep.SELECT_EVENT_FIELD;
-import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.ShowEventsState.ShowEventsStep.SHOW_EVENTS_LIST;
-import static net.dunice.mk.rsmtelegrambot.handler.state.stateobject.ShowEventsState.ShowEventsStep.SHOW_EVENT_DETAILS;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_MAIN_MENU;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.SHOW_EVENTS;
+import static net.dunice.mk.rsmtelegrambot.handler.state.ShowEventsState.ShowEventsStep.CONFIRM_EVENT_EDIT;
+import static net.dunice.mk.rsmtelegrambot.handler.state.ShowEventsState.ShowEventsStep.EDIT_EVENT_FIELD;
+import static net.dunice.mk.rsmtelegrambot.handler.state.ShowEventsState.ShowEventsStep.HANDLE_USER_ACTION;
+import static net.dunice.mk.rsmtelegrambot.handler.state.ShowEventsState.ShowEventsStep.SELECT_EVENT_FIELD;
+import static net.dunice.mk.rsmtelegrambot.handler.state.ShowEventsState.ShowEventsStep.SHOW_EVENTS_LIST;
+import static net.dunice.mk.rsmtelegrambot.handler.state.ShowEventsState.ShowEventsStep.SHOW_EVENT_DETAILS;
 
 import lombok.RequiredArgsConstructor;
 import net.dunice.mk.rsmtelegrambot.constant.Menu;
@@ -28,10 +29,11 @@ import net.dunice.mk.rsmtelegrambot.entity.Event;
 import net.dunice.mk.rsmtelegrambot.entity.User;
 import net.dunice.mk.rsmtelegrambot.handler.MenuGenerator;
 import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
-import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.ShowEventsState;
+import net.dunice.mk.rsmtelegrambot.handler.state.ShowEventsState;
 import net.dunice.mk.rsmtelegrambot.repository.EventRepository;
 import net.dunice.mk.rsmtelegrambot.repository.UserRepository;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
@@ -52,21 +54,21 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class ShowEventsHandler implements MessageHandler {
 
-    private final EventRepository eventRepository;
-    private final MenuGenerator menuGenerator;
-    private final Map<Long, BasicState> basicStates;
-    private final UserRepository userRepository;
-    private final Map<Long, ShowEventsState> showEventStates;
-    private final Map<Menu, ReplyKeyboard> menus;
     private static final String EVENT_INFO_TEMPLATE = """
         Мероприятие: %s
         Описание: %s
         Ссылка: %s
         Дата: %s  |  Время: %s
         """;
+    private final EventRepository eventRepository;
+    private final MenuGenerator menuGenerator;
+    private final Map<Long, BasicState> basicStates;
+    private final UserRepository userRepository;
+    private final Map<Long, ShowEventsState> showEventStates;
+    private final Map<Menu, ReplyKeyboard> menus;
 
     @Override
-    public BasicState getState() {
+    public BasicStep getStep() {
         return SHOW_EVENTS;
     }
 
@@ -80,7 +82,7 @@ public class ShowEventsHandler implements MessageHandler {
 
         return switch (state.getStep()) {
             case SHOW_EVENTS_LIST -> {
-                List<Event> events = eventRepository.findAll();
+                List<Event> events = eventRepository.findAll(Sort.by(Sort.Direction.ASC, "title"));
                 state.setStep(SHOW_EVENT_DETAILS);
                 yield generateSendMessage(telegramId, "Выберите интересующее вас мероприятие: ",
                     generateEventListKeyboard(events));
@@ -112,7 +114,7 @@ public class ShowEventsHandler implements MessageHandler {
                 } else if (EVENTS_LIST.equalsIgnoreCase(text)) {
                     state.setStep(SHOW_EVENTS_LIST);
                     yield handle(messageDto, telegramId);
-                } else if (text.equals(DELETE)) {
+                } else if (text.equals(DELETE_EVENT)) {
                     eventRepository.delete(state.getTargetEvent());
                     state.setStep(SHOW_EVENTS_LIST);
                     yield handle(messageDto, telegramId);
@@ -186,17 +188,8 @@ public class ShowEventsHandler implements MessageHandler {
                     state.setStep(SHOW_EVENT_DETAILS);
                     messageDto.setText(" " + state.getTargetEvent().getEventId());
                     yield handle(messageDto, telegramId);
-                }
-                else {
-                    yield generateSendMessage(telegramId, "Неверная команда.", menus.get(SELECTION_MENU));
-                }
-            }
-
-            case FINISH -> {
-                if (TO_MAIN_MENU.equalsIgnoreCase(text)) {
-                    yield goToMainMenu(telegramId);
                 } else {
-                    yield generateSendMessage(telegramId, "Неверная команда", menus.get(GO_TO_MAIN_MENU));
+                    yield generateSendMessage(telegramId, "Неверная команда.", menus.get(SELECTION_MENU));
                 }
             }
         };
@@ -239,7 +232,7 @@ public class ShowEventsHandler implements MessageHandler {
         keyboard.add(List.of(toMainMenuButton));
         keyboard.add(List.of(toEventsButton));
         if (userOptional.isPresent() && userOptional.get().getUserRole() != USER) {
-            InlineKeyboardButton deleteEventButton = new InlineKeyboardButton(DELETE);
+            InlineKeyboardButton deleteEventButton = new InlineKeyboardButton(DELETE_EVENT);
             deleteEventButton.setCallbackData(deleteEventButton.getText());
             keyboard.add(List.of(deleteEventButton));
             InlineKeyboardButton editEventButton = new InlineKeyboardButton(EDIT_EVENT);
@@ -251,9 +244,10 @@ public class ShowEventsHandler implements MessageHandler {
     }
 
     private SendMessage goToMainMenu(Long telegramId) {
+        BasicState state = basicStates.get(telegramId);
         showEventStates.remove(telegramId);
-        basicStates.put(telegramId, IN_MAIN_MENU);
+        state.setStep(IN_MAIN_MENU);
         return menuGenerator.generateRoleSpecificMainMenu(telegramId,
-            userRepository.findByTelegramId(telegramId).get().getUserRole());
+            state.getUser().getUserRole());
     }
 }

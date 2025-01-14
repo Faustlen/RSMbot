@@ -12,8 +12,8 @@ public class ShowAnalyticsState {
 
     private ShowAnalyticsStep step = ShowAnalyticsStep.SHOW_PARTNERS_LIST;
     private List<Partner> partners;
-    private Long selectedPartnerId; // Идентификатор выбранного партнера
-    private LocalDateTime startDate; // Дата начала расчета
+    private Long selectedPartnerId;
+    private LocalDateTime startDate;
     private LocalDateTime endDate;
 
     public enum ShowAnalyticsStep {

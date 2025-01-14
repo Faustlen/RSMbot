@@ -19,14 +19,9 @@ import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
-import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageMedia;
-import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageReplyMarkup;
-import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
-import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
-import org.telegram.telegrambots.meta.api.objects.media.InputMedia;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.io.InputStream;
@@ -114,22 +109,11 @@ public class TelegramBot extends TelegramLongPollingBot implements MessageGenera
         } catch (TelegramApiException e) {
             log.error("Не удалось отправить сообщение", e);
         }
-        /*try {
-            Message sentMessage = switch (message) {
-                case SendMessage sendMessage -> execute(sendMessage);
-                EditMessageMedia.builder().media(InputMedia)
-                case SendPhoto sendPhoto -> execute(sendPhoto);
-                default -> throw new IllegalStateException("Unexpected value: " + message);
-            };
-            lastBotMessageIdMap.put(sentMessage.getChatId(), sentMessage.getMessageId());
-        } catch (TelegramApiException e) {
-            log.error("Не удалось отправить сообщение", e);
-        }*/
     }
 
     private Optional<MessageHandler> getMessageHandlerForState(BasicState state) {
         return messageHandlers.stream()
-            .filter(handler -> handler.getState() == state)
+            .filter(handler -> handler.getStep() == state.getStep())
             .findFirst();
     }
 

@@ -1,17 +1,18 @@
 package net.dunice.mk.rsmtelegrambot.config;
 
 import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
-import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.EventCreationState;
-import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.GrantAdminState;
-import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.PartnerRegistrationState;
-import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.ShowAdminsState;
-import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.ShowAnalyticsState;
-import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.ShowEventsState;
-import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.ShowPartnersState;
-import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.ShowUsersState;
-import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.UpdateProfileState;
-import net.dunice.mk.rsmtelegrambot.handler.state.stateobject.UserRegistrationState;
-import net.dunice.mk.rsmtelegrambot.handler.state.step.SelectRegistrationStep;
+import net.dunice.mk.rsmtelegrambot.handler.state.EventCreationState;
+import net.dunice.mk.rsmtelegrambot.handler.state.GrantAdminState;
+import net.dunice.mk.rsmtelegrambot.handler.state.MessageBroadcastState;
+import net.dunice.mk.rsmtelegrambot.handler.state.PartnerRegistrationState;
+import net.dunice.mk.rsmtelegrambot.handler.state.SelectRegistrationState;
+import net.dunice.mk.rsmtelegrambot.handler.state.ShowAdminsState;
+import net.dunice.mk.rsmtelegrambot.handler.state.ShowEventsState;
+import net.dunice.mk.rsmtelegrambot.handler.state.ShowPartnersState;
+import net.dunice.mk.rsmtelegrambot.handler.state.ShowUsersState;
+import net.dunice.mk.rsmtelegrambot.handler.state.UpdateProfileState;
+import net.dunice.mk.rsmtelegrambot.handler.state.UserRegistrationState;
+import net.dunice.mk.rsmtelegrambot.handler.state.ShowAnalyticsState;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -53,7 +54,9 @@ public class StatesConfig {
     }
 
     @Bean("showAdminsStates")
-    public Map<Long, ShowAdminsState> getShowAdminsStatesMap() {return new ConcurrentHashMap<>();}
+    public Map<Long, ShowAdminsState> getShowAdminsStatesMap() {
+        return new ConcurrentHashMap<>();
+    }
 
     @Bean("showAnalyticsStates")
     public Map<Long, ShowAnalyticsState> getShowAnalyticsStatesMap() {
@@ -61,7 +64,9 @@ public class StatesConfig {
     }
 
     @Bean("showUsersStates")
-    public Map<Long, ShowUsersState> getShowUsersStatesMap() {return new ConcurrentHashMap<>();}
+    public Map<Long, ShowUsersState> getShowUsersStatesMap() {
+        return new ConcurrentHashMap<>();
+    }
 
     @Bean("showEventStates")
     public Map<Long, ShowEventsState> getShowEventsStatesMap() {
@@ -74,7 +79,12 @@ public class StatesConfig {
     }
 
     @Bean("selectRegistrationSteps")
-    public Map<Long, SelectRegistrationStep> getSelectRegistrationStepsMap() {
+    public Map<Long, SelectRegistrationState> getSelectRegistrationStatesMap() {
+        return new ConcurrentHashMap<>();
+    }
+
+    @Bean("messageBroadcastStates")
+    public Map<Long, MessageBroadcastState> getMessageBroadcastStatesMap() {
         return new ConcurrentHashMap<>();
     }
 
@@ -87,11 +97,11 @@ public class StatesConfig {
                                               Map<Long, EventCreationState> eventCreationStates,
                                               Map<Long, PartnerRegistrationState> partnerRegistrationStates,
                                               Map<Long, ShowAdminsState> showAdminsStates,
-                                              Map<Long, ShowAnalyticsState> showAnalyticsStates,
                                               Map<Long, ShowUsersState> showUsersStates,
-                                              Map<Long, SelectRegistrationStep> selectRegistrationSteps) {
+                                              Map<Long, SelectRegistrationState> selectRegistrationStates,
+                                              Map<Long, MessageBroadcastState> messageBroadcastStates) {
         return List.of(grantAdminStates, registrationStates, updateProfileStates, showEventStates, showPartnersStates,
-            eventCreationStates, partnerRegistrationStates, showAdminsStates, showAnalyticsStates, showUsersStates,
-                selectRegistrationSteps);
+            eventCreationStates, partnerRegistrationStates, showAdminsStates, showUsersStates, selectRegistrationStates,
+            messageBroadcastStates, showAnalyticsStates);
     }
 }

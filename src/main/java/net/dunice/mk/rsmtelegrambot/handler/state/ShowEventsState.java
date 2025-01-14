@@ -1,4 +1,4 @@
-package net.dunice.mk.rsmtelegrambot.handler.state.stateobject;
+package net.dunice.mk.rsmtelegrambot.handler.state;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -19,6 +19,5 @@ public class ShowEventsState {
         SELECT_EVENT_FIELD,
         EDIT_EVENT_FIELD,
         CONFIRM_EVENT_EDIT,
-        FINISH
     }
 }

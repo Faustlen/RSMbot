@@ -1,4 +1,4 @@
-package net.dunice.mk.rsmtelegrambot.handler.state.stateobject;
+package net.dunice.mk.rsmtelegrambot.handler.state;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -16,11 +16,11 @@ public class EventCreationState {
 
     public enum EventCreationStep {
         REQUEST_EVENT_NAME,
-        VERIFY_EVENT_NAME,
-        VERIFY_EVENT_DESCRIPTION,
-        VERIFY_EVENT_DATE_TIME,
-        VERIFY_EVENT_LINK,
+        VALIDATE_EVENT_NAME,
+        VALIDATE_EVENT_DESCRIPTION,
+        VALIDATE_EVENT_DATE_TIME,
+        VALIDATE_EVENT_LINK,
         CONFIRM_EVENT,
-        CHECK_CONFIRMATION,
+        FINISH
     }
 }
