@@ -1,6 +1,7 @@
 package net.dunice.mk.rsmtelegrambot.handler.messagehandler;
 
 import lombok.RequiredArgsConstructor;
+import net.dunice.mk.rsmtelegrambot.config.MenuConfig;
 import net.dunice.mk.rsmtelegrambot.constant.Menu;
 import net.dunice.mk.rsmtelegrambot.dto.MessageDto;
 import net.dunice.mk.rsmtelegrambot.entity.Partner;
@@ -41,6 +42,7 @@ public class ShowAnalyticsHandler implements MessageHandler {
 
     private final PartnerRepository partnerRepository;
     private final MenuGenerator menuGenerator;
+    private final MenuConfig menuConfig;
     private final Map<Menu, ReplyKeyboard> menus;
     private final UserRepository userRepository;
     private final Map<Long, BasicState> basicStates;
@@ -62,7 +64,7 @@ public class ShowAnalyticsHandler implements MessageHandler {
                 state.setStep(REQUEST_START_DATE);
                 state.setSelectedPartnerId(telegramId);
                 return generateSendMessage(telegramId, "Введите дату начала расчета аналитики в формате ДД.ММ.ГГГГ:",
-                        getUserActionKeyboard(telegramId));
+                        menuConfig.getGoToMainMenu());
             }
         }
         if (StringUtils.equalsAny(text, TO_MAIN_MENU, CANCEL)) {
@@ -74,29 +76,29 @@ public class ShowAnalyticsHandler implements MessageHandler {
                 List<Partner> partners = partnerRepository.findValidPartnersWithPresentDiscount();
                 state.setStep(SELECT_PARTNER);
                 yield generateSendMessage(telegramId, "Выберите партнёра: ",
-                        getPartnersListKeyboard(partners));
+                        menuConfig.getPartnersListKeyboard(partners));
             }
             case SELECT_PARTNER -> {
 
                 Partner selectedPartner = partnerRepository.findByName(text).orElse(null);
                 if (selectedPartner == null) {
                     yield generateSendMessage(telegramId, "Партнёр не найден.",
-                            getUserActionKeyboard(telegramId));
+                            menuConfig.getGoToMainMenu());
                 }
                 state.setSelectedPartnerId(selectedPartner.getPartnerTelegramId());
                 state.setStep(ShowAnalyticsState.ShowAnalyticsStep.REQUEST_START_DATE);
                 yield generateSendMessage(telegramId, "Введите дату начала расчета аналитики в формате ДД.ММ.ГГГГ:",
-                        getUserActionKeyboard(telegramId));
+                        menuConfig.getGoToMainMenu());
             }
             case REQUEST_START_DATE -> {
                 try {
                     state.setStartDate(LocalDate.parse(text, DateTimeFormatter.ofPattern("dd.MM.yyyy")).atStartOfDay());
                     state.setStep(ShowAnalyticsState.ShowAnalyticsStep.REQUEST_END_DATE);
                     yield generateSendMessage(telegramId, "Введите дату конца расчета аналитики в формате ДД.ММ.ГГГГ:",
-                            getUserActionKeyboard(telegramId));
+                            menuConfig.getGoToMainMenu());
                 } catch (Exception e) {
                     yield generateSendMessage(telegramId, "Неверный формат даты. (ДД.ММ.ГГГГ)",
-                            getUserActionKeyboard(telegramId));
+                            menuConfig.getGoToMainMenu());
                 }
             }
             case REQUEST_END_DATE -> {
@@ -109,7 +111,7 @@ public class ShowAnalyticsHandler implements MessageHandler {
                     );
                     if (analytics.getCheckCount() == 0) {
                         yield generateSendMessage(telegramId, "На данный период чеков не найдено",
-                                getUserActionKeyboard(telegramId));
+                               menuConfig.getGoToMainMenu());
                     } else {
                         yield generateSendMessage(telegramId,
                                 "Аналитика:\n" +
@@ -117,41 +119,14 @@ public class ShowAnalyticsHandler implements MessageHandler {
                                         "Сумма чеков: " + analytics.getTotalSum() + "\n" +
                                         "Сумма скидок: " + analytics.getTotalDiscount() + "\n" +
                                         "Количество чеков: " + analytics.getCheckCount(),
-                                getUserActionKeyboard(telegramId));
+                                menuConfig.getGoToMainMenu());
                     }
                 } catch (Exception e) {
                     yield generateSendMessage(telegramId, "Ошибка при обработке данных. (ДД.ММ.ГГГГ)",
-                            getUserActionKeyboard(telegramId));
+                            menuConfig.getGoToMainMenu());
                 }
             }
         };
-    }
-
-    private ReplyKeyboardMarkup getPartnersListKeyboard(List<Partner> partners) {
-        ReplyKeyboardMarkup replyMarkup = new ReplyKeyboardMarkup();
-        List<KeyboardRow> keyboard = new ArrayList<>();
-        KeyboardRow firstRow = new KeyboardRow();
-        firstRow.add(TO_MAIN_MENU);
-        keyboard.add(firstRow);
-        for (Partner partner : partners) {
-            KeyboardRow row = new KeyboardRow();
-            row.add(partner.getName());
-            keyboard.add(row);
-        }
-        replyMarkup.setKeyboard(keyboard);
-        replyMarkup.setResizeKeyboard(true);
-        replyMarkup.setOneTimeKeyboard(false);
-        return replyMarkup;
-    }
-
-    private ReplyKeyboard getUserActionKeyboard(Long telegramId) {
-        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
-        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
-        InlineKeyboardButton toMainMenuButton = new InlineKeyboardButton(TO_MAIN_MENU);
-        toMainMenuButton.setCallbackData(toMainMenuButton.getText());
-        keyboard.add(List.of(toMainMenuButton));
-        inlineKeyboardMarkup.setKeyboard(keyboard);
-        return inlineKeyboardMarkup;
     }
 
     private SendMessage goToMainMenu(Long telegramId) {

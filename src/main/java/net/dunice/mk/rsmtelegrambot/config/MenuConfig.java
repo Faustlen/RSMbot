@@ -29,6 +29,7 @@ import static net.dunice.mk.rsmtelegrambot.constant.Menu.TRY_AGAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.TRY_AGAIN_OR_GO_TO_MAIN_MENU;
 
 import net.dunice.mk.rsmtelegrambot.constant.Menu;
+import net.dunice.mk.rsmtelegrambot.entity.Partner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
@@ -231,6 +232,23 @@ public class MenuConfig {
         return inlineKeyboardMarkup;
     }
 
+    public ReplyKeyboardMarkup getPartnersListKeyboard(List<Partner> partners) {
+        ReplyKeyboardMarkup replyMarkup = new ReplyKeyboardMarkup();
+        List<KeyboardRow> keyboard = new ArrayList<>();
+        KeyboardRow firstRow = new KeyboardRow();
+        firstRow.add(TO_MAIN_MENU);
+        keyboard.add(firstRow);
+        for (Partner partner : partners) {
+            KeyboardRow row = new KeyboardRow();
+            row.add(partner.getName());
+            keyboard.add(row);
+        }
+        replyMarkup.setKeyboard(keyboard);
+        replyMarkup.setResizeKeyboard(true);
+        replyMarkup.setOneTimeKeyboard(false);
+        return replyMarkup;
+    }
+
     private ReplyKeyboardMarkup getBaseUserMenu() {
         ReplyKeyboardMarkup replyMarkup = new ReplyKeyboardMarkup();
         List<KeyboardRow> keyboard = new ArrayList<>();
@@ -265,4 +283,6 @@ public class MenuConfig {
                 PERIOD_ANALYTICS));
         return replyMarkup;
     }
+
+
 }

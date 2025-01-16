@@ -20,6 +20,7 @@ import static net.dunice.mk.rsmtelegrambot.handler.state.ShowPartnersState.ShowP
 import static net.dunice.mk.rsmtelegrambot.handler.state.ShowPartnersState.ShowPartnersStep.VERIFY_NEW_DISCOUNT_PERCENT;
 
 import lombok.RequiredArgsConstructor;
+import net.dunice.mk.rsmtelegrambot.config.MenuConfig;
 import net.dunice.mk.rsmtelegrambot.constant.Menu;
 import net.dunice.mk.rsmtelegrambot.dto.MessageDto;
 import net.dunice.mk.rsmtelegrambot.entity.Partner;
@@ -74,6 +75,7 @@ public class ShowPartnersHandler implements MessageHandler {
         """;
     private final PartnerRepository partnerRepository;
     private final MenuGenerator menuGenerator;
+    private final MenuConfig menuConfig;
     private final Map<Menu, ReplyKeyboard> menus;
     private final Map<Long, BasicState> basicStates;
     private final UserRepository userRepository;
@@ -99,7 +101,7 @@ public class ShowPartnersHandler implements MessageHandler {
                 List<Partner> partners = partnerRepository.findValidPartnersWithPresentDiscount();
                 state.setStep(SHOW_PARTNER_DETAILS);
                 yield generateSendMessage(telegramId, "Партнеры РСМ: ",
-                    getPartnersListKeyboard(partners));
+                        menuConfig.getPartnersListKeyboard(partners));
             }
             case SHOW_PARTNER_DETAILS -> {
                 Optional<Partner> partnerOptional = partnerRepository.findByName(text);
@@ -196,23 +198,6 @@ public class ShowPartnersHandler implements MessageHandler {
                     menus.get(GO_TO_MAIN_MENU));
             }
         };
-    }
-
-    private ReplyKeyboardMarkup getPartnersListKeyboard(List<Partner> partners) {
-        ReplyKeyboardMarkup replyMarkup = new ReplyKeyboardMarkup();
-        List<KeyboardRow> keyboard = new ArrayList<>();
-        KeyboardRow firstRow = new KeyboardRow();
-        firstRow.add(TO_MAIN_MENU);
-        keyboard.add(firstRow);
-        for (Partner partner : partners) {
-            KeyboardRow row = new KeyboardRow();
-            row.add(partner.getName());
-            keyboard.add(row);
-        }
-        replyMarkup.setKeyboard(keyboard);
-        replyMarkup.setResizeKeyboard(true);
-        replyMarkup.setOneTimeKeyboard(false);
-        return replyMarkup;
     }
 
     private ReplyKeyboard getUserActionKeyboard(Optional<User> userOptional) {
