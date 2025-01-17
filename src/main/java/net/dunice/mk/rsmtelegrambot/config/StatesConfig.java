@@ -12,6 +12,7 @@ import net.dunice.mk.rsmtelegrambot.handler.state.ShowPartnersState;
 import net.dunice.mk.rsmtelegrambot.handler.state.ShowUsersState;
 import net.dunice.mk.rsmtelegrambot.handler.state.UpdateProfileState;
 import net.dunice.mk.rsmtelegrambot.handler.state.UserRegistrationState;
+import net.dunice.mk.rsmtelegrambot.handler.state.ShowAnalyticsState;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -57,6 +58,11 @@ public class StatesConfig {
         return new ConcurrentHashMap<>();
     }
 
+    @Bean("showAnalyticsStates")
+    public Map<Long, ShowAnalyticsState> getShowAnalyticsStatesMap() {
+        return new ConcurrentHashMap<>();
+    }
+
     @Bean("showUsersStates")
     public Map<Long, ShowUsersState> getShowUsersStatesMap() {
         return new ConcurrentHashMap<>();
@@ -93,9 +99,10 @@ public class StatesConfig {
                                               Map<Long, ShowAdminsState> showAdminsStates,
                                               Map<Long, ShowUsersState> showUsersStates,
                                               Map<Long, SelectRegistrationState> selectRegistrationStates,
-                                              Map<Long, MessageBroadcastState> messageBroadcastStates) {
+                                              Map<Long, MessageBroadcastState> messageBroadcastStates,
+                                              Map<Long, ShowAnalyticsState> showAnalyticsStates) {
         return List.of(grantAdminStates, registrationStates, updateProfileStates, showEventStates, showPartnersStates,
-            eventCreationStates, partnerRegistrationStates, showAdminsStates, showUsersStates, selectRegistrationStates,
-            messageBroadcastStates);
+                eventCreationStates, partnerRegistrationStates, showAdminsStates, showUsersStates, selectRegistrationStates,
+                messageBroadcastStates, showAnalyticsStates);
     }
 }

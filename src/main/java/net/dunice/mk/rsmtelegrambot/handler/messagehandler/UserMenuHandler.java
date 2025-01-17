@@ -5,6 +5,7 @@ import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.ADMINS_LIST;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.EVENTS_LIST;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.PARTNERS_LIST;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.SEND_MESSAGE_TO_EVERYONE;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.PERIOD_ANALYTICS;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.UPDATE_PROFILE;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.USERS_LIST;
 import static net.dunice.mk.rsmtelegrambot.entity.Role.SUPER_USER;
@@ -18,6 +19,8 @@ import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.SH
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.SHOW_EVENTS;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.SHOW_PARTNERS;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.SHOW_USERS;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.SHOW_ANALYTICS;
+
 
 import lombok.RequiredArgsConstructor;
 import net.dunice.mk.rsmtelegrambot.dto.MessageDto;
@@ -37,6 +40,7 @@ public class UserMenuHandler implements MessageHandler {
     private final ShowEventsHandler showEventsHandler;
     private final ShowPartnersHandler showPartnersHandler;
     private final ShowAdminsHandler showAdminsHandler;
+    private final ShowAnalyticsHandler showAnalyticsHandler;
     private final CreateEventHandler createEventHandler;
     private final ShowUsersHandler showUsersHandler;
     private final MessageBroadcastHandler messageBroadcastHandler;
@@ -86,6 +90,10 @@ public class UserMenuHandler implements MessageHandler {
                         case ADMINS_LIST -> {
                             state.setStep(SHOW_ADMINS);
                             yield showAdminsHandler.handle(messageDto, telegramId);
+                        }
+                        case PERIOD_ANALYTICS -> {
+                            state.setStep(SHOW_ANALYTICS);
+                            yield showAnalyticsHandler.handle(messageDto, telegramId);
                         }
                         default -> null;
                     });

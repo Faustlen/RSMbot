@@ -6,6 +6,7 @@ import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CANCEL;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.EVENTS_LIST;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.NO;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.PARTNERS_LIST;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.PERIOD_ANALYTICS;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.RSM_MEMBER;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.RSM_PARTNER;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.SEND_MESSAGE_TO_EVERYONE;
@@ -28,6 +29,7 @@ import static net.dunice.mk.rsmtelegrambot.constant.Menu.TRY_AGAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.TRY_AGAIN_OR_GO_TO_MAIN_MENU;
 
 import net.dunice.mk.rsmtelegrambot.constant.Menu;
+import net.dunice.mk.rsmtelegrambot.entity.Partner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
@@ -198,6 +200,9 @@ public class MenuConfig {
         KeyboardRow row = new KeyboardRow();
         row.add(PARTNERS_LIST);
         keyboard.add(row);
+        row = new KeyboardRow();
+        row.add(PERIOD_ANALYTICS);
+        keyboard.add(row);
         replyMarkup.setKeyboard(keyboard);
         replyMarkup.setResizeKeyboard(true);
         replyMarkup.setOneTimeKeyboard(false);
@@ -225,6 +230,23 @@ public class MenuConfig {
         }
         inlineKeyboardMarkup.setKeyboard(keyboard);
         return inlineKeyboardMarkup;
+    }
+
+    public ReplyKeyboardMarkup getPartnersListKeyboard(List<Partner> partners) {
+        ReplyKeyboardMarkup replyMarkup = new ReplyKeyboardMarkup();
+        List<KeyboardRow> keyboard = new ArrayList<>();
+        KeyboardRow firstRow = new KeyboardRow();
+        firstRow.add(TO_MAIN_MENU);
+        keyboard.add(firstRow);
+        for (Partner partner : partners) {
+            KeyboardRow row = new KeyboardRow();
+            row.add(partner.getName());
+            keyboard.add(row);
+        }
+        replyMarkup.setKeyboard(keyboard);
+        replyMarkup.setResizeKeyboard(true);
+        replyMarkup.setOneTimeKeyboard(false);
+        return replyMarkup;
     }
 
     private ReplyKeyboardMarkup getBaseUserMenu() {
@@ -256,7 +278,11 @@ public class MenuConfig {
         ReplyKeyboardMarkup replyMarkup = getBaseAdminMenu();
         List<KeyboardRow> keyboard = replyMarkup.getKeyboard();
         keyboard.add(new KeyboardRow());
-        keyboard.get(2).add(ADMINS_LIST);
+        keyboard.get(2).addAll(List.of(
+                ADMINS_LIST,
+                PERIOD_ANALYTICS));
         return replyMarkup;
     }
+
+
 }
