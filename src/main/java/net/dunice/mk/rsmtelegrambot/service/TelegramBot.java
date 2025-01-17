@@ -8,6 +8,7 @@ import net.dunice.mk.rsmtelegrambot.constant.Command;
 import net.dunice.mk.rsmtelegrambot.dto.MessageDto;
 import net.dunice.mk.rsmtelegrambot.handler.CommandHandler;
 import net.dunice.mk.rsmtelegrambot.handler.MessageGenerator;
+import net.dunice.mk.rsmtelegrambot.handler.messagehandler.BroadcastResponseHandler;
 import net.dunice.mk.rsmtelegrambot.handler.messagehandler.MessageHandler;
 import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,6 +37,7 @@ import java.util.Set;
 public class TelegramBot extends TelegramLongPollingBot implements MessageGenerator {
 
     private final CommandHandler commandHandler;
+    private final BroadcastResponseHandler broadcastResponseHandler;
     private final Map<Long, BasicState> basicStates;
     private final Set<MessageHandler> messageHandlers;
     private final Map<Long, Integer> lastBotMessageIdMap;
@@ -88,13 +90,19 @@ public class TelegramBot extends TelegramLongPollingBot implements MessageGenera
         } else if (update.hasCallbackQuery()) {
             Long telegramId = update.getCallbackQuery().getFrom().getId();
             String text = update.getCallbackQuery().getData();
-            deleteMessage(telegramId, lastBotMessageIdMap.remove(telegramId));
-            BasicState currentState = basicStates.get(telegramId);
-            Optional<MessageHandler> handler = getMessageHandlerForState(currentState);
-            messageDto.setText(text);
-            sendMessage(handler.isPresent()
-                ? handler.get().handle(messageDto, telegramId)
-                : generateSendMessage(telegramId, "Обработчик команды не найден"));
+            if (text.startsWith("broadcast_")) {
+                messageDto.setText(text.replace("broadcast_", ""));
+                sendMessage(broadcastResponseHandler.handle(messageDto, telegramId));
+                deleteMessage(telegramId, update.getCallbackQuery().getMessage().getMessageId());
+            } else {
+                deleteMessage(telegramId, lastBotMessageIdMap.remove(telegramId));
+                BasicState currentState = basicStates.get(telegramId);
+                Optional<MessageHandler> handler = getMessageHandlerForState(currentState);
+                messageDto.setText(text);
+                sendMessage(handler.isPresent()
+                        ? handler.get().handle(messageDto, telegramId)
+                        : generateSendMessage(telegramId, "Обработчик команды не найден"));
+            }
         }
     }
 
