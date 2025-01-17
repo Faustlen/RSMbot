@@ -4,6 +4,8 @@ import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.PARTNERS_LIST;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_PARTNER_MENU;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.SHOW_PARTNERS;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.PERIOD_ANALYTICS;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.SHOW_ANALYTICS;
 
 import lombok.RequiredArgsConstructor;
 import net.dunice.mk.rsmtelegrambot.dto.MessageDto;
@@ -21,6 +23,7 @@ public class PartnerMenuHandler implements MessageHandler {
 
     private final Map<Long, BasicState> basicStates;
     private final ShowPartnersHandler showPartnersHandler;
+    private final ShowAnalyticsHandler showAnalyticsHandler;
 
     @Override
     public BasicStep getStep() {
@@ -35,6 +38,10 @@ public class PartnerMenuHandler implements MessageHandler {
                 case PARTNERS_LIST -> {
                     basicStates.get(telegramId).setStep(SHOW_PARTNERS);
                     yield showPartnersHandler.handle(messageDto, telegramId);
+                }
+                case PERIOD_ANALYTICS -> {
+                    basicStates.get(telegramId).setStep(SHOW_ANALYTICS);
+                    yield showAnalyticsHandler.handle(messageDto, telegramId);
                 }
                 default -> null;
             }
