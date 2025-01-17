@@ -17,7 +17,7 @@ public class BroadcastResponseHandler implements BaseHandler {
     private final PartnerRepository partnerRepository;
 
     @Override
-    public PartialBotApiMethod<Message> handle(MessageDto messageDto, Long telegramId) {
+    public SendMessage handle(MessageDto messageDto, Long telegramId) {
         String callbackData = messageDto.getText();
         String action = callbackData.split("_")[0];
 

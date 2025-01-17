@@ -9,12 +9,10 @@ import net.dunice.mk.rsmtelegrambot.entity.Partner;
 import net.dunice.mk.rsmtelegrambot.entity.User;
 import net.dunice.mk.rsmtelegrambot.event.PartnerRegisteredEvent;
 import net.dunice.mk.rsmtelegrambot.handler.MessageGenerator;
-import net.dunice.mk.rsmtelegrambot.repository.PartnerRepository;
 import net.dunice.mk.rsmtelegrambot.repository.UserRepository;
 import net.dunice.mk.rsmtelegrambot.service.TelegramBot;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
@@ -61,6 +59,6 @@ public class PartnerRegistrationEventListener implements MessageGenerator {
 
         List<User> admins = userRepository.findAllByUserRole(ADMIN);
         admins.forEach(admin ->
-                telegramBot.sendMessage(generateSendMessage(admin.getTelegramId(), notification, markup)));
+                telegramBot.sendNoDeleteMessage(generateSendMessage(admin.getTelegramId(), notification, markup)));
     }
 }

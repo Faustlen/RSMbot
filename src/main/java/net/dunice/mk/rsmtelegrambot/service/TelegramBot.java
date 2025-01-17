@@ -119,6 +119,18 @@ public class TelegramBot extends TelegramLongPollingBot implements MessageGenera
         }
     }
 
+    public void sendNoDeleteMessage(PartialBotApiMethod<Message> message) {
+        try {
+            Message sentMessage = switch (message) {
+                case SendMessage sendMessage -> execute(sendMessage);
+                case SendPhoto sendPhoto -> execute(sendPhoto);
+                default -> throw new IllegalStateException("Unexpected value: " + message);
+            };
+        } catch (TelegramApiException e) {
+            log.error("Не удалось отправить сообщение", e);
+        }
+    }
+
     private Optional<MessageHandler> getMessageHandlerForState(BasicState state) {
         return messageHandlers.stream()
             .filter(handler -> handler.getStep() == state.getStep())
