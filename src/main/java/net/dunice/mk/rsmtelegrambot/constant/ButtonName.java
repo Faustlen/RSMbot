@@ -30,5 +30,8 @@ public class ButtonName {
             ACTIVATE_PARTNER = "Активировать партнера",
             DEACTIVATE_PARTNER = "Деактивировать партнера",
             ACCEPT_PARTNER_REGISTRATION = "Подтвердить регистрацию партнера",
-            DECLINE_PARTNER_REGISTRATION = "Отклонить регистрацию партнера";
+            DECLINE_PARTNER_REGISTRATION = "Отклонить регистрацию партнера",
+            PERIOD_ANALYTICS = "Аналитика за период",
+            CONFIRM = "✅Подтвердить",
+            REJECT = "❎Отказать";
 }

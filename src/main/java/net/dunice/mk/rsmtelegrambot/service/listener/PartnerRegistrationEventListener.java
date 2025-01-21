@@ -1,8 +1,7 @@
 package net.dunice.mk.rsmtelegrambot.service.listener;
 
-import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.ACCEPT_PARTNER_REGISTRATION;
-import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.DECLINE_PARTNER_REGISTRATION;
-import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TO_MAIN_MENU;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CONFIRM;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.REJECT;
 import static net.dunice.mk.rsmtelegrambot.entity.Role.ADMIN;
 
 import lombok.RequiredArgsConstructor;
@@ -15,11 +14,9 @@ import net.dunice.mk.rsmtelegrambot.service.TelegramBot;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -50,24 +47,18 @@ public class PartnerRegistrationEventListener implements MessageGenerator {
             partner.getCategory().getCategoryName(),
             partner.getDiscountDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
             partner.getPartnersInfo());
-        ReplyKeyboard replyKeyboard = getApprovalMenu();
+
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        List<InlineKeyboardButton> buttons = List.of(
+            InlineKeyboardButton.builder().text(CONFIRM)
+                .callbackData("broadcast_partnerAccept_confirm_" + partner.getPartnerTelegramId()).build(),
+            InlineKeyboardButton.builder().text(REJECT)
+                .callbackData("broadcast_partnerAccept_reject_" + partner.getPartnerTelegramId()).build()
+        );
+        markup.setKeyboard(List.of(buttons));
+
         List<User> admins = userRepository.findAllByUserRole(ADMIN);
-        admins.forEach(admin -> telegramBot.sendMessage(
-            generateSendMessage(admin.getTelegramId(), notification, replyKeyboard)));
-
-    }
-
-    private ReplyKeyboard getApprovalMenu() {
-        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
-        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
-        InlineKeyboardButton toMainMenuButton = new InlineKeyboardButton(TO_MAIN_MENU);
-        toMainMenuButton.setCallbackData(toMainMenuButton.getText());
-        InlineKeyboardButton acceptPartnerRegistrationButton = new InlineKeyboardButton(ACCEPT_PARTNER_REGISTRATION);
-        acceptPartnerRegistrationButton.setCallbackData(acceptPartnerRegistrationButton.getText());
-        InlineKeyboardButton declinePartnerRegistrationButton = new InlineKeyboardButton(DECLINE_PARTNER_REGISTRATION);
-        declinePartnerRegistrationButton.setCallbackData(declinePartnerRegistrationButton.getText());
-        keyboard.add(List.of(toMainMenuButton, acceptPartnerRegistrationButton, declinePartnerRegistrationButton));
-        inlineKeyboardMarkup.setKeyboard(keyboard);
-        return inlineKeyboardMarkup;
+        admins.forEach(admin ->
+            telegramBot.sendNoDeleteMessage(generateSendMessage(admin.getTelegramId(), notification, markup)));
     }
 }
