@@ -9,6 +9,7 @@ import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.CANCEL_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.GO_TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.SELECTION_MENU;
+import static net.dunice.mk.rsmtelegrambot.entity.Role.ADMIN;
 import static net.dunice.mk.rsmtelegrambot.entity.Role.SUPER_USER;
 import static net.dunice.mk.rsmtelegrambot.entity.Role.USER;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep;
@@ -37,11 +38,14 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
+import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
+import java.io.ByteArrayInputStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -121,14 +125,15 @@ public class ShowPartnersHandler implements MessageHandler {
                     Partner targetPartner = partnerOptional.get();
                     Optional<User> userOptional = userRepository.findById(telegramId);
                     User targetUser = userOptional.get();
+
                     String partnerDescription = "";
-                    if (userOptional.isEmpty() && partnerOptional.get().isValid()) {
+                    if (userOptional.isEmpty() && targetPartner.isValid()) {
                         partnerDescription = PARTNER_INFO_FOR_PARTNERS.formatted(
                             targetPartner.getName(),
                             targetPartner.getCategory().getCategoryName(),
                             targetPartner.getPartnersInfo(),
                             targetPartner.getPhoneNumber());
-                    } else if (targetUser.getUserRole().equals(USER) && partnerOptional.get().isValid()) {
+                    } else if (targetUser.getUserRole().equals(USER) && targetPartner.isValid()) {
                         partnerDescription = PARTNER_INFO_FOR_USERS.formatted(
                             targetPartner.getName(),
                             targetPartner.getCategory().getCategoryName(),
@@ -160,20 +165,47 @@ public class ShowPartnersHandler implements MessageHandler {
                                 "Да"
                             );
                         }
+                    } else if (targetUser.getUserRole().equals(ADMIN)) {
+                        if (targetPartner.isValid()) {
+                            partnerDescription = PARTNER_INFO_FOR_ADMIN.formatted(
+                                targetPartner.getName(),
+                                targetPartner.getCategory().getCategoryName(),
+                                targetPartner.getPartnersInfo(),
+                                targetPartner.getDiscountPercent(),
+                                targetPartner.getDiscountDate() == null ? "Неограниченно" :
+                                    targetPartner.getDiscountDate().toLocalDate(),
+                                targetPartner.getPhoneNumber(),
+                                "Нет");
+                        } else {
+                            partnerDescription = PARTNER_INFO_FOR_ADMIN.formatted(
+                                targetPartner.getName(),
+                                targetPartner.getCategory().getCategoryName(),
+                                targetPartner.getPartnersInfo(),
+                                targetPartner.getDiscountPercent(),
+                                targetPartner.getDiscountDate() == null ? "Неограниченно" :
+                                    targetPartner.getDiscountDate().toLocalDate(),
+                                targetPartner.getPhoneNumber(),
+                                "Да"
+                            );
+                        }
                     }
+
                     byte[] logo = targetPartner.getLogo();
                     state.setStep(HANDLE_USER_ACTION);
                     state.setTargetPartner(targetPartner);
-                    yield isLogoPresent(logo)
-                        ?
-                        generateImageMessage(telegramId, partnerDescription,
-                            getUserActionKeyboard(userOptional, partnerOptional), logo)
-                        : generateSendMessage(telegramId, partnerDescription,
-                        getUserActionKeyboard(userOptional, partnerOptional));
+
+                    if (isLogoPresent(logo)) {
+                        yield generatePhotoMessage(telegramId, partnerDescription,
+                            getUserActionKeyboard(userOptional, partnerOptional), logo);
+                    } else {
+                        yield generateSendMessage(telegramId, partnerDescription,
+                            getUserActionKeyboard(userOptional, partnerOptional));
+                    }
                 } else {
                     yield generateSendMessage(telegramId, "Нет партнера с таким названием.");
                 }
             }
+
             case HANDLE_USER_ACTION -> {
                 if (PARTNERS_LIST.equalsIgnoreCase(text)) {
                     state.setStep(SHOW_PARTNERS_LIST);
@@ -297,5 +329,15 @@ public class ShowPartnersHandler implements MessageHandler {
 
     private boolean isTgUserPartner(Long telegramId) {
         return partnerRepository.existsById(telegramId);
+    }
+
+    private SendPhoto generatePhotoMessage(Long telegramId, String description, ReplyKeyboard keyboard, byte[] photo) {
+        SendPhoto sendPhoto = new SendPhoto();
+        sendPhoto.setChatId(telegramId);
+        sendPhoto.setPhoto(new InputFile(new ByteArrayInputStream(photo), "logo.jpg"));
+        sendPhoto.setCaption(description);
+        sendPhoto.setReplyMarkup(keyboard);
+
+        return sendPhoto;
     }
 }
