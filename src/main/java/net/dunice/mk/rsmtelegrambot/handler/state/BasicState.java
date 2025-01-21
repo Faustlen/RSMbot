@@ -29,6 +29,7 @@ public class BasicState {
         SHOW_ADMINS,
         CREATE_EVENT,
         SEND_MESSAGE_TO_EVERYBODY,
-        SHOW_ANALYTICS
+        SHOW_ANALYTICS,
+        CREATE_CHECK;
     }
 }

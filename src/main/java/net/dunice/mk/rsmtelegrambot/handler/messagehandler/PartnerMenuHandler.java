@@ -1,6 +1,8 @@
 package net.dunice.mk.rsmtelegrambot.handler.messagehandler;
 
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.NEW_CHECK;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.PARTNERS_LIST;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.CREATE_CHECK;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_PARTNER_MENU;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.SHOW_PARTNERS;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep;
@@ -24,6 +26,7 @@ public class PartnerMenuHandler implements MessageHandler {
     private final Map<Long, BasicState> basicStates;
     private final ShowPartnersHandler showPartnersHandler;
     private final ShowAnalyticsHandler showAnalyticsHandler;
+    private final CreateCheckHandler createCheckHandler;
 
     @Override
     public BasicStep getStep() {
@@ -42,6 +45,10 @@ public class PartnerMenuHandler implements MessageHandler {
                 case PERIOD_ANALYTICS -> {
                     basicStates.get(telegramId).setStep(SHOW_ANALYTICS);
                     yield showAnalyticsHandler.handle(messageDto, telegramId);
+                }
+                case NEW_CHECK -> {
+                    basicStates.get(telegramId).setStep(CREATE_CHECK);
+                    yield createCheckHandler.handle(messageDto, telegramId);
                 }
                 default -> null;
             }
