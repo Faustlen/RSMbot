@@ -13,4 +13,5 @@ public class AppConfig {
     public Map<Long, Integer> getLastBotMessageIDMap() {
         return new ConcurrentHashMap<>();
     }
+
 }

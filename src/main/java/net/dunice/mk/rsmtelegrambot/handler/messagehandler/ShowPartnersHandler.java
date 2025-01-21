@@ -2,17 +2,20 @@ package net.dunice.mk.rsmtelegrambot.handler.messagehandler;
 
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CANCEL;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CHANGE_DISCOUNT;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.GET_DISCOUNT_CODE;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.PARTNERS_LIST;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.CANCEL_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.GO_TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.SELECTION_MENU;
+import static net.dunice.mk.rsmtelegrambot.constant.Menu.UPDATE_DISCOUNT_CODE_MENU;
 import static net.dunice.mk.rsmtelegrambot.entity.Role.USER;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_PARTNER_MENU;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.SHOW_PARTNERS;
 import static net.dunice.mk.rsmtelegrambot.handler.state.ShowPartnersState.ShowPartnersStep.CONFIRM_CHANGE;
+import static net.dunice.mk.rsmtelegrambot.handler.state.ShowPartnersState.ShowPartnersStep.SEND_DISCOUNT_CODE;
 import static net.dunice.mk.rsmtelegrambot.handler.state.ShowPartnersState.ShowPartnersStep.HANDLE_USER_ACTION;
 import static net.dunice.mk.rsmtelegrambot.handler.state.ShowPartnersState.ShowPartnersStep.SHOW_PARTNERS_LIST;
 import static net.dunice.mk.rsmtelegrambot.handler.state.ShowPartnersState.ShowPartnersStep.SHOW_PARTNER_DETAILS;
@@ -30,6 +33,7 @@ import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
 import net.dunice.mk.rsmtelegrambot.handler.state.ShowPartnersState;
 import net.dunice.mk.rsmtelegrambot.repository.PartnerRepository;
 import net.dunice.mk.rsmtelegrambot.repository.UserRepository;
+import net.dunice.mk.rsmtelegrambot.service.DiscountCodeService;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
@@ -37,9 +41,7 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -80,6 +82,7 @@ public class ShowPartnersHandler implements MessageHandler {
     private final Map<Long, BasicState> basicStates;
     private final UserRepository userRepository;
     private final Map<Long, ShowPartnersState> showPartnersStates;
+    private final DiscountCodeService discountCodeService;
 
     @Override
     public BasicStep getStep() {
@@ -96,13 +99,15 @@ public class ShowPartnersHandler implements MessageHandler {
         if (StringUtils.equalsAny(text, TO_MAIN_MENU, CANCEL)) {
             return goToMainMenu(telegramId);
         }
+
         return switch (state.getStep()) {
             case SHOW_PARTNERS_LIST -> {
                 List<Partner> partners = partnerRepository.findValidPartnersWithPresentDiscount();
                 state.setStep(SHOW_PARTNER_DETAILS);
                 yield generateSendMessage(telegramId, "Партнеры РСМ: ",
-                        menuConfig.getPartnersListKeyboard(partners));
+                    menuConfig.getPartnersListKeyboard(partners));
             }
+
             case SHOW_PARTNER_DETAILS -> {
                 Optional<Partner> partnerOptional = partnerRepository.findByName(text);
                 if (partnerOptional.isPresent()) {
@@ -136,22 +141,27 @@ public class ShowPartnersHandler implements MessageHandler {
                     yield generateSendMessage(telegramId, "Нет партнера с таким названием.");
                 }
             }
+
             case HANDLE_USER_ACTION -> {
                 if (PARTNERS_LIST.equalsIgnoreCase(text)) {
                     state.setStep(SHOW_PARTNERS_LIST);
                     yield handle(messageDto, telegramId);
                 } else if (CHANGE_DISCOUNT.equalsIgnoreCase(text) &&
-                           userRepository.findById(telegramId).get().getUserRole() != USER) {
+                           basicStates.get(telegramId).getUser().getUserRole() != USER) {
                     state.setStep(VERIFY_NEW_DISCOUNT_PERCENT);
                     yield generateSendMessage(telegramId, "Пожалуйста, введите новый процент скидки (от 0 до 100):",
                         menus.get(CANCEL_MENU));
+                } else if (GET_DISCOUNT_CODE.equalsIgnoreCase(text)) {
+                    state.setStep(SEND_DISCOUNT_CODE);
+                    yield handle(messageDto, telegramId);
                 } else {
                     yield goToMainMenu(telegramId);
                 }
             }
+
             case VERIFY_NEW_DISCOUNT_PERCENT -> {
                 try {
-                    Short discountPercent = Short.parseShort(text);
+                    short discountPercent = Short.parseShort(text);
                     if (discountPercent >= 100 || discountPercent < 0) {
                         yield generateSendMessage(telegramId,
                             "Процент скидки должен быть от 0 до 100. Повторите ввод:", menus.get(CANCEL_MENU));
@@ -166,6 +176,7 @@ public class ShowPartnersHandler implements MessageHandler {
                         menus.get(CANCEL_MENU));
                 }
             }
+
             case VERIFY_NEW_DISCOUNT_DATE -> {
                 try {
                     state.setDiscountDate(
@@ -181,6 +192,7 @@ public class ShowPartnersHandler implements MessageHandler {
                         "Дата должна быть в формате (ДД.ММ.ГГГГ-ЧЧ:ММ). Повторите ввод:", menus.get(CANCEL_MENU));
                 }
             }
+
             case CONFIRM_CHANGE -> {
                 String responseMessage;
                 if ("Да".equalsIgnoreCase(text)) {
@@ -197,6 +209,15 @@ public class ShowPartnersHandler implements MessageHandler {
                 yield generateSendMessage(telegramId, responseMessage,
                     menus.get(GO_TO_MAIN_MENU));
             }
+
+            case SEND_DISCOUNT_CODE -> {
+                yield generateSendMessage(telegramId, """
+                        Ваш скидочный код: %06d
+                        Оставшееся время действия кода(в секундах): %s
+                        Если ваш код, и код у партнера РСМ не совпадают, нажмите "Обновить код".
+                        """.formatted(discountCodeService.getDiscountCode(), discountCodeService.getSecondsLeft()),
+                    menus.get(UPDATE_DISCOUNT_CODE_MENU));
+            }
         };
     }
 
@@ -209,10 +230,15 @@ public class ShowPartnersHandler implements MessageHandler {
         toPartnersButton.setCallbackData(toPartnersButton.getText());
         keyboard.add(List.of(toMainMenuButton));
         keyboard.add(List.of(toPartnersButton));
-        if (userOptional.isPresent() && userOptional.get().getUserRole() != USER) {
-            InlineKeyboardButton changeDiscountButton = new InlineKeyboardButton(CHANGE_DISCOUNT);
-            changeDiscountButton.setCallbackData(changeDiscountButton.getText());
-            keyboard.add(List.of(changeDiscountButton));
+        if (userOptional.isPresent()) {
+            InlineKeyboardButton getDiscountButton = new InlineKeyboardButton(GET_DISCOUNT_CODE);
+            getDiscountButton.setCallbackData(getDiscountButton.getText());
+            keyboard.add(List.of(getDiscountButton));
+            if (userOptional.get().getUserRole() != USER) {
+                InlineKeyboardButton changeDiscountButton = new InlineKeyboardButton(CHANGE_DISCOUNT);
+                changeDiscountButton.setCallbackData(changeDiscountButton.getText());
+                keyboard.add(List.of(changeDiscountButton));
+            }
         }
         inlineKeyboardMarkup.setKeyboard(keyboard);
         return inlineKeyboardMarkup;
