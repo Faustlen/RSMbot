@@ -4,6 +4,7 @@ import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.ACTIVATE_PARTNER;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CANCEL;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CHANGE_DISCOUNT;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.DEACTIVATE_PARTNER;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.GET_DISCOUNT_CODE;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.PARTNERS_LIST;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.CANCEL_MENU;
@@ -11,6 +12,7 @@ import static net.dunice.mk.rsmtelegrambot.constant.Menu.GO_TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.SELECTION_MENU;
 import static net.dunice.mk.rsmtelegrambot.entity.Role.ADMIN;
 import static net.dunice.mk.rsmtelegrambot.entity.Role.SUPER_USER;
+import static net.dunice.mk.rsmtelegrambot.constant.Menu.UPDATE_DISCOUNT_CODE_MENU;
 import static net.dunice.mk.rsmtelegrambot.entity.Role.USER;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_MAIN_MENU;
@@ -18,6 +20,7 @@ import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.SHOW_PARTNERS;
 import static net.dunice.mk.rsmtelegrambot.handler.state.ShowPartnersState.ShowPartnersStep.CONFIRM_CHANGE;
 import static net.dunice.mk.rsmtelegrambot.handler.state.ShowPartnersState.ShowPartnersStep.HANDLE_USER_ACTION;
+import static net.dunice.mk.rsmtelegrambot.handler.state.ShowPartnersState.ShowPartnersStep.SEND_DISCOUNT_CODE;
 import static net.dunice.mk.rsmtelegrambot.handler.state.ShowPartnersState.ShowPartnersStep.SHOW_PARTNERS_LIST;
 import static net.dunice.mk.rsmtelegrambot.handler.state.ShowPartnersState.ShowPartnersStep.SHOW_PARTNER_DETAILS;
 import static net.dunice.mk.rsmtelegrambot.handler.state.ShowPartnersState.ShowPartnersStep.VERIFY_NEW_DISCOUNT_DATE;
@@ -34,6 +37,7 @@ import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
 import net.dunice.mk.rsmtelegrambot.handler.state.ShowPartnersState;
 import net.dunice.mk.rsmtelegrambot.repository.PartnerRepository;
 import net.dunice.mk.rsmtelegrambot.repository.UserRepository;
+import net.dunice.mk.rsmtelegrambot.service.DiscountCodeService;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
@@ -96,6 +100,7 @@ public class ShowPartnersHandler implements MessageHandler {
     private final Map<Long, BasicState> basicStates;
     private final UserRepository userRepository;
     private final Map<Long, ShowPartnersState> showPartnersStates;
+    private final DiscountCodeService discountCodeService;
 
     @Override
     public BasicStep getStep() {
@@ -112,6 +117,7 @@ public class ShowPartnersHandler implements MessageHandler {
         if (StringUtils.equalsAny(text, TO_MAIN_MENU, CANCEL)) {
             return goToMainMenu(telegramId);
         }
+
         return switch (state.getStep()) {
             case SHOW_PARTNERS_LIST -> {
                 List<Partner> partners = partnerRepository.findAll();
@@ -119,6 +125,7 @@ public class ShowPartnersHandler implements MessageHandler {
                 yield generateSendMessage(telegramId, "Партнеры РСМ: ",
                     menuConfig.getPartnersListKeyboard(partners));
             }
+
             case SHOW_PARTNER_DETAILS -> {
                 Optional<Partner> partnerOptional = partnerRepository.findByName(text);
                 if (partnerOptional.isPresent()) {
@@ -211,10 +218,13 @@ public class ShowPartnersHandler implements MessageHandler {
                     state.setStep(SHOW_PARTNERS_LIST);
                     yield handle(messageDto, telegramId);
                 } else if (CHANGE_DISCOUNT.equalsIgnoreCase(text) &&
-                           userRepository.findById(telegramId).get().getUserRole() != USER) {
+                           basicStates.get(telegramId).getUser().getUserRole() != USER) {
                     state.setStep(VERIFY_NEW_DISCOUNT_PERCENT);
                     yield generateSendMessage(telegramId, "Пожалуйста, введите новый процент скидки (от 0 до 100):",
                         menus.get(CANCEL_MENU));
+                } else if (GET_DISCOUNT_CODE.equalsIgnoreCase(text)) {
+                    state.setStep(SEND_DISCOUNT_CODE);
+                    yield handle(messageDto, telegramId);
                 } else if (ACTIVATE_PARTNER.equalsIgnoreCase(text)) {
                     Partner currentPartner = state.getTargetPartner();
                     currentPartner.setValid(true);
@@ -233,9 +243,10 @@ public class ShowPartnersHandler implements MessageHandler {
                     yield goToMainMenu(telegramId);
                 }
             }
+
             case VERIFY_NEW_DISCOUNT_PERCENT -> {
                 try {
-                    Short discountPercent = Short.parseShort(text);
+                    short discountPercent = Short.parseShort(text);
                     if (discountPercent >= 100 || discountPercent < 0) {
                         yield generateSendMessage(telegramId,
                             "Процент скидки должен быть от 0 до 100. Повторите ввод:", menus.get(CANCEL_MENU));
@@ -250,6 +261,7 @@ public class ShowPartnersHandler implements MessageHandler {
                         menus.get(CANCEL_MENU));
                 }
             }
+
             case VERIFY_NEW_DISCOUNT_DATE -> {
                 try {
                     state.setDiscountDate(
@@ -265,6 +277,7 @@ public class ShowPartnersHandler implements MessageHandler {
                         "Дата должна быть в формате (ДД.ММ.ГГГГ-ЧЧ:ММ). Повторите ввод:", menus.get(CANCEL_MENU));
                 }
             }
+
             case CONFIRM_CHANGE -> {
                 String responseMessage;
                 if ("Да".equalsIgnoreCase(text)) {
@@ -280,6 +293,15 @@ public class ShowPartnersHandler implements MessageHandler {
                 }
                 yield generateSendMessage(telegramId, responseMessage,
                     menus.get(GO_TO_MAIN_MENU));
+            }
+
+            case SEND_DISCOUNT_CODE -> {
+                yield generateSendMessage(telegramId, """
+                        Ваш скидочный код: %06d
+                        Оставшееся время действия кода(в секундах): %s
+                        Если ваш код, и код у партнера РСМ не совпадают, нажмите "Обновить код".
+                        """.formatted(discountCodeService.getDiscountCode(), discountCodeService.getSecondsLeft()),
+                    menus.get(UPDATE_DISCOUNT_CODE_MENU));
             }
         };
     }
@@ -306,38 +328,49 @@ public class ShowPartnersHandler implements MessageHandler {
                 activatePartner.setCallbackData(activatePartner.getText());
                 keyboard.add(List.of(activatePartner));
             }
+            if (userOptional.isPresent()) {
+                InlineKeyboardButton getDiscountButton = new InlineKeyboardButton(GET_DISCOUNT_CODE);
+                getDiscountButton.setCallbackData(getDiscountButton.getText());
+                keyboard.add(List.of(getDiscountButton));
+                if (userOptional.get().getUserRole() != USER) {
+                    InlineKeyboardButton changeDiscountButton = new InlineKeyboardButton(CHANGE_DISCOUNT);
+                    changeDiscountButton.setCallbackData(changeDiscountButton.getText());
+                    keyboard.add(List.of(changeDiscountButton));
+                }
+            }
+            inlineKeyboardMarkup.setKeyboard(keyboard);
+            return inlineKeyboardMarkup;
         }
-        inlineKeyboardMarkup.setKeyboard(keyboard);
-        return inlineKeyboardMarkup;
-    }
 
-    private SendMessage goToMainMenu(Long telegramId) {
-        showPartnersStates.remove(telegramId);
-        if (isTgUserPartner(telegramId)) {
-            basicStates.get(telegramId).setStep(IN_PARTNER_MENU);
-            return generateSendMessage(telegramId, "Выберите раздел:", menus.get(Menu.PARTNER_MAIN_MENU));
-        } else {
-            basicStates.get(telegramId).setStep(IN_MAIN_MENU);
-            return menuGenerator.generateRoleSpecificMainMenu(telegramId,
-                userRepository.findByTelegramId(telegramId).get().getUserRole());
+        private SendMessage goToMainMenu (Long telegramId){
+            showPartnersStates.remove(telegramId);
+            if (isTgUserPartner(telegramId)) {
+                basicStates.get(telegramId).setStep(IN_PARTNER_MENU);
+                return generateSendMessage(telegramId, "Выберите раздел:", menus.get(Menu.PARTNER_MAIN_MENU));
+            } else {
+                basicStates.get(telegramId).setStep(IN_MAIN_MENU);
+                return menuGenerator.generateRoleSpecificMainMenu(telegramId,
+                    userRepository.findByTelegramId(telegramId).get().getUserRole());
+            }
         }
-    }
 
-    private boolean isLogoPresent(byte[] logo) {
-        return logo != null && logo.length > 0;
-    }
+        private boolean isLogoPresent ( byte[] logo){
+            return logo != null && logo.length > 0;
+        }
 
-    private boolean isTgUserPartner(Long telegramId) {
-        return partnerRepository.existsById(telegramId);
-    }
+        private boolean isTgUserPartner (Long telegramId){
+            return partnerRepository.existsById(telegramId);
+        }
 
-    private SendPhoto generatePhotoMessage(Long telegramId, String description, ReplyKeyboard keyboard, byte[] photo) {
-        SendPhoto sendPhoto = new SendPhoto();
-        sendPhoto.setChatId(telegramId);
-        sendPhoto.setPhoto(new InputFile(new ByteArrayInputStream(photo), "logo.jpg"));
-        sendPhoto.setCaption(description);
-        sendPhoto.setReplyMarkup(keyboard);
+        private SendPhoto generatePhotoMessage (Long telegramId, String description, ReplyKeyboard keyboard, byte[] photo)
+        {
+            SendPhoto sendPhoto = new SendPhoto();
+            sendPhoto.setChatId(telegramId);
+            sendPhoto.setPhoto(new InputFile(new ByteArrayInputStream(photo), "logo.jpg"));
+            sendPhoto.setCaption(description);
+            sendPhoto.setReplyMarkup(keyboard);
 
-        return sendPhoto;
+            return sendPhoto;
+        }
     }
 }
