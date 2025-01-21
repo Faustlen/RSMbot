@@ -6,6 +6,7 @@ import static net.dunice.mk.rsmtelegrambot.constant.Menu.CANCEL_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.CATEGORY_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.GO_TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_PARTNER_MENU;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.PARTNER_REGISTRATION;
 import static net.dunice.mk.rsmtelegrambot.handler.state.PartnerRegistrationState.PartnerRegistrationStep.CATEGORY;
 import static net.dunice.mk.rsmtelegrambot.handler.state.PartnerRegistrationState.PartnerRegistrationStep.DISCOUNT_DATE;
@@ -47,7 +48,6 @@ public class PartnerRegistrationHandler implements MessageHandler {
     private final ApplicationEventPublisher eventPublisher;
     private final PartnerRepository partnerRepository;
     private final CategoryRepository categoryRepository;
-
 
     @Override
     public SendMessage handle(MessageDto messageDto, Long telegramId) {
@@ -176,7 +176,7 @@ public class PartnerRegistrationHandler implements MessageHandler {
 
     private SendMessage goToMainMenu(Long telegramId) {
         partnerRegistrationStates.remove(telegramId);
-        //basicStates.get(telegramId).setStep(IN_PARTNER_MENU);
+        basicStates.get(telegramId).setStep(IN_PARTNER_MENU);
         return generateSendMessage(telegramId,
             "Регистрация завершена, профиль партнера станет доступен после проверки администратором");
     }

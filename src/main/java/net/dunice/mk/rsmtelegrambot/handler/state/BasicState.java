@@ -30,6 +30,7 @@ public class BasicState {
         CREATE_EVENT,
         SEND_MESSAGE_TO_EVERYBODY,
         SHOW_ANALYTICS,
+        REQUEST_VERIFICATION_CODE,
         CREATE_CHECK;
     }
 }
