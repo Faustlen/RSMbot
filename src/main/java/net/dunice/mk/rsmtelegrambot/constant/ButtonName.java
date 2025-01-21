@@ -26,5 +26,9 @@ public class ButtonName {
             PREVIOUS_PAGE = "⬅ Предыдущая страница",
             NEXT_PAGE = "Следующая страница ➡",
             SEND_MESSAGE_TO_EVERYONE = "✉ Сообщение всем",
-            PERIOD_ANALYTICS = "Аналитика за период";
+            PERIOD_ANALYTICS = "Аналитика за период",
+            ACTIVATE_PARTNER = "Активировать партнера",
+            DEACTIVATE_PARTNER = "Деактивировать партнера",
+            ACCEPT_PARTNER_REGISTRATION = "Подтвердить регистрацию партнера",
+            DECLINE_PARTNER_REGISTRATION = "Отклонить регистрацию партнера";
 }

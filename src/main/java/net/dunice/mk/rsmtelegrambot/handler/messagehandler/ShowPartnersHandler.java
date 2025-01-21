@@ -1,12 +1,15 @@
 package net.dunice.mk.rsmtelegrambot.handler.messagehandler;
 
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.ACTIVATE_PARTNER;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CANCEL;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CHANGE_DISCOUNT;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.DEACTIVATE_PARTNER;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.PARTNERS_LIST;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.CANCEL_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.GO_TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.SELECTION_MENU;
+import static net.dunice.mk.rsmtelegrambot.entity.Role.SUPER_USER;
 import static net.dunice.mk.rsmtelegrambot.entity.Role.USER;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_MAIN_MENU;
@@ -37,9 +40,7 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -73,6 +74,17 @@ public class ShowPartnersHandler implements MessageHandler {
         Процент скидки: %s%%
         Дата окончания скидки: %s
         """;
+
+    private static final String PARTNER_INFO_FOR_ADMIN = """
+        Партнер: %s
+        Категория: %s
+        Информация о партнере: %s
+        Процент скидки: %s%%
+        Дата окончания скидки: %s
+        Номер телефона: %s
+        Партнер деактивирован: %s
+        """;
+
     private final PartnerRepository partnerRepository;
     private final MenuGenerator menuGenerator;
     private final MenuConfig menuConfig;
@@ -98,24 +110,25 @@ public class ShowPartnersHandler implements MessageHandler {
         }
         return switch (state.getStep()) {
             case SHOW_PARTNERS_LIST -> {
-                List<Partner> partners = partnerRepository.findValidPartnersWithPresentDiscount();
+                List<Partner> partners = partnerRepository.findAll();
                 state.setStep(SHOW_PARTNER_DETAILS);
                 yield generateSendMessage(telegramId, "Партнеры РСМ: ",
-                        menuConfig.getPartnersListKeyboard(partners));
+                    menuConfig.getPartnersListKeyboard(partners));
             }
             case SHOW_PARTNER_DETAILS -> {
                 Optional<Partner> partnerOptional = partnerRepository.findByName(text);
                 if (partnerOptional.isPresent()) {
                     Partner targetPartner = partnerOptional.get();
                     Optional<User> userOptional = userRepository.findById(telegramId);
-                    String partnerDescription;
-                    if (userOptional.isEmpty()) {
+                    User targetUser = userOptional.get();
+                    String partnerDescription = "";
+                    if (userOptional.isEmpty() && partnerOptional.get().isValid()) {
                         partnerDescription = PARTNER_INFO_FOR_PARTNERS.formatted(
                             targetPartner.getName(),
                             targetPartner.getCategory().getCategoryName(),
                             targetPartner.getPartnersInfo(),
                             targetPartner.getPhoneNumber());
-                    } else {
+                    } else if (targetUser.getUserRole().equals(USER) && partnerOptional.get().isValid()) {
                         partnerDescription = PARTNER_INFO_FOR_USERS.formatted(
                             targetPartner.getName(),
                             targetPartner.getCategory().getCategoryName(),
@@ -124,14 +137,39 @@ public class ShowPartnersHandler implements MessageHandler {
                             targetPartner.getDiscountPercent(),
                             targetPartner.getDiscountDate() == null ? "Неограниченно" :
                                 targetPartner.getDiscountDate().toLocalDate());
+                    } else if (targetUser.getUserRole().equals(SUPER_USER)) {
+                        if (targetPartner.isValid()) {
+                            partnerDescription = PARTNER_INFO_FOR_ADMIN.formatted(
+                                targetPartner.getName(),
+                                targetPartner.getCategory().getCategoryName(),
+                                targetPartner.getPartnersInfo(),
+                                targetPartner.getDiscountPercent(),
+                                targetPartner.getDiscountDate() == null ? "Неограниченно" :
+                                    targetPartner.getDiscountDate().toLocalDate(),
+                                targetPartner.getPhoneNumber(),
+                                "Нет");
+                        } else {
+                            partnerDescription = PARTNER_INFO_FOR_ADMIN.formatted(
+                                targetPartner.getName(),
+                                targetPartner.getCategory().getCategoryName(),
+                                targetPartner.getPartnersInfo(),
+                                targetPartner.getDiscountPercent(),
+                                targetPartner.getDiscountDate() == null ? "Неограниченно" :
+                                    targetPartner.getDiscountDate().toLocalDate(),
+                                targetPartner.getPhoneNumber(),
+                                "Да"
+                            );
+                        }
                     }
                     byte[] logo = targetPartner.getLogo();
                     state.setStep(HANDLE_USER_ACTION);
                     state.setTargetPartner(targetPartner);
                     yield isLogoPresent(logo)
                         ?
-                        generateImageMessage(telegramId, partnerDescription, getUserActionKeyboard(userOptional), logo)
-                        : generateSendMessage(telegramId, partnerDescription, getUserActionKeyboard(userOptional));
+                        generateImageMessage(telegramId, partnerDescription,
+                            getUserActionKeyboard(userOptional, partnerOptional), logo)
+                        : generateSendMessage(telegramId, partnerDescription,
+                        getUserActionKeyboard(userOptional, partnerOptional));
                 } else {
                     yield generateSendMessage(telegramId, "Нет партнера с таким названием.");
                 }
@@ -145,6 +183,20 @@ public class ShowPartnersHandler implements MessageHandler {
                     state.setStep(VERIFY_NEW_DISCOUNT_PERCENT);
                     yield generateSendMessage(telegramId, "Пожалуйста, введите новый процент скидки (от 0 до 100):",
                         menus.get(CANCEL_MENU));
+                } else if (ACTIVATE_PARTNER.equalsIgnoreCase(text)) {
+                    Partner currentPartner = state.getTargetPartner();
+                    currentPartner.setValid(true);
+                    partnerRepository.save(currentPartner);
+                    yield generateSendMessage(telegramId, "Партнёр успешно активирован.",
+                        getUserActionKeyboard(userRepository.findById(telegramId),
+                            Optional.ofNullable(state.getTargetPartner())));
+                } else if (DEACTIVATE_PARTNER.equalsIgnoreCase(text)) {
+                    Partner currentPartner = state.getTargetPartner();
+                    currentPartner.setValid(false);
+                    partnerRepository.save(currentPartner);
+                    yield generateSendMessage(telegramId, "Партнёр успешно деактивирован.",
+                        getUserActionKeyboard(userRepository.findById(telegramId),
+                            Optional.ofNullable(state.getTargetPartner())));
                 } else {
                     yield goToMainMenu(telegramId);
                 }
@@ -200,7 +252,7 @@ public class ShowPartnersHandler implements MessageHandler {
         };
     }
 
-    private ReplyKeyboard getUserActionKeyboard(Optional<User> userOptional) {
+    private ReplyKeyboard getUserActionKeyboard(Optional<User> userOptional, Optional<Partner> partnerOptional) {
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
         InlineKeyboardButton toMainMenuButton = new InlineKeyboardButton(TO_MAIN_MENU);
@@ -210,9 +262,18 @@ public class ShowPartnersHandler implements MessageHandler {
         keyboard.add(List.of(toMainMenuButton));
         keyboard.add(List.of(toPartnersButton));
         if (userOptional.isPresent() && userOptional.get().getUserRole() != USER) {
-            InlineKeyboardButton changeDiscountButton = new InlineKeyboardButton(CHANGE_DISCOUNT);
-            changeDiscountButton.setCallbackData(changeDiscountButton.getText());
-            keyboard.add(List.of(changeDiscountButton));
+            if (partnerOptional.isPresent() && partnerOptional.get().isValid()) {
+                InlineKeyboardButton changeDiscountButton = new InlineKeyboardButton(CHANGE_DISCOUNT);
+                changeDiscountButton.setCallbackData(changeDiscountButton.getText());
+                InlineKeyboardButton deactivatePartner = new InlineKeyboardButton(DEACTIVATE_PARTNER);
+                deactivatePartner.setCallbackData(deactivatePartner.getText());
+                keyboard.add(List.of(changeDiscountButton, deactivatePartner));
+
+            } else if (partnerOptional.isPresent() && !partnerOptional.get().isValid()) {
+                InlineKeyboardButton activatePartner = new InlineKeyboardButton(ACTIVATE_PARTNER);
+                activatePartner.setCallbackData(activatePartner.getText());
+                keyboard.add(List.of(activatePartner));
+            }
         }
         inlineKeyboardMarkup.setKeyboard(keyboard);
         return inlineKeyboardMarkup;
