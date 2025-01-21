@@ -220,14 +220,6 @@ public class MenuConfig {
             PARTNERS_LIST,
             PERIOD_ANALYTICS,
             VERIFICATION_CODE));
-        /*ReplyKeyboardMarkup replyMarkup = new ReplyKeyboardMarkup();
-        List<KeyboardRow> keyboard = new ArrayList<>();
-        KeyboardRow row = new KeyboardRow();
-        row.add(PARTNERS_LIST);
-        keyboard.add(row);
-        row = new KeyboardRow();
-        row.add(PERIOD_ANALYTICS);
-        keyboard.add(row);*/
         replyMarkup.setKeyboard(keyboard);
         replyMarkup.setResizeKeyboard(true);
         replyMarkup.setOneTimeKeyboard(false);
