@@ -23,7 +23,7 @@ public class BroadcastEventListener {
         List<User> users = event.getUsers();
         for (User user : users) {
             SendMessage message = bot.generateSendMessage(user.getTelegramId(), event.getMessage());
-            bot.sendMessage(message);
+            bot.sendNoDeleteMessage(message);
         }
     }
 }

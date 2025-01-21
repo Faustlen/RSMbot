@@ -15,9 +15,6 @@ public class ButtonName {
         TO_MAIN_MENU = "⌂ В главное меню",
         EVENTS_LIST = "☰ Мероприятия",
         PARTNERS_LIST = "☰ Партнеры",
-        GET_DISCOUNT_CODE = "Получить код скидки",
-        VERIFICATION_CODE = "Проверочный код",
-        UPDATE_DISCOUNT_CODE = "Обновить код",
         USERS_LIST = "☰ Пользователи",
         TRY_AGAIN = "\uD83D\uDD01 Попробовать eще раз",
         RSM_MEMBER = "Член РСМ",
@@ -29,5 +26,10 @@ public class ButtonName {
         PREVIOUS_PAGE = "⬅ Предыдущая страница",
         NEXT_PAGE = "Следующая страница ➡",
         SEND_MESSAGE_TO_EVERYONE = "✉ Сообщение всем",
-        PERIOD_ANALYTICS = "Аналитика за период";
+        PERIOD_ANALYTICS = "Аналитика за период",
+        CONFIRM = "✅Подтвердить",
+        REJECT = "❎Отказать",
+        GET_DISCOUNT_CODE = "Получить код скидки",
+        VERIFICATION_CODE = "Проверочный код",
+        UPDATE_DISCOUNT_CODE = "Обновить код";
 }
