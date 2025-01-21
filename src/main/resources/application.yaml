@@ -40,3 +40,9 @@ spring:
 bot:
   name: ${BOT_NAME}
   token: ${BOT_TOKEN}
+
+discount:
+  code:
+    lifetime:
+      seconds: 15
+    length: 6

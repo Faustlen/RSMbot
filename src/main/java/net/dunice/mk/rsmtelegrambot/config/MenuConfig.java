@@ -12,8 +12,10 @@ import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.RSM_PARTNER;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.SEND_MESSAGE_TO_EVERYONE;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TRY_AGAIN;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.UPDATE_DISCOUNT_CODE;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.UPDATE_PROFILE;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.USERS_LIST;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.VERIFICATION_CODE;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.YES;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.ADMIN_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.CANCEL_MENU;
@@ -27,6 +29,7 @@ import static net.dunice.mk.rsmtelegrambot.constant.Menu.SELECTION_USER_TYPE_MEN
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.SUPERUSER_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.TRY_AGAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.TRY_AGAIN_OR_GO_TO_MAIN_MENU;
+import static net.dunice.mk.rsmtelegrambot.constant.Menu.UPDATE_DISCOUNT_CODE_MENU;
 
 import net.dunice.mk.rsmtelegrambot.constant.Menu;
 import net.dunice.mk.rsmtelegrambot.entity.Partner;
@@ -53,7 +56,8 @@ public class MenuConfig {
         ReplyKeyboard goToMainMenu, ReplyKeyboard tryAgainMenu,
         ReplyKeyboard tryAgainOrGoToMainMenu, ReplyKeyboard selectionUserTypeMenu,
         ReplyKeyboard partnerMainMenu, ReplyKeyboard cancelMenu,
-        ReplyKeyboard categoryMenu, ReplyKeyboard eventFieldsMenu) {
+        ReplyKeyboard categoryMenu, ReplyKeyboard eventFieldsMenu,
+        ReplyKeyboard updateDiscountCodeMenu) {
         EnumMap<Menu, ReplyKeyboard> menus = new EnumMap<>(Menu.class);
         menus.put(SELECTION_MENU, selectionMenu);
         menus.put(SELECTION_USER_TYPE_MENU, selectionUserTypeMenu);
@@ -67,6 +71,7 @@ public class MenuConfig {
         menus.put(CANCEL_MENU, cancelMenu);
         menus.put(CATEGORY_MENU, categoryMenu);
         menus.put(EVENT_FIELDS_MENU, eventFieldsMenu);
+        menus.put(UPDATE_DISCOUNT_CODE_MENU, updateDiscountCodeMenu);
         return menus;
     }
 
@@ -193,16 +198,36 @@ public class MenuConfig {
         return inlineKeyboardMarkup;
     }
 
+    @Bean("updateDiscountCodeMenu")
+    public ReplyKeyboard getUpdateDiscountCodeMenu() {
+        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
+        InlineKeyboardButton updateCodeButton = new InlineKeyboardButton(UPDATE_DISCOUNT_CODE);
+        updateCodeButton.setCallbackData(updateCodeButton.getText());
+        InlineKeyboardButton mainMenuButton = new InlineKeyboardButton(TO_MAIN_MENU);
+        mainMenuButton.setCallbackData(mainMenuButton.getText());
+        keyboard.add(List.of(updateCodeButton, mainMenuButton));
+        inlineKeyboardMarkup.setKeyboard(keyboard);
+        return inlineKeyboardMarkup;
+    }
+
     @Bean("partnerMainMenu")
     public ReplyKeyboard getPartnerMenu() {
         ReplyKeyboardMarkup replyMarkup = new ReplyKeyboardMarkup();
+        List<KeyboardRow> keyboard = new ArrayList<>();
+        keyboard.add(new KeyboardRow());
+        keyboard.get(0).addAll(List.of(
+            PARTNERS_LIST,
+            PERIOD_ANALYTICS,
+            VERIFICATION_CODE));
+        /*ReplyKeyboardMarkup replyMarkup = new ReplyKeyboardMarkup();
         List<KeyboardRow> keyboard = new ArrayList<>();
         KeyboardRow row = new KeyboardRow();
         row.add(PARTNERS_LIST);
         keyboard.add(row);
         row = new KeyboardRow();
         row.add(PERIOD_ANALYTICS);
-        keyboard.add(row);
+        keyboard.add(row);*/
         replyMarkup.setKeyboard(keyboard);
         replyMarkup.setResizeKeyboard(true);
         replyMarkup.setOneTimeKeyboard(false);
