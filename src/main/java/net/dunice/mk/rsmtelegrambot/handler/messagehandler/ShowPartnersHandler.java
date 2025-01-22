@@ -117,12 +117,20 @@ public class ShowPartnersHandler implements MessageHandler {
 
         return switch (state.getStep()) {
             case SHOW_PARTNERS_LIST -> {
-                List<Partner> partners = partnerRepository.findAll().stream()
-                    .filter(Partner::isValid)
-                    .toList();
-                state.setStep(SHOW_PARTNER_DETAILS);
-                yield generateSendMessage(telegramId, "Партнеры РСМ: ",
-                    menuConfig.getPartnersListKeyboard(partners));
+                Optional<User> userOptional = userRepository.findById(telegramId);
+                if (userOptional.get().getUserRole() == USER) {
+                    List<Partner> partners = partnerRepository.findAll().stream()
+                        .filter(Partner::isValid)
+                        .toList();
+                    state.setStep(SHOW_PARTNER_DETAILS);
+                    yield generateSendMessage(telegramId, "Партнеры РСМ: ",
+                        menuConfig.getPartnersListKeyboard(partners));
+                } else {
+                    List<Partner> partners = partnerRepository.findAll();
+                    state.setStep(SHOW_PARTNER_DETAILS);
+                    yield generateSendMessage(telegramId, "Партнеры РСМ: ",
+                        menuConfig.getPartnersListKeyboard(partners));
+                }
             }
 
             case SHOW_PARTNER_DETAILS -> {
