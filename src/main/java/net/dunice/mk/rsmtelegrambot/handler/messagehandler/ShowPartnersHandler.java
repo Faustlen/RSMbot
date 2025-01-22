@@ -10,9 +10,9 @@ import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.CANCEL_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.GO_TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.SELECTION_MENU;
+import static net.dunice.mk.rsmtelegrambot.constant.Menu.UPDATE_DISCOUNT_CODE_MENU;
 import static net.dunice.mk.rsmtelegrambot.entity.Role.ADMIN;
 import static net.dunice.mk.rsmtelegrambot.entity.Role.SUPER_USER;
-import static net.dunice.mk.rsmtelegrambot.constant.Menu.UPDATE_DISCOUNT_CODE_MENU;
 import static net.dunice.mk.rsmtelegrambot.entity.Role.USER;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_MAIN_MENU;
@@ -42,14 +42,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
-import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
-import java.io.ByteArrayInputStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -90,7 +87,7 @@ public class ShowPartnersHandler implements MessageHandler {
         Процент скидки: %s%%
         Дата окончания скидки: %s
         Номер телефона: %s
-        Партнер деактивирован: %s
+        Активирован: %s
         """;
 
     private final PartnerRepository partnerRepository;
@@ -120,7 +117,9 @@ public class ShowPartnersHandler implements MessageHandler {
 
         return switch (state.getStep()) {
             case SHOW_PARTNERS_LIST -> {
-                List<Partner> partners = partnerRepository.findAll();
+                List<Partner> partners = partnerRepository.findAll().stream()
+                    .filter(Partner::isValid)
+                    .toList();
                 state.setStep(SHOW_PARTNER_DETAILS);
                 yield generateSendMessage(telegramId, "Партнеры РСМ: ",
                     menuConfig.getPartnersListKeyboard(partners));
@@ -159,7 +158,7 @@ public class ShowPartnersHandler implements MessageHandler {
                                 targetPartner.getDiscountDate() == null ? "Неограниченно" :
                                     targetPartner.getDiscountDate().toLocalDate(),
                                 targetPartner.getPhoneNumber(),
-                                "Нет");
+                                "Да");
                         } else {
                             partnerDescription = PARTNER_INFO_FOR_ADMIN.formatted(
                                 targetPartner.getName(),
@@ -169,7 +168,7 @@ public class ShowPartnersHandler implements MessageHandler {
                                 targetPartner.getDiscountDate() == null ? "Неограниченно" :
                                     targetPartner.getDiscountDate().toLocalDate(),
                                 targetPartner.getPhoneNumber(),
-                                "Да"
+                                "Нет"
                             );
                         }
                     } else if (targetUser.getUserRole().equals(ADMIN)) {
@@ -182,7 +181,7 @@ public class ShowPartnersHandler implements MessageHandler {
                                 targetPartner.getDiscountDate() == null ? "Неограниченно" :
                                     targetPartner.getDiscountDate().toLocalDate(),
                                 targetPartner.getPhoneNumber(),
-                                "Нет");
+                                "Да");
                         } else {
                             partnerDescription = PARTNER_INFO_FOR_ADMIN.formatted(
                                 targetPartner.getName(),
@@ -192,7 +191,7 @@ public class ShowPartnersHandler implements MessageHandler {
                                 targetPartner.getDiscountDate() == null ? "Неограниченно" :
                                     targetPartner.getDiscountDate().toLocalDate(),
                                 targetPartner.getPhoneNumber(),
-                                "Да"
+                                "Нет"
                             );
                         }
                     }
@@ -202,7 +201,7 @@ public class ShowPartnersHandler implements MessageHandler {
                     state.setTargetPartner(targetPartner);
 
                     if (isLogoPresent(logo)) {
-                        yield generatePhotoMessage(telegramId, partnerDescription,
+                        yield generateImageMessage(telegramId, partnerDescription,
                             getUserActionKeyboard(userOptional, partnerOptional), logo);
                     } else {
                         yield generateSendMessage(telegramId, partnerDescription,
@@ -338,39 +337,29 @@ public class ShowPartnersHandler implements MessageHandler {
                     keyboard.add(List.of(changeDiscountButton));
                 }
             }
-            inlineKeyboardMarkup.setKeyboard(keyboard);
-            return inlineKeyboardMarkup;
-        }
 
-        private SendMessage goToMainMenu (Long telegramId){
-            showPartnersStates.remove(telegramId);
-            if (isTgUserPartner(telegramId)) {
-                basicStates.get(telegramId).setStep(IN_PARTNER_MENU);
-                return generateSendMessage(telegramId, "Выберите раздел:", menus.get(Menu.PARTNER_MAIN_MENU));
-            } else {
-                basicStates.get(telegramId).setStep(IN_MAIN_MENU);
-                return menuGenerator.generateRoleSpecificMainMenu(telegramId,
-                    userRepository.findByTelegramId(telegramId).get().getUserRole());
-            }
         }
+        inlineKeyboardMarkup.setKeyboard(keyboard);
+        return inlineKeyboardMarkup;
+    }
 
-        private boolean isLogoPresent ( byte[] logo){
-            return logo != null && logo.length > 0;
+    private SendMessage goToMainMenu(Long telegramId) {
+        showPartnersStates.remove(telegramId);
+        if (isTgUserPartner(telegramId)) {
+            basicStates.get(telegramId).setStep(IN_PARTNER_MENU);
+            return generateSendMessage(telegramId, "Выберите раздел:", menus.get(Menu.PARTNER_MAIN_MENU));
+        } else {
+            basicStates.get(telegramId).setStep(IN_MAIN_MENU);
+            return menuGenerator.generateRoleSpecificMainMenu(telegramId,
+                userRepository.findByTelegramId(telegramId).get().getUserRole());
         }
+    }
 
-        private boolean isTgUserPartner (Long telegramId){
-            return partnerRepository.existsById(telegramId);
-        }
+    private boolean isLogoPresent(byte[] logo) {
+        return logo != null && logo.length > 0;
+    }
 
-        private SendPhoto generatePhotoMessage (Long telegramId, String description, ReplyKeyboard keyboard, byte[] photo)
-        {
-            SendPhoto sendPhoto = new SendPhoto();
-            sendPhoto.setChatId(telegramId);
-            sendPhoto.setPhoto(new InputFile(new ByteArrayInputStream(photo), "logo.jpg"));
-            sendPhoto.setCaption(description);
-            sendPhoto.setReplyMarkup(keyboard);
-
-            return sendPhoto;
-        }
+    private boolean isTgUserPartner(Long telegramId) {
+        return partnerRepository.existsById(telegramId);
     }
 }

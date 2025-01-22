@@ -44,8 +44,7 @@ public class CommandHandler implements BaseHandler {
                     К сожалению, вы находитесь в списке пользователей, которым ограничен доступ к этому боту.
                     Если вы считаете, что это ошибка, обратитесь к своему руководителю РСМ.
                     """);
-            }
-            else {
+            } else {
                 return switch (Command.getCommandByString(messageDto.getText())) {
                     case START -> {
                         basicStates.put(telegramId, new BasicState(user, IN_MAIN_MENU));

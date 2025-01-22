@@ -7,12 +7,12 @@ import net.dunice.mk.rsmtelegrambot.handler.state.MessageBroadcastState;
 import net.dunice.mk.rsmtelegrambot.handler.state.PartnerRegistrationState;
 import net.dunice.mk.rsmtelegrambot.handler.state.SelectRegistrationState;
 import net.dunice.mk.rsmtelegrambot.handler.state.ShowAdminsState;
+import net.dunice.mk.rsmtelegrambot.handler.state.ShowAnalyticsState;
 import net.dunice.mk.rsmtelegrambot.handler.state.ShowEventsState;
 import net.dunice.mk.rsmtelegrambot.handler.state.ShowPartnersState;
 import net.dunice.mk.rsmtelegrambot.handler.state.ShowUsersState;
 import net.dunice.mk.rsmtelegrambot.handler.state.UpdateProfileState;
 import net.dunice.mk.rsmtelegrambot.handler.state.UserRegistrationState;
-import net.dunice.mk.rsmtelegrambot.handler.state.ShowAnalyticsState;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -102,7 +102,7 @@ public class StatesConfig {
                                               Map<Long, MessageBroadcastState> messageBroadcastStates,
                                               Map<Long, ShowAnalyticsState> showAnalyticsStates) {
         return List.of(grantAdminStates, registrationStates, updateProfileStates, showEventStates, showPartnersStates,
-                eventCreationStates, partnerRegistrationStates, showAdminsStates, showUsersStates, selectRegistrationStates,
-                messageBroadcastStates, showAnalyticsStates);
+            eventCreationStates, partnerRegistrationStates, showAdminsStates, showUsersStates, selectRegistrationStates,
+            messageBroadcastStates, showAnalyticsStates);
     }
 }
