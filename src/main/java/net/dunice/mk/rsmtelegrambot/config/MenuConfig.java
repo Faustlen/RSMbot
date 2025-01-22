@@ -298,8 +298,8 @@ public class MenuConfig {
         List<KeyboardRow> keyboard = replyMarkup.getKeyboard();
         keyboard.add(new KeyboardRow());
         keyboard.get(2).addAll(List.of(
-                ADMINS_LIST,
-                PERIOD_ANALYTICS));
+            ADMINS_LIST,
+            PERIOD_ANALYTICS));
         return replyMarkup;
     }
 

@@ -27,6 +27,8 @@ public class ButtonName {
         NEXT_PAGE = "Следующая страница ➡",
         SEND_MESSAGE_TO_EVERYONE = "✉ Сообщение всем",
         PERIOD_ANALYTICS = "Аналитика за период",
+        ACTIVATE_PARTNER = "Активировать партнера",
+        DEACTIVATE_PARTNER = "Деактивировать партнера",
         CONFIRM = "✅Подтвердить",
         REJECT = "❎Отказать",
         GET_DISCOUNT_CODE = "Получить код скидки",
