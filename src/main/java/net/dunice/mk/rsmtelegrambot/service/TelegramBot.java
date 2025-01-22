@@ -100,8 +100,8 @@ public class TelegramBot extends TelegramLongPollingBot implements MessageGenera
                 Optional<MessageHandler> handler = getMessageHandlerForState(currentState);
                 messageDto.setText(text);
                 sendMessage(handler.isPresent()
-                        ? handler.get().handle(messageDto, telegramId)
-                        : generateSendMessage(telegramId, "Обработчик команды не найден"));
+                    ? handler.get().handle(messageDto, telegramId)
+                    : generateSendMessage(telegramId, "Обработчик команды не найден"));
             }
         }
     }

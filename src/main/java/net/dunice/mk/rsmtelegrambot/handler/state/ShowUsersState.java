@@ -16,6 +16,18 @@ public class ShowUsersState {
     private ShowUsersStep step = ShowUsersStep.SHOW_USERS_LIST;
     private int page = 0;
 
+    public void incrementPage() {
+        if (page * 10 + 10 <= allUsers.size()) {
+            page++;
+        }
+    }
+
+    public void decrementPage() {
+        if (page > 0) {
+            page--;
+        }
+    }
+
     public enum ShowUsersStep {
         SHOW_USERS_LIST,
         SHOW_USER_DETAILS,
@@ -24,15 +36,5 @@ public class ShowUsersState {
         GRANT_OR_REVOKE_ADMIN_RIGHTS,
         HANDLE_USER_ACTION,
         FINISH
-    }
-    public void incrementPage() {
-        if (page * 10 + 10 <= allUsers.size()) {
-            page++;
-        }
-    }
-    public void decrementPage() {
-        if (page > 0) {
-            page--;
-        }
     }
 }

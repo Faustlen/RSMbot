@@ -1,7 +1,9 @@
 package net.dunice.mk.rsmtelegrambot.handler.messagehandler;
 
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.ACTIVATE_PARTNER;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CANCEL;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CHANGE_DISCOUNT;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.DEACTIVATE_PARTNER;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.GET_DISCOUNT_CODE;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.PARTNERS_LIST;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TO_MAIN_MENU;
@@ -9,14 +11,16 @@ import static net.dunice.mk.rsmtelegrambot.constant.Menu.CANCEL_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.GO_TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.SELECTION_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.UPDATE_DISCOUNT_CODE_MENU;
+import static net.dunice.mk.rsmtelegrambot.entity.Role.ADMIN;
+import static net.dunice.mk.rsmtelegrambot.entity.Role.SUPER_USER;
 import static net.dunice.mk.rsmtelegrambot.entity.Role.USER;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_PARTNER_MENU;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.SHOW_PARTNERS;
 import static net.dunice.mk.rsmtelegrambot.handler.state.ShowPartnersState.ShowPartnersStep.CONFIRM_CHANGE;
-import static net.dunice.mk.rsmtelegrambot.handler.state.ShowPartnersState.ShowPartnersStep.SEND_DISCOUNT_CODE;
 import static net.dunice.mk.rsmtelegrambot.handler.state.ShowPartnersState.ShowPartnersStep.HANDLE_USER_ACTION;
+import static net.dunice.mk.rsmtelegrambot.handler.state.ShowPartnersState.ShowPartnersStep.SEND_DISCOUNT_CODE;
 import static net.dunice.mk.rsmtelegrambot.handler.state.ShowPartnersState.ShowPartnersStep.SHOW_PARTNERS_LIST;
 import static net.dunice.mk.rsmtelegrambot.handler.state.ShowPartnersState.ShowPartnersStep.SHOW_PARTNER_DETAILS;
 import static net.dunice.mk.rsmtelegrambot.handler.state.ShowPartnersState.ShowPartnersStep.VERIFY_NEW_DISCOUNT_DATE;
@@ -75,6 +79,17 @@ public class ShowPartnersHandler implements MessageHandler {
         Процент скидки: %s%%
         Дата окончания скидки: %s
         """;
+
+    private static final String PARTNER_INFO_FOR_ADMIN = """
+        Партнер: %s
+        Категория: %s
+        Информация о партнере: %s
+        Процент скидки: %s%%
+        Дата окончания скидки: %s
+        Номер телефона: %s
+        Активирован: %s
+        """;
+
     private final PartnerRepository partnerRepository;
     private final MenuGenerator menuGenerator;
     private final MenuConfig menuConfig;
@@ -102,10 +117,20 @@ public class ShowPartnersHandler implements MessageHandler {
 
         return switch (state.getStep()) {
             case SHOW_PARTNERS_LIST -> {
-                List<Partner> partners = partnerRepository.findValidPartnersWithPresentDiscount();
-                state.setStep(SHOW_PARTNER_DETAILS);
-                yield generateSendMessage(telegramId, "Партнеры РСМ: ",
-                    menuConfig.getPartnersListKeyboard(partners));
+                Optional<User> userOptional = userRepository.findById(telegramId);
+                if (userOptional.get().getUserRole() == USER) {
+                    List<Partner> partners = partnerRepository.findAll().stream()
+                        .filter(Partner::isValid)
+                        .toList();
+                    state.setStep(SHOW_PARTNER_DETAILS);
+                    yield generateSendMessage(telegramId, "Партнеры РСМ: ",
+                        menuConfig.getPartnersListKeyboard(partners));
+                } else {
+                    List<Partner> partners = partnerRepository.findAll();
+                    state.setStep(SHOW_PARTNER_DETAILS);
+                    yield generateSendMessage(telegramId, "Партнеры РСМ: ",
+                        menuConfig.getPartnersListKeyboard(partners));
+                }
             }
 
             case SHOW_PARTNER_DETAILS -> {
@@ -113,14 +138,16 @@ public class ShowPartnersHandler implements MessageHandler {
                 if (partnerOptional.isPresent()) {
                     Partner targetPartner = partnerOptional.get();
                     Optional<User> userOptional = userRepository.findById(telegramId);
-                    String partnerDescription;
-                    if (userOptional.isEmpty()) {
+                    User targetUser = userOptional.get();
+
+                    String partnerDescription = "";
+                    if (userOptional.isEmpty() && targetPartner.isValid()) {
                         partnerDescription = PARTNER_INFO_FOR_PARTNERS.formatted(
                             targetPartner.getName(),
                             targetPartner.getCategory().getCategoryName(),
                             targetPartner.getPartnersInfo(),
                             targetPartner.getPhoneNumber());
-                    } else {
+                    } else if (targetUser.getUserRole().equals(USER) && targetPartner.isValid()) {
                         partnerDescription = PARTNER_INFO_FOR_USERS.formatted(
                             targetPartner.getName(),
                             targetPartner.getCategory().getCategoryName(),
@@ -129,14 +156,65 @@ public class ShowPartnersHandler implements MessageHandler {
                             targetPartner.getDiscountPercent(),
                             targetPartner.getDiscountDate() == null ? "Неограниченно" :
                                 targetPartner.getDiscountDate().toLocalDate());
+                    } else if (targetUser.getUserRole().equals(SUPER_USER)) {
+                        if (targetPartner.isValid()) {
+                            partnerDescription = PARTNER_INFO_FOR_ADMIN.formatted(
+                                targetPartner.getName(),
+                                targetPartner.getCategory().getCategoryName(),
+                                targetPartner.getPartnersInfo(),
+                                targetPartner.getDiscountPercent(),
+                                targetPartner.getDiscountDate() == null ? "Неограниченно" :
+                                    targetPartner.getDiscountDate().toLocalDate(),
+                                targetPartner.getPhoneNumber(),
+                                "Да");
+                        } else {
+                            partnerDescription = PARTNER_INFO_FOR_ADMIN.formatted(
+                                targetPartner.getName(),
+                                targetPartner.getCategory().getCategoryName(),
+                                targetPartner.getPartnersInfo(),
+                                targetPartner.getDiscountPercent(),
+                                targetPartner.getDiscountDate() == null ? "Неограниченно" :
+                                    targetPartner.getDiscountDate().toLocalDate(),
+                                targetPartner.getPhoneNumber(),
+                                "Нет"
+                            );
+                        }
+                    } else if (targetUser.getUserRole().equals(ADMIN)) {
+                        if (targetPartner.isValid()) {
+                            partnerDescription = PARTNER_INFO_FOR_ADMIN.formatted(
+                                targetPartner.getName(),
+                                targetPartner.getCategory().getCategoryName(),
+                                targetPartner.getPartnersInfo(),
+                                targetPartner.getDiscountPercent(),
+                                targetPartner.getDiscountDate() == null ? "Неограниченно" :
+                                    targetPartner.getDiscountDate().toLocalDate(),
+                                targetPartner.getPhoneNumber(),
+                                "Да");
+                        } else {
+                            partnerDescription = PARTNER_INFO_FOR_ADMIN.formatted(
+                                targetPartner.getName(),
+                                targetPartner.getCategory().getCategoryName(),
+                                targetPartner.getPartnersInfo(),
+                                targetPartner.getDiscountPercent(),
+                                targetPartner.getDiscountDate() == null ? "Неограниченно" :
+                                    targetPartner.getDiscountDate().toLocalDate(),
+                                targetPartner.getPhoneNumber(),
+                                "Нет"
+                            );
+                        }
                     }
+
                     byte[] logo = targetPartner.getLogo();
                     state.setStep(HANDLE_USER_ACTION);
                     state.setTargetPartner(targetPartner);
-                    yield isLogoPresent(logo)
-                        ?
-                        generateImageMessage(telegramId, partnerDescription, getUserActionKeyboard(userOptional), logo)
-                        : generateSendMessage(telegramId, partnerDescription, getUserActionKeyboard(userOptional));
+
+                    if (isLogoPresent(logo)) {
+                        yield generateImageMessage(telegramId, partnerDescription,
+                            getUserActionKeyboard(userOptional, partnerOptional), logo);
+                    } else {
+                        yield generateSendMessage(telegramId, partnerDescription,
+                            getUserActionKeyboard(userOptional, partnerOptional));
+                    }
                 } else {
                     yield generateSendMessage(telegramId, "Нет партнера с таким названием.");
                 }
@@ -154,6 +232,20 @@ public class ShowPartnersHandler implements MessageHandler {
                 } else if (GET_DISCOUNT_CODE.equalsIgnoreCase(text)) {
                     state.setStep(SEND_DISCOUNT_CODE);
                     yield handle(messageDto, telegramId);
+                } else if (ACTIVATE_PARTNER.equalsIgnoreCase(text)) {
+                    Partner currentPartner = state.getTargetPartner();
+                    currentPartner.setValid(true);
+                    partnerRepository.save(currentPartner);
+                    yield generateSendMessage(telegramId, "Партнёр успешно активирован.",
+                        getUserActionKeyboard(userRepository.findById(telegramId),
+                            Optional.ofNullable(state.getTargetPartner())));
+                } else if (DEACTIVATE_PARTNER.equalsIgnoreCase(text)) {
+                    Partner currentPartner = state.getTargetPartner();
+                    currentPartner.setValid(false);
+                    partnerRepository.save(currentPartner);
+                    yield generateSendMessage(telegramId, "Партнёр успешно деактивирован.",
+                        getUserActionKeyboard(userRepository.findById(telegramId),
+                            Optional.ofNullable(state.getTargetPartner())));
                 } else {
                     yield goToMainMenu(telegramId);
                 }
@@ -221,7 +313,7 @@ public class ShowPartnersHandler implements MessageHandler {
         };
     }
 
-    private ReplyKeyboard getUserActionKeyboard(Optional<User> userOptional) {
+    private ReplyKeyboard getUserActionKeyboard(Optional<User> userOptional, Optional<Partner> partnerOptional) {
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
         InlineKeyboardButton toMainMenuButton = new InlineKeyboardButton(TO_MAIN_MENU);
@@ -230,15 +322,30 @@ public class ShowPartnersHandler implements MessageHandler {
         toPartnersButton.setCallbackData(toPartnersButton.getText());
         keyboard.add(List.of(toMainMenuButton));
         keyboard.add(List.of(toPartnersButton));
-        if (userOptional.isPresent()) {
-            InlineKeyboardButton getDiscountButton = new InlineKeyboardButton(GET_DISCOUNT_CODE);
-            getDiscountButton.setCallbackData(getDiscountButton.getText());
-            keyboard.add(List.of(getDiscountButton));
-            if (userOptional.get().getUserRole() != USER) {
+        if (userOptional.isPresent() && userOptional.get().getUserRole() != USER) {
+            if (partnerOptional.isPresent() && partnerOptional.get().isValid()) {
                 InlineKeyboardButton changeDiscountButton = new InlineKeyboardButton(CHANGE_DISCOUNT);
                 changeDiscountButton.setCallbackData(changeDiscountButton.getText());
-                keyboard.add(List.of(changeDiscountButton));
+                InlineKeyboardButton deactivatePartner = new InlineKeyboardButton(DEACTIVATE_PARTNER);
+                deactivatePartner.setCallbackData(deactivatePartner.getText());
+                keyboard.add(List.of(changeDiscountButton, deactivatePartner));
+
+            } else if (partnerOptional.isPresent() && !partnerOptional.get().isValid()) {
+                InlineKeyboardButton activatePartner = new InlineKeyboardButton(ACTIVATE_PARTNER);
+                activatePartner.setCallbackData(activatePartner.getText());
+                keyboard.add(List.of(activatePartner));
             }
+            if (userOptional.isPresent()) {
+                InlineKeyboardButton getDiscountButton = new InlineKeyboardButton(GET_DISCOUNT_CODE);
+                getDiscountButton.setCallbackData(getDiscountButton.getText());
+                keyboard.add(List.of(getDiscountButton));
+                if (userOptional.get().getUserRole() != USER) {
+                    InlineKeyboardButton changeDiscountButton = new InlineKeyboardButton(CHANGE_DISCOUNT);
+                    changeDiscountButton.setCallbackData(changeDiscountButton.getText());
+                    keyboard.add(List.of(changeDiscountButton));
+                }
+            }
+
         }
         inlineKeyboardMarkup.setKeyboard(keyboard);
         return inlineKeyboardMarkup;

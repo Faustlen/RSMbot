@@ -1,5 +1,14 @@
 package net.dunice.mk.rsmtelegrambot.handler.messagehandler;
 
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CANCEL;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TO_MAIN_MENU;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_MAIN_MENU;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_PARTNER_MENU;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.SHOW_ANALYTICS;
+import static net.dunice.mk.rsmtelegrambot.handler.state.ShowAnalyticsState.ShowAnalyticsStep.REQUEST_START_DATE;
+import static net.dunice.mk.rsmtelegrambot.handler.state.ShowAnalyticsState.ShowAnalyticsStep.SELECT_PARTNER;
+
 import lombok.RequiredArgsConstructor;
 import net.dunice.mk.rsmtelegrambot.config.MenuConfig;
 import net.dunice.mk.rsmtelegrambot.constant.Menu;
@@ -16,25 +25,12 @@ import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
+
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
-import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CANCEL;
-import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TO_MAIN_MENU;
-import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep;
-import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_MAIN_MENU;
-import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_PARTNER_MENU;
-import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.SHOW_ANALYTICS;
-import static net.dunice.mk.rsmtelegrambot.handler.state.ShowAnalyticsState.ShowAnalyticsStep.REQUEST_START_DATE;
-import static net.dunice.mk.rsmtelegrambot.handler.state.ShowAnalyticsState.ShowAnalyticsStep.SELECT_PARTNER;
 
 @Service
 @RequiredArgsConstructor
@@ -64,7 +60,7 @@ public class ShowAnalyticsHandler implements MessageHandler {
                 state.setStep(REQUEST_START_DATE);
                 state.setSelectedPartnerId(telegramId);
                 return generateSendMessage(telegramId, "Введите дату начала расчета аналитики в формате ДД.ММ.ГГГГ:",
-                        menuConfig.getGoToMainMenu());
+                    menuConfig.getGoToMainMenu());
             }
         }
         if (StringUtils.equalsAny(text, TO_MAIN_MENU, CANCEL)) {
@@ -76,54 +72,54 @@ public class ShowAnalyticsHandler implements MessageHandler {
                 List<Partner> partners = partnerRepository.findValidPartnersWithPresentDiscount();
                 state.setStep(SELECT_PARTNER);
                 yield generateSendMessage(telegramId, "Выберите партнёра: ",
-                        menuConfig.getPartnersListKeyboard(partners));
+                    menuConfig.getPartnersListKeyboard(partners));
             }
             case SELECT_PARTNER -> {
 
                 Partner selectedPartner = partnerRepository.findByName(text).orElse(null);
                 if (selectedPartner == null) {
                     yield generateSendMessage(telegramId, "Партнёр не найден.",
-                            menuConfig.getGoToMainMenu());
+                        menuConfig.getGoToMainMenu());
                 }
                 state.setSelectedPartnerId(selectedPartner.getPartnerTelegramId());
                 state.setStep(ShowAnalyticsState.ShowAnalyticsStep.REQUEST_START_DATE);
                 yield generateSendMessage(telegramId, "Введите дату начала расчета аналитики в формате ДД.ММ.ГГГГ:",
-                        menuConfig.getGoToMainMenu());
+                    menuConfig.getGoToMainMenu());
             }
             case REQUEST_START_DATE -> {
                 try {
                     state.setStartDate(LocalDate.parse(text, DateTimeFormatter.ofPattern("dd.MM.yyyy")).atStartOfDay());
                     state.setStep(ShowAnalyticsState.ShowAnalyticsStep.REQUEST_END_DATE);
                     yield generateSendMessage(telegramId, "Введите дату конца расчета аналитики в формате ДД.ММ.ГГГГ:",
-                            menuConfig.getGoToMainMenu());
+                        menuConfig.getGoToMainMenu());
                 } catch (Exception e) {
                     yield generateSendMessage(telegramId, "Неверный формат даты. (ДД.ММ.ГГГГ)",
-                            menuConfig.getGoToMainMenu());
+                        menuConfig.getGoToMainMenu());
                 }
             }
             case REQUEST_END_DATE -> {
                 try {
                     state.setEndDate(LocalDate.parse(text, DateTimeFormatter.ofPattern("dd.MM.yyyy")).atStartOfDay());
                     var analytics = checkRepository.getAnalytics(
-                            state.getSelectedPartnerId(),
-                            state.getStartDate(),
-                            state.getEndDate()
+                        state.getSelectedPartnerId(),
+                        state.getStartDate(),
+                        state.getEndDate()
                     );
                     if (analytics.getCheckCount() == 0) {
                         yield generateSendMessage(telegramId, "На данный период чеков не найдено",
-                               menuConfig.getGoToMainMenu());
+                            menuConfig.getGoToMainMenu());
                     } else {
                         yield generateSendMessage(telegramId,
-                                "Аналитика:\n" +
-                                        "Средний чек: " + analytics.getAvgCheck() + "\n" +
-                                        "Сумма чеков: " + analytics.getTotalSum() + "\n" +
-                                        "Сумма скидок: " + analytics.getTotalDiscount() + "\n" +
-                                        "Количество чеков: " + analytics.getCheckCount(),
-                                menuConfig.getGoToMainMenu());
+                            "Аналитика:\n" +
+                            "Средний чек: " + analytics.getAvgCheck() + "\n" +
+                            "Сумма чеков: " + analytics.getTotalSum() + "\n" +
+                            "Сумма скидок: " + analytics.getTotalDiscount() + "\n" +
+                            "Количество чеков: " + analytics.getCheckCount(),
+                            menuConfig.getGoToMainMenu());
                     }
                 } catch (Exception e) {
                     yield generateSendMessage(telegramId, "Ошибка при обработке данных. (ДД.ММ.ГГГГ)",
-                            menuConfig.getGoToMainMenu());
+                        menuConfig.getGoToMainMenu());
                 }
             }
         };
@@ -137,7 +133,7 @@ public class ShowAnalyticsHandler implements MessageHandler {
         } else {
             basicStates.get(telegramId).setStep(IN_MAIN_MENU);
             return menuGenerator.generateRoleSpecificMainMenu(telegramId,
-                    userRepository.findByTelegramId(telegramId).get().getUserRole());
+                userRepository.findByTelegramId(telegramId).get().getUserRole());
         }
     }
 }

@@ -37,14 +37,14 @@ public class RequestVerificationCodeHandler implements MessageHandler {
 
         if (TO_MAIN_MENU.equals(text)) {
             return goToMainMenu(telegramId);
+        } else {
+            return generateSendMessage(telegramId, """
+                    Проверочный код: %06d
+                    Оставшееся время действия кода(в секундах): %s
+                    Если ваш проверочный код, и код у члена РСМ не совпадают, нажмите "Обновить код".
+                    """.formatted(discountCodeService.getDiscountCode(), discountCodeService.getSecondsLeft()),
+                menus.get(UPDATE_DISCOUNT_CODE_MENU));
         }
-
-        else return generateSendMessage(telegramId, """
-                Проверочный код: %06d
-                Оставшееся время действия кода(в секундах): %s
-                Если ваш проверочный код, и код у члена РСМ не совпадают, нажмите "Обновить код".
-                """.formatted(discountCodeService.getDiscountCode(), discountCodeService.getSecondsLeft()),
-            menus.get(UPDATE_DISCOUNT_CODE_MENU));
     }
 
     private SendMessage goToMainMenu(Long telegramId) {
