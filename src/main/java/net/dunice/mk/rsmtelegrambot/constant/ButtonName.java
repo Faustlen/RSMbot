@@ -33,5 +33,6 @@ public class ButtonName {
         REJECT = "❎Отказать",
         GET_DISCOUNT_CODE = "Получить код скидки",
         VERIFICATION_CODE = "Проверочный код",
-        UPDATE_DISCOUNT_CODE = "Обновить код";
+        UPDATE_DISCOUNT_CODE = "Обновить код",
+        NEW_CHECK = "Сформировать чек";
 }

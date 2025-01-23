@@ -1,9 +1,11 @@
 package net.dunice.mk.rsmtelegrambot.handler.messagehandler;
 
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.NEW_CHECK;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.PARTNERS_LIST;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.PERIOD_ANALYTICS;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.VERIFICATION_CODE;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.CREATE_CHECK;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_PARTNER_MENU;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.REQUEST_VERIFICATION_CODE;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.SHOW_ANALYTICS;
@@ -27,6 +29,7 @@ public class PartnerMenuHandler implements MessageHandler {
     private final ShowPartnersHandler showPartnersHandler;
     private final ShowAnalyticsHandler showAnalyticsHandler;
     private final RequestVerificationCodeHandler requestCodeHandler;
+    private final CreateCheckHandler createCheckHandler;
 
     @Override
     public BasicStep getStep() {
@@ -49,6 +52,10 @@ public class PartnerMenuHandler implements MessageHandler {
                 case VERIFICATION_CODE -> {
                     basicStates.get(telegramId).setStep(REQUEST_VERIFICATION_CODE);
                     yield requestCodeHandler.handle(messageDto, telegramId);
+                }
+                case NEW_CHECK -> {
+                    basicStates.get(telegramId).setStep(CREATE_CHECK);
+                    yield createCheckHandler.handle(messageDto, telegramId);
                 }
                 default -> null;
             }
