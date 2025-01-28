@@ -6,9 +6,7 @@ import net.dunice.mk.rsmtelegrambot.entity.Partner;
 import net.dunice.mk.rsmtelegrambot.handler.BaseHandler;
 import net.dunice.mk.rsmtelegrambot.repository.PartnerRepository;
 import org.springframework.stereotype.Service;
-import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.objects.Message;
 
 @Service
 @RequiredArgsConstructor
@@ -38,7 +36,8 @@ public class BroadcastResponseHandler implements BaseHandler {
             if (partner != null) {
                 partner.setValid(true);
                 partnerRepository.save(partner);
-                return generateSendMessage(adminTelegramId, "Партнер \"" + partner.getName() + "\" успешно подтвержден.");
+                return generateSendMessage(adminTelegramId,
+                    "Партнер \"" + partner.getName() + "\" успешно подтвержден.");
             } else {
                 return generateSendMessage(adminTelegramId, "Партнер не найден.");
             }

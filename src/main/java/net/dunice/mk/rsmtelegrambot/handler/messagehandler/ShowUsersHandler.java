@@ -2,9 +2,9 @@ package net.dunice.mk.rsmtelegrambot.handler.messagehandler;
 
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.BAN;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.DELETE_USER;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.GRANT_ADMIN;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.NEXT_PAGE;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.PREVIOUS_PAGE;
-import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.GRANT_ADMIN;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.REVOKE_ADMIN;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.UNBAN;
@@ -147,7 +147,8 @@ public class ShowUsersHandler implements MessageHandler {
                             state.setTargetUser(targetUser);
                             state.setStep(HANDLE_USER_ACTION);
                             yield generateSendMessage(telegramId, userDescription,
-                                generateUserActionKeyboard(basicStates.get(telegramId).getUser().getUserRole(), targetUser));
+                                generateUserActionKeyboard(basicStates.get(telegramId).getUser().getUserRole(),
+                                    targetUser));
                         } else {
                             yield generateSendMessage(telegramId, "Пользователь не найден",
                                 menus.get(GO_TO_MAIN_MENU));
@@ -175,8 +176,7 @@ public class ShowUsersHandler implements MessageHandler {
                 } else if (DELETE_USER.equalsIgnoreCase(text)) {
                     state.setStep(ShowUsersState.ShowUsersStep.DELETE_USER);
                     yield handle(messageDto, telegramId);
-                }
-                else {
+                } else {
                     yield goToMainMenu(telegramId);
                 }
             }
@@ -188,36 +188,33 @@ public class ShowUsersHandler implements MessageHandler {
                     yield generateSendMessage(telegramId,
                         "Команда на назначение/отстранение админа доступна только для суперпользователя",
                         menus.get(GO_TO_MAIN_MENU));
-                }
-                else {
+                } else {
                     if (GRANT_ADMIN.equalsIgnoreCase(text)) {
                         String response;
                         if (targetUser.isBanned()) {
-                            response = "Невозможно дать права администратора пользователю %s, так как он находится в бан листе."
-                                .formatted(targetUser.getFullName());
-                        }
-                        else {
+                            response =
+                                "Невозможно дать права администратора пользователю %s, так как он находится в бан листе."
+                                    .formatted(targetUser.getFullName());
+                        } else {
                             targetUser.setUserRole(ADMIN);
                             userRepository.save(targetUser);
                             if (telegramId.equals(targetUser.getTelegramId())) {
                                 currentUser.setUserRole(ADMIN);
                                 response = """
-                            Вы понизили свои права до администратора, если вы сделали это по ошибке используйте команду /sustart, чтобы восстановить права.
-                            Или же сообщите эту команду другому пользователю который должен стать суперпользователем.
-                            """;
-                            }
-                            else {
+                                    Вы понизили свои права до администратора, если вы сделали это по ошибке используйте команду /sustart, чтобы восстановить права.
+                                    Или же сообщите эту команду другому пользователю который должен стать суперпользователем.
+                                    """;
+                            } else {
                                 response = "Пользователю '%s' были даны права администратора."
                                     .formatted(targetUser.getFullName());
                             }
                         }
                         yield generateSendMessage(telegramId, response, menus.get(GO_TO_MAIN_MENU));
-                    }
-                    else {
+                    } else {
                         targetUser.setUserRole(USER);
                         userRepository.save(targetUser);
                         yield generateSendMessage(telegramId, "У пользователя '%s' были отозваны права администратора."
-                            .formatted(targetUser.getFullName()),
+                                .formatted(targetUser.getFullName()),
                             menus.get(GO_TO_MAIN_MENU));
                     }
                 }
@@ -353,8 +350,7 @@ public class ShowUsersHandler implements MessageHandler {
                 InlineKeyboardButton banButton = new InlineKeyboardButton(BAN);
                 banButton.setCallbackData(banButton.getText());
                 keyboard.add(List.of(banButton));
-            }
-            else {
+            } else {
                 InlineKeyboardButton unbanButton = new InlineKeyboardButton(UNBAN);
                 unbanButton.setCallbackData(unbanButton.getText());
                 keyboard.add(List.of(unbanButton));
@@ -363,20 +359,17 @@ public class ShowUsersHandler implements MessageHandler {
                 InlineKeyboardButton grantAdminButton = new InlineKeyboardButton(GRANT_ADMIN);
                 grantAdminButton.setCallbackData(grantAdminButton.getText());
                 keyboard.add(List.of(grantAdminButton));
-            }
-            else {
+            } else {
                 InlineKeyboardButton revokeAdminButton = new InlineKeyboardButton(REVOKE_ADMIN);
                 revokeAdminButton.setCallbackData(revokeAdminButton.getText());
                 keyboard.add(List.of(revokeAdminButton));
             }
-        }
-        else {
+        } else {
             if (!targetUser.isBanned() && targetUser.getUserRole() == USER) {
                 InlineKeyboardButton banButton = new InlineKeyboardButton(BAN);
                 banButton.setCallbackData(banButton.getText());
                 keyboard.add(List.of(banButton));
-            }
-            else if (targetUser.getUserRole() == USER) {
+            } else if (targetUser.getUserRole() == USER) {
                 InlineKeyboardButton unbanButton = new InlineKeyboardButton(UNBAN);
                 unbanButton.setCallbackData(unbanButton.getText());
                 keyboard.add(List.of(unbanButton));

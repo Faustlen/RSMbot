@@ -40,25 +40,25 @@ public class PartnerRegistrationEventListener implements MessageGenerator {
     public void handlePartnerRegistrationEvent(PartnerRegisteredEvent event) {
         Partner partner = event.getPartner();
         String notification = PARTNER_INFO_TEMPLATE.formatted(
-                partner.getPartnerTelegramId(),
-                partner.getName(),
-                partner.getPhoneNumber(),
-                partner.getDiscountPercent(),
-                partner.getCategory().getCategoryName(),
-                partner.getDiscountDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
-                partner.getPartnersInfo());
+            partner.getPartnerTelegramId(),
+            partner.getName(),
+            partner.getPhoneNumber(),
+            partner.getDiscountPercent(),
+            partner.getCategory().getCategoryName(),
+            partner.getDiscountDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
+            partner.getPartnersInfo());
 
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
         List<InlineKeyboardButton> buttons = List.of(
-                InlineKeyboardButton.builder().text(CONFIRM)
-                        .callbackData("broadcast_partnerAccept_confirm_" + partner.getPartnerTelegramId()).build(),
-                InlineKeyboardButton.builder().text(REJECT)
-                        .callbackData("broadcast_partnerAccept_reject_" + partner.getPartnerTelegramId()).build()
+            InlineKeyboardButton.builder().text(CONFIRM)
+                .callbackData("broadcast_partnerAccept_confirm_" + partner.getPartnerTelegramId()).build(),
+            InlineKeyboardButton.builder().text(REJECT)
+                .callbackData("broadcast_partnerAccept_reject_" + partner.getPartnerTelegramId()).build()
         );
         markup.setKeyboard(List.of(buttons));
 
         List<User> admins = userRepository.findAllByUserRole(ADMIN);
         admins.forEach(admin ->
-                telegramBot.sendNoDeleteMessage(generateSendMessage(admin.getTelegramId(), notification, markup)));
+            telegramBot.sendNoDeleteMessage(generateSendMessage(admin.getTelegramId(), notification, markup)));
     }
 }

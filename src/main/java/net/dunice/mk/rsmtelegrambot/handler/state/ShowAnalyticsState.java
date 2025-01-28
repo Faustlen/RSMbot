@@ -3,6 +3,7 @@ package net.dunice.mk.rsmtelegrambot.handler.state;
 import lombok.Getter;
 import lombok.Setter;
 import net.dunice.mk.rsmtelegrambot.entity.Partner;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
