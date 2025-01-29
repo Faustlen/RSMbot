@@ -118,7 +118,7 @@ public class ShowPartnersHandler implements MessageHandler {
         return switch (state.getStep()) {
             case SHOW_PARTNERS_LIST -> {
                 Optional<User> userOptional = userRepository.findById(telegramId);
-                if (userOptional.get().getUserRole() == USER) {
+                if (userOptional.isPresent() && userOptional.get().getUserRole() == USER || userOptional.isEmpty()) {
                     List<Partner> partners = partnerRepository.findAll().stream()
                         .filter(Partner::isValid)
                         .toList();
@@ -139,7 +139,6 @@ public class ShowPartnersHandler implements MessageHandler {
                     Partner targetPartner = partnerOptional.get();
                     Optional<User> userOptional = userRepository.findById(telegramId);
                     User targetUser = userOptional.get();
-
                     String partnerDescription = "";
                     if (userOptional.isEmpty() && targetPartner.isValid()) {
                         partnerDescription = PARTNER_INFO_FOR_PARTNERS.formatted(
@@ -310,7 +309,9 @@ public class ShowPartnersHandler implements MessageHandler {
                         """.formatted(discountCodeService.getDiscountCode(), discountCodeService.getSecondsLeft()),
                     menus.get(UPDATE_DISCOUNT_CODE_MENU));
             }
-        };
+        }
+
+            ;
     }
 
     private ReplyKeyboard getUserActionKeyboard(Optional<User> userOptional, Optional<Partner> partnerOptional) {

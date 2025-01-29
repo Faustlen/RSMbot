@@ -35,5 +35,9 @@ public class ButtonName {
         VERIFICATION_CODE = "Проверочный код",
         UPDATE_DISCOUNT_CODE = "Обновить код",
         NEW_CHECK = "Сформировать чек",
-        PARTNERS_INFO_CHANGE = "Редактировать  данные";
+        CHANGE_LOGO = "Изменить логотип",
+        CHANGE_NAME = "Изменить название",
+        CHANGE_CATEGORY = "Изменить категорию",
+        CHANGE_INFO = "Изменить описание",
+        CHANGE_PHONE_NUMBER = "Изменить номер телефона";
 }

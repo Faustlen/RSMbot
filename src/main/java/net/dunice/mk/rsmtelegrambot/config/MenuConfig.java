@@ -6,7 +6,6 @@ import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CANCEL;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.EVENTS_LIST;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.NEW_CHECK;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.NO;
-import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.PARTNERS_INFO_CHANGE;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.PARTNERS_LIST;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.PERIOD_ANALYTICS;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.RSM_MEMBER;
@@ -220,10 +219,14 @@ public class MenuConfig {
         keyboard.add(new KeyboardRow());
         keyboard.get(0).addAll(List.of(
             PARTNERS_LIST,
-            PERIOD_ANALYTICS,
+            PERIOD_ANALYTICS));
+        keyboard.add(new KeyboardRow());
+        keyboard.get(1).addAll(List.of(
             VERIFICATION_CODE,
-            NEW_CHECK,
-            PARTNERS_INFO_CHANGE));
+            NEW_CHECK));
+        keyboard.add(new KeyboardRow());
+        keyboard.get(2).addAll(List.of(
+            UPDATE_PROFILE));
         replyMarkup.setKeyboard(keyboard);
         replyMarkup.setResizeKeyboard(true);
         replyMarkup.setOneTimeKeyboard(false);

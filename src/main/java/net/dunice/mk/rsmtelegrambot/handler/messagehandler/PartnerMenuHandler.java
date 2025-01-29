@@ -1,9 +1,9 @@
 package net.dunice.mk.rsmtelegrambot.handler.messagehandler;
 
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.NEW_CHECK;
-import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.PARTNERS_INFO_CHANGE;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.PARTNERS_LIST;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.PERIOD_ANALYTICS;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.UPDATE_PROFILE;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.VERIFICATION_CODE;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.CREATE_CHECK;
@@ -60,7 +60,7 @@ public class PartnerMenuHandler implements MessageHandler {
                     basicStates.get(telegramId).setStep(CREATE_CHECK);
                     yield createCheckHandler.handle(messageDto, telegramId);
                 }
-                case PARTNERS_INFO_CHANGE -> {
+                case UPDATE_PROFILE -> {
                     basicStates.get(telegramId).setStep(PARTNER_EDITING);
                     yield partnerEditingHandler.handle(messageDto, telegramId);
                 }
