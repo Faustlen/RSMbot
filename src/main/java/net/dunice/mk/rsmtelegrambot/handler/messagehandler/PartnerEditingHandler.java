@@ -163,7 +163,7 @@ public class PartnerEditingHandler implements MessageHandler{
             state.setStep(CHOICE_OPTION);
             return handleShowPartnersDetails(state, telegramId);
         } else {
-            return generateSendMessage(telegramId, "Некоректное название. Повторите ввод:",
+            return generateSendMessage(telegramId, "Название организации не должно быть пустым. Повторите ввод:",
                 menus.get(CANCEL_MENU));
         }
     }
@@ -192,12 +192,14 @@ public class PartnerEditingHandler implements MessageHandler{
     }
 
     private PartialBotApiMethod<Message> handleUpdatePhoneNumber(PartnerEditingState state, Long telegramId, String text) {
-        if (text != null && text.length() <= 20) {
+        if (text != null &&
+            text.matches("\\+7[\\s-]?\\(?\\d{3}\\)?[\\s-]?\\d{3}[\\s-]?\\d{2}[\\s-]?\\d{2}")) {
             state.getPartner().setPhoneNumber(text.strip());
             state.setStep(CHOICE_OPTION);
             return handleShowPartnersDetails(state, telegramId);
         } else {
-            return generateSendMessage(telegramId, "Некорректный номер телефона. Повторите ввод:",
+            return generateSendMessage(telegramId,
+                "Номер телефона должен соответствовать формату +7 для России. Повторите ввод:",
                 menus.get(CANCEL_MENU));
         }
     }

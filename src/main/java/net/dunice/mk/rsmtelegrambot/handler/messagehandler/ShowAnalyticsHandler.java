@@ -72,7 +72,7 @@ public class ShowAnalyticsHandler implements MessageHandler {
                 List<Partner> partners = partnerRepository.findValidPartnersWithPresentDiscount();
                 state.setStep(SELECT_PARTNER);
                 yield generateSendMessage(telegramId, "Выберите партнёра: ",
-                    menuConfig.getPartnersListKeyboard(partners));
+                    menuConfig.getPartnersListKeyboard(partners, false));
             }
             case SELECT_PARTNER -> {
 
