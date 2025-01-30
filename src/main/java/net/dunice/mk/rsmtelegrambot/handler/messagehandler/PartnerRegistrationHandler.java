@@ -70,7 +70,7 @@ public class PartnerRegistrationHandler implements MessageHandler {
                 yield generateSendMessage(telegramId, "Введите название партнёра:", menus.get(CANCEL_MENU));
             }
             case VALIDATE_PARTNER_NAME -> {
-                if (text.isBlank()) {
+                if (text == null || text.length() > 100) {
                     yield generateSendMessage(telegramId, "Название организации не должно быть пустым. Повторите ввод:",
                         menus.get(CANCEL_MENU));
                 } else {
@@ -80,7 +80,7 @@ public class PartnerRegistrationHandler implements MessageHandler {
                 }
             }
             case PHONE_NUMBER -> {
-                if (!text.isBlank() &&
+                if (text != null &&
                     text.matches("\\+7[\\s-]?\\(?\\d{3}\\)?[\\s-]?\\d{3}[\\s-]?\\d{2}[\\s-]?\\d{2}")) {
                     state.setPhoneNumber(text.strip());
                     state.setStep(DISCOUNT_PERCENT);
@@ -93,7 +93,7 @@ public class PartnerRegistrationHandler implements MessageHandler {
             }
             case DISCOUNT_PERCENT -> {
                 try {
-                    if (text.isBlank()) {
+                    if (text == null) {
                         yield generateSendMessage(telegramId, "Процент скидки должен быть указан. Повторите ввод:",
                             menus.get(CANCEL_MENU));
                     }
@@ -120,7 +120,7 @@ public class PartnerRegistrationHandler implements MessageHandler {
                         menus.get(CANCEL_MENU));
                 } else {
                     yield generateSendMessage(telegramId, "Категория не найдена. Повторите ввод:",
-                        menus.get(CANCEL_MENU));
+                        menus.get(CATEGORY_MENU));
                 }
             }
             case LOGO -> {
@@ -142,14 +142,14 @@ public class PartnerRegistrationHandler implements MessageHandler {
                     state.setStep(PARTNER_INFO);
                     yield generateSendMessage(telegramId, "Введите дополнительную информацию о партнёре:",
                         menus.get(CANCEL_MENU));
-                } catch (DateTimeParseException e) {
+                } catch (DateTimeParseException | NullPointerException e) {
                     yield generateSendMessage(telegramId,
                         "Дата должна быть в формате (ДД.ММ.ГГГГ-ЧЧ:ММ) . Повторите ввод:",
                         menus.get(CANCEL_MENU));
                 }
             }
             case PARTNER_INFO -> {
-                if (text.length() <= 255) {
+                if (text != null && text.length() <= 255) {
                     state.setInfo(text.trim());
                     savePartner(state, telegramId);
                     state.setStep(FINISH);
