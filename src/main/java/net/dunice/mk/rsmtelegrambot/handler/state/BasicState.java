@@ -20,6 +20,7 @@ public class BasicState {
         SELECT_REGISTRATION_TYPE,
         USER_REGISTRATION,
         PARTNER_REGISTRATION,
+        PARTNER_EDITING,
         IN_MAIN_MENU,
         IN_PARTNER_MENU,
         CHANGE_PROFILE,

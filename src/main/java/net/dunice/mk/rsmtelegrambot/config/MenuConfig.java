@@ -219,9 +219,14 @@ public class MenuConfig {
         keyboard.add(new KeyboardRow());
         keyboard.get(0).addAll(List.of(
             PARTNERS_LIST,
-            PERIOD_ANALYTICS,
+            PERIOD_ANALYTICS));
+        keyboard.add(new KeyboardRow());
+        keyboard.get(1).addAll(List.of(
             VERIFICATION_CODE,
             NEW_CHECK));
+        keyboard.add(new KeyboardRow());
+        keyboard.get(2).addAll(List.of(
+            UPDATE_PROFILE));
         replyMarkup.setKeyboard(keyboard);
         replyMarkup.setResizeKeyboard(true);
         replyMarkup.setOneTimeKeyboard(false);
