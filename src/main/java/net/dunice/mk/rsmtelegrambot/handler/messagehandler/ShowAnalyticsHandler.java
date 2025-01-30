@@ -99,7 +99,8 @@ public class ShowAnalyticsHandler implements MessageHandler {
             }
             case REQUEST_END_DATE -> {
                 try {
-                    state.setEndDate(LocalDate.parse(text, DateTimeFormatter.ofPattern("dd.MM.yyyy")).atStartOfDay());
+                    state.setEndDate(LocalDate.parse(text, DateTimeFormatter.ofPattern("dd.MM.yyyy"))
+                        .atTime(23, 59, 59, 999999999));
                     var analytics = checkRepository.getAnalytics(
                         state.getSelectedPartnerId(),
                         state.getStartDate(),
