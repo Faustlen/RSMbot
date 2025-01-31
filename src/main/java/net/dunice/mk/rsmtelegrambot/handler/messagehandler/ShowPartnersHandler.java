@@ -32,6 +32,8 @@ import net.dunice.mk.rsmtelegrambot.constant.Menu;
 import net.dunice.mk.rsmtelegrambot.dto.MessageDto;
 import net.dunice.mk.rsmtelegrambot.entity.Partner;
 import net.dunice.mk.rsmtelegrambot.entity.User;
+import net.dunice.mk.rsmtelegrambot.event.BroadcastPartnersEvent;
+import net.dunice.mk.rsmtelegrambot.event.BroadcastUsersEvent;
 import net.dunice.mk.rsmtelegrambot.handler.MenuGenerator;
 import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
 import net.dunice.mk.rsmtelegrambot.handler.state.ShowPartnersState;
@@ -39,6 +41,7 @@ import net.dunice.mk.rsmtelegrambot.repository.PartnerRepository;
 import net.dunice.mk.rsmtelegrambot.repository.UserRepository;
 import net.dunice.mk.rsmtelegrambot.service.DiscountCodeService;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -90,6 +93,13 @@ public class ShowPartnersHandler implements MessageHandler {
         Активирован: %s
         """;
 
+    private static final String CHANGE_DISCOUNT_NOTIFICATION = """
+        Ваши данные были изменены администратором:
+        Процент скидки: %s%%
+        Дата окончания скидки %S
+        """;
+
+    private final ApplicationEventPublisher eventPublisher;
     private final PartnerRepository partnerRepository;
     private final MenuGenerator menuGenerator;
     private final MenuConfig menuConfig;
@@ -295,6 +305,12 @@ public class ShowPartnersHandler implements MessageHandler {
                     currentPartner.setDiscountDate(state.getDiscountDate());
                     partnerRepository.save(currentPartner);
                     responseMessage = "Данные партнера успешно изменены.";
+                    eventPublisher.publishEvent(new BroadcastPartnersEvent(
+                        CHANGE_DISCOUNT_NOTIFICATION.formatted(
+                            currentPartner.getDiscountPercent(),
+                            currentPartner.getDiscountDate() == null ? "Неограниченно" :
+                                currentPartner.getDiscountDate().toLocalDate())
+                        , List.of(state.getTargetPartner())));
                 } else if ("Нет".equalsIgnoreCase(text)) {
                     responseMessage = "Изменение данных партнера отменено.";
                 } else {

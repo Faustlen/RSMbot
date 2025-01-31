@@ -14,7 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.dunice.mk.rsmtelegrambot.constant.Menu;
 import net.dunice.mk.rsmtelegrambot.dto.MessageDto;
 import net.dunice.mk.rsmtelegrambot.entity.User;
-import net.dunice.mk.rsmtelegrambot.event.BroadcastEvent;
+import net.dunice.mk.rsmtelegrambot.event.BroadcastUsersEvent;
 import net.dunice.mk.rsmtelegrambot.handler.MenuGenerator;
 import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
 import net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep;
@@ -104,6 +104,6 @@ public class MessageBroadcastHandler implements MessageHandler {
 
     public void broadcastMessage(String text) {
         List<User> users = userRepository.findAll();
-        eventPublisher.publishEvent(new BroadcastEvent(text, users));
+        eventPublisher.publishEvent(new BroadcastUsersEvent(text, users));
     }
 }
