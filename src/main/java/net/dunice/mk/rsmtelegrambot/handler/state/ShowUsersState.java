@@ -33,6 +33,7 @@ public class ShowUsersState {
         SHOW_USER_DETAILS,
         BAN_OR_UNBAN,
         DELETE_USER,
+        DELETE_USER_APPROVE,
         GRANT_OR_REVOKE_ADMIN_RIGHTS,
         HANDLE_USER_ACTION,
         FINISH

@@ -4,12 +4,15 @@ import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.BAN;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.DELETE_USER;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.GRANT_ADMIN;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.NEXT_PAGE;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.NO;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.PREVIOUS_PAGE;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.REVOKE_ADMIN;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.UNBAN;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.USERS_LIST;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.YES;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.GO_TO_MAIN_MENU;
+import static net.dunice.mk.rsmtelegrambot.constant.Menu.SELECTION_MENU;
 import static net.dunice.mk.rsmtelegrambot.entity.Role.ADMIN;
 import static net.dunice.mk.rsmtelegrambot.entity.Role.SUPER_USER;
 import static net.dunice.mk.rsmtelegrambot.entity.Role.USER;
@@ -17,6 +20,7 @@ import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.SHOW_USERS;
 import static net.dunice.mk.rsmtelegrambot.handler.state.ShowUsersState.ShowUsersStep.BAN_OR_UNBAN;
+import static net.dunice.mk.rsmtelegrambot.handler.state.ShowUsersState.ShowUsersStep.DELETE_USER_APPROVE;
 import static net.dunice.mk.rsmtelegrambot.handler.state.ShowUsersState.ShowUsersStep.FINISH;
 import static net.dunice.mk.rsmtelegrambot.handler.state.ShowUsersState.ShowUsersStep.GRANT_OR_REVOKE_ADMIN_RIGHTS;
 import static net.dunice.mk.rsmtelegrambot.handler.state.ShowUsersState.ShowUsersStep.HANDLE_USER_ACTION;
@@ -26,6 +30,7 @@ import static net.dunice.mk.rsmtelegrambot.handler.state.ShowUsersState.ShowUser
 import lombok.RequiredArgsConstructor;
 import net.dunice.mk.rsmtelegrambot.constant.Menu;
 import net.dunice.mk.rsmtelegrambot.dto.MessageDto;
+import net.dunice.mk.rsmtelegrambot.entity.Partner;
 import net.dunice.mk.rsmtelegrambot.entity.Role;
 import net.dunice.mk.rsmtelegrambot.entity.User;
 import net.dunice.mk.rsmtelegrambot.handler.MenuGenerator;
@@ -256,7 +261,7 @@ public class ShowUsersHandler implements MessageHandler {
                 }
             }
             case DELETE_USER -> {
-                state.setStep(FINISH);
+                state.setStep(DELETE_USER_APPROVE);
                 User targetUser = state.getTargetUser();
                 if (telegramId.equals(targetUser.getTelegramId())) {
                     yield generateSendMessage(telegramId,
@@ -269,13 +274,27 @@ public class ShowUsersHandler implements MessageHandler {
                         "Команда на удаление пользователя '%s' отклонена, т.к пользователь имеет роль '%s'.".formatted(
                             targetUser.getFullName(), targetUser.getUserRole()), menus.get(GO_TO_MAIN_MENU));
                 } else {
+                    yield generateSendMessage(telegramId,
+                        String.format("Вы точно хотите удалить пользователя '%s'?", targetUser.getFullName()),
+                        menus.get(SELECTION_MENU));
+                }
+            }
+            case DELETE_USER_APPROVE -> {
+                state.setStep(FINISH);
+                User targetUser = state.getTargetUser();
+                String responseMessage;
 
+                if (YES.equalsIgnoreCase(text)) {
                     userRepository.delete(targetUser);
                     basicStates.remove(targetUser.getTelegramId());
-                    yield generateSendMessage(telegramId,
-                        String.format("Пользователь '%s' удален.", targetUser.getFullName()),
-                        menus.get(GO_TO_MAIN_MENU));
+                    responseMessage = String.format("Пользователь '%s' удален.", targetUser.getFullName());
+                } else if (NO.equalsIgnoreCase(text)) {
+                    responseMessage = "Удаление пользователя отменено.";
+                } else {
+                    responseMessage = "Неверная команда.";
                 }
+                yield generateSendMessage(telegramId, responseMessage,
+                    menus.get(GO_TO_MAIN_MENU));
             }
             case FINISH -> {
                 if (TO_MAIN_MENU.equalsIgnoreCase(text)) {
