@@ -256,7 +256,7 @@ public class MenuConfig {
         return inlineKeyboardMarkup;
     }
 
-    public ReplyKeyboardMarkup getPartnersListKeyboard(List<Partner> partners) {
+    public ReplyKeyboardMarkup getPartnersListKeyboard(List<Partner> partners, boolean onlyValid) {
         ReplyKeyboardMarkup replyMarkup = new ReplyKeyboardMarkup();
         List<KeyboardRow> keyboard = new ArrayList<>();
         KeyboardRow firstRow = new KeyboardRow();
@@ -264,7 +264,7 @@ public class MenuConfig {
         keyboard.add(firstRow);
         for (Partner partner : partners) {
             KeyboardRow row = new KeyboardRow();
-            row.add(partner.getName());
+            row.add(partner.getName() + (onlyValid ? "" : (partner.isValid() ? " ✅" : " ❌")));
             keyboard.add(row);
         }
         replyMarkup.setKeyboard(keyboard);

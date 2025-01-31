@@ -124,16 +124,19 @@ public class ShowPartnersHandler implements MessageHandler {
                         .toList();
                     state.setStep(SHOW_PARTNER_DETAILS);
                     yield generateSendMessage(telegramId, "Партнеры РСМ: ",
-                        menuConfig.getPartnersListKeyboard(partners));
+                        menuConfig.getPartnersListKeyboard(partners, true));
                 } else {
                     List<Partner> partners = partnerRepository.findAll();
                     state.setStep(SHOW_PARTNER_DETAILS);
                     yield generateSendMessage(telegramId, "Партнеры РСМ: ",
-                        menuConfig.getPartnersListKeyboard(partners));
+                        menuConfig.getPartnersListKeyboard(partners, false));
                 }
             }
 
             case SHOW_PARTNER_DETAILS -> {
+                if (text.endsWith("✅") || text.endsWith("❌")) {
+                    text = text.substring(0, text.length() - 2).trim();
+                }
                 Optional<Partner> partnerOptional = partnerRepository.findByName(text);
                 if (partnerOptional.isPresent()) {
                     Partner targetPartner = partnerOptional.get();
@@ -224,7 +227,7 @@ public class ShowPartnersHandler implements MessageHandler {
                     state.setStep(SHOW_PARTNERS_LIST);
                     yield handle(messageDto, telegramId);
                 } else if (CHANGE_DISCOUNT.equalsIgnoreCase(text) &&
-                           basicStates.get(telegramId).getUser().getUserRole() != USER) {
+                    basicStates.get(telegramId).getUser().getUserRole() != USER) {
                     state.setStep(VERIFY_NEW_DISCOUNT_PERCENT);
                     yield generateSendMessage(telegramId, "Пожалуйста, введите новый процент скидки (от 0 до 100):",
                         menus.get(CANCEL_MENU));
@@ -336,16 +339,10 @@ public class ShowPartnersHandler implements MessageHandler {
                 activatePartner.setCallbackData(activatePartner.getText());
                 keyboard.add(List.of(activatePartner));
             }
-            if (userOptional.isPresent()) {
-                InlineKeyboardButton getDiscountButton = new InlineKeyboardButton(GET_DISCOUNT_CODE);
-                getDiscountButton.setCallbackData(getDiscountButton.getText());
-                keyboard.add(List.of(getDiscountButton));
-                if (userOptional.get().getUserRole() != USER) {
-                    InlineKeyboardButton changeDiscountButton = new InlineKeyboardButton(CHANGE_DISCOUNT);
-                    changeDiscountButton.setCallbackData(changeDiscountButton.getText());
-                    keyboard.add(List.of(changeDiscountButton));
-                }
-            }
+
+            InlineKeyboardButton getDiscountButton = new InlineKeyboardButton(GET_DISCOUNT_CODE);
+            getDiscountButton.setCallbackData(getDiscountButton.getText());
+            keyboard.add(List.of(getDiscountButton));
 
         }
         inlineKeyboardMarkup.setKeyboard(keyboard);
