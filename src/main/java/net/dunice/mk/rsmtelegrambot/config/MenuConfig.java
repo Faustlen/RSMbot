@@ -277,10 +277,9 @@ public class MenuConfig {
         ReplyKeyboardMarkup replyMarkup = new ReplyKeyboardMarkup();
         List<KeyboardRow> keyboard = new ArrayList<>();
         keyboard.add(new KeyboardRow());
-        keyboard.get(0).addAll(List.of(
-            PARTNERS_LIST,
-            EVENTS_LIST,
-            UPDATE_PROFILE));
+        keyboard.get(0).addAll(List.of(PARTNERS_LIST, EVENTS_LIST));
+        keyboard.add(new KeyboardRow());
+        keyboard.get(1).addAll(List.of(UPDATE_PROFILE));
         replyMarkup.setKeyboard(keyboard);
         replyMarkup.setResizeKeyboard(true);
         replyMarkup.setOneTimeKeyboard(false);
@@ -291,10 +290,9 @@ public class MenuConfig {
         ReplyKeyboardMarkup replyMarkup = getBaseUserMenu();
         List<KeyboardRow> keyboard = replyMarkup.getKeyboard();
         keyboard.add(new KeyboardRow());
-        keyboard.get(1).addAll(List.of(
-            ADD_EVENT,
-            USERS_LIST,
-            SEND_MESSAGE_TO_EVERYONE));
+        keyboard.get(1).addAll(List.of(USERS_LIST));
+        keyboard.add(new KeyboardRow());
+        keyboard.get(2).addAll(List.of(ADD_EVENT, SEND_MESSAGE_TO_EVERYONE));
         return replyMarkup;
     }
 
@@ -302,9 +300,7 @@ public class MenuConfig {
         ReplyKeyboardMarkup replyMarkup = getBaseAdminMenu();
         List<KeyboardRow> keyboard = replyMarkup.getKeyboard();
         keyboard.add(new KeyboardRow());
-        keyboard.get(2).addAll(List.of(
-            ADMINS_LIST,
-            PERIOD_ANALYTICS));
+        keyboard.get(3).addAll(List.of(ADMINS_LIST, PERIOD_ANALYTICS));
         return replyMarkup;
     }
 
