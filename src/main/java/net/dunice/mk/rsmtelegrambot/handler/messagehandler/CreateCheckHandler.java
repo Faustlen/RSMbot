@@ -100,9 +100,17 @@ public class CreateCheckHandler implements MessageHandler {
         if (YES.equalsIgnoreCase(text)) {
             state.setConfirmationDate(LocalDateTime.now());
             state.setStep(CONFIRM_CHECK_CREATION);
-            return generateSendMessage(telegramId, String.format(
-                    "Сумма чека: %.2f\nПроцент скидки: %d%%\nДата подтверждения: %s\nСформировать чек?",
+            return generateSendMessage(telegramId, String.format("""
+                    Сумма чека: %.2f
+                    Суммачека с учётом скидки: %.2f
+                    Процент скидки: %d%%
+                    Дата подтверждения: %s
+                    Сформировать чек?
+                    """,
                     state.getCheckSum(),
+                state.getCheckSum()
+                    .multiply(BigDecimal.valueOf(100 - state.getDiscountPercent())
+                    .divide(BigDecimal.valueOf(100))),
                     state.getDiscountPercent(),
                     state.getConfirmationDate().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss"))
             ), menus.get(SELECTION_MENU));
