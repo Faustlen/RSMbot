@@ -67,8 +67,8 @@ public class TelegramBot extends TelegramLongPollingBot implements MessageGenera
             Long telegramId = message.getFrom().getId();
             Integer userMessageId = message.getMessageId();
             Integer botMessageId = lastBotMessageIdMap.remove(telegramId);
+            //deleteMessage(telegramId, botMessageId);
             String text = message.getText();
-            deletePreviousMessages(telegramId, userMessageId, botMessageId);
             BasicState currentState = basicStates.get(telegramId);
             if (currentState == null) {
                 text = START.getStringValue();
@@ -87,21 +87,23 @@ public class TelegramBot extends TelegramLongPollingBot implements MessageGenera
                     ? handler.get().handle(messageDto, telegramId)
                     : generateSendMessage(telegramId, "Обработчик команды не найден"));
             }
+            deletePreviousMessages(telegramId, userMessageId, botMessageId);
         } else if (update.hasCallbackQuery()) {
             Long telegramId = update.getCallbackQuery().getFrom().getId();
+            Integer botMessageId = lastBotMessageIdMap.remove(telegramId);
             String text = update.getCallbackQuery().getData();
             if (text.startsWith("broadcast_")) {
                 messageDto.setText(text.replace("broadcast_", ""));
                 sendMessage(broadcastResponseHandler.handle(messageDto, telegramId));
                 deleteMessage(telegramId, update.getCallbackQuery().getMessage().getMessageId());
             } else {
-                deleteMessage(telegramId, lastBotMessageIdMap.remove(telegramId));
                 BasicState currentState = basicStates.get(telegramId);
                 Optional<MessageHandler> handler = getMessageHandlerForState(currentState);
                 messageDto.setText(text);
                 sendMessage(handler.isPresent()
                     ? handler.get().handle(messageDto, telegramId)
                     : generateSendMessage(telegramId, "Обработчик команды не найден"));
+                deleteMessage(telegramId, botMessageId);
             }
         }
     }
@@ -137,7 +139,7 @@ public class TelegramBot extends TelegramLongPollingBot implements MessageGenera
             .findFirst();
     }
 
-    private void deleteMessage(long chatId, int messageId) {
+    private void deleteMessage(Long chatId, Integer messageId) {
         DeleteMessage deleteMessage = new DeleteMessage();
         deleteMessage.setChatId(chatId);
         deleteMessage.setMessageId(messageId);
