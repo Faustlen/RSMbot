@@ -75,7 +75,9 @@ public class ShowAnalyticsHandler implements MessageHandler {
                     menuConfig.getPartnersListKeyboard(partners, false));
             }
             case SELECT_PARTNER -> {
-
+                if (text.endsWith("✅") || text.endsWith("❌")) {
+                    text = text.substring(0, text.length() - 2).trim();
+                }
                 Partner selectedPartner = partnerRepository.findByName(text).orElse(null);
                 if (selectedPartner == null) {
                     yield generateSendMessage(telegramId, "Партнёр не найден.",
