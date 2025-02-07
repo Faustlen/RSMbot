@@ -17,6 +17,7 @@ public class PartnerRegistrationState {
     private byte[] logo;
     private LocalDateTime discountDate;
     private String info;
+    private String address;
 
     public enum PartnerRegistrationStep {
         REQUEST_PARTNER_NAME,
@@ -27,6 +28,7 @@ public class PartnerRegistrationState {
         LOGO,
         DISCOUNT_DATE,
         PARTNER_INFO,
+        ADDRESS,
         FINISH
     }
 }

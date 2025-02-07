@@ -31,9 +31,9 @@ import net.dunice.mk.rsmtelegrambot.config.MenuConfig;
 import net.dunice.mk.rsmtelegrambot.constant.Menu;
 import net.dunice.mk.rsmtelegrambot.dto.MessageDto;
 import net.dunice.mk.rsmtelegrambot.entity.Partner;
+import net.dunice.mk.rsmtelegrambot.entity.Role;
 import net.dunice.mk.rsmtelegrambot.entity.User;
 import net.dunice.mk.rsmtelegrambot.event.BroadcastPartnersEvent;
-import net.dunice.mk.rsmtelegrambot.event.BroadcastUsersEvent;
 import net.dunice.mk.rsmtelegrambot.handler.MenuGenerator;
 import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
 import net.dunice.mk.rsmtelegrambot.handler.state.ShowPartnersState;
@@ -45,11 +45,14 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -62,20 +65,21 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class ShowPartnersHandler implements MessageHandler {
 
-    private static final String PARTNER_INFO_FOR_USERS = """
-        Партнер: %s
-        Категория: %s
-        Информация о партнере: %s
-        Номер телефона: %s
-        Процент скидки: %s%%
-        Дата окончания скидки: %s
-        """;
     private static final String PARTNER_INFO_FOR_PARTNERS = """
         Партнер: %s
         Категория: %s
         Информация о партнере: %s
         Номер телефона: %s
+        Адрес: %s
         """;
+
+    private static final String PARTNER_INFO_FOR_USERS = PARTNER_INFO_FOR_PARTNERS + """
+        Процент скидки: %s%%
+        Дата окончания скидки: %s
+        """;
+
+    private static final String PARTNER_INFO_FOR_ADMIN = PARTNER_INFO_FOR_USERS + "Активирован: %s";
+
     private static final String CHANGE_DISCOUNT_INFO = """
         Хотите изменить данные у партнера на следующие?
         Партнер: %s
@@ -83,20 +87,16 @@ public class ShowPartnersHandler implements MessageHandler {
         Дата окончания скидки: %s
         """;
 
-    private static final String PARTNER_INFO_FOR_ADMIN = """
-        Партнер: %s
-        Категория: %s
-        Информация о партнере: %s
-        Процент скидки: %s%%
-        Дата окончания скидки: %s
-        Номер телефона: %s
-        Активирован: %s
-        """;
-
     private static final String CHANGE_DISCOUNT_NOTIFICATION = """
         Ваши данные были изменены администратором:
         Процент скидки: %s%%
         Дата окончания скидки %S
+        """;
+
+    private static final String DISCOUNT_CODE_MESSAGE = """
+        Ваш скидочный код: %06d
+        Оставшееся время действия кода(в секундах): %s
+        Если ваш код, и код у партнера РСМ не совпадают, нажмите "Обновить код".
         """;
 
     private final ApplicationEventPublisher eventPublisher;
@@ -127,17 +127,19 @@ public class ShowPartnersHandler implements MessageHandler {
 
         return switch (state.getStep()) {
             case SHOW_PARTNERS_LIST -> {
+                List<Partner> partners = partnerRepository.findAll();
                 Optional<User> userOptional = userRepository.findById(telegramId);
-                if (userOptional.isPresent() && userOptional.get().getUserRole() == USER || userOptional.isEmpty()) {
-                    List<Partner> partners = partnerRepository.findAll().stream()
-                        .filter(Partner::isValid)
+                state.setStep(SHOW_PARTNER_DETAILS);
+
+                if (userOptional.isEmpty() || userOptional.get().getUserRole() == USER) {
+                    partners = partners.stream()
+                        .filter(partner ->
+                            partner.isValid() &&
+                            partner.getDiscountDate().isAfter(LocalDateTime.now()))
                         .toList();
-                    state.setStep(SHOW_PARTNER_DETAILS);
                     yield generateSendMessage(telegramId, "Партнеры РСМ: ",
                         menuConfig.getPartnersListKeyboard(partners, true));
                 } else {
-                    List<Partner> partners = partnerRepository.findAll();
-                    state.setStep(SHOW_PARTNER_DETAILS);
                     yield generateSendMessage(telegramId, "Партнеры РСМ: ",
                         menuConfig.getPartnersListKeyboard(partners, false));
                 }
@@ -151,81 +153,64 @@ public class ShowPartnersHandler implements MessageHandler {
                 if (partnerOptional.isPresent()) {
                     Partner targetPartner = partnerOptional.get();
                     Optional<User> userOptional = userRepository.findById(telegramId);
-                    User targetUser = userOptional.get();
                     String partnerDescription = "";
-                    if (userOptional.isEmpty() && targetPartner.isValid()) {
-                        partnerDescription = PARTNER_INFO_FOR_PARTNERS.formatted(
-                            targetPartner.getName(),
-                            targetPartner.getCategory().getCategoryName(),
-                            targetPartner.getPartnersInfo(),
-                            targetPartner.getPhoneNumber());
-                    } else if (targetUser.getUserRole().equals(USER) && targetPartner.isValid()) {
-                        partnerDescription = PARTNER_INFO_FOR_USERS.formatted(
-                            targetPartner.getName(),
-                            targetPartner.getCategory().getCategoryName(),
-                            targetPartner.getPartnersInfo(),
-                            targetPartner.getPhoneNumber(),
-                            targetPartner.getDiscountPercent(),
-                            targetPartner.getDiscountDate() == null ? "Неограниченно" :
-                                targetPartner.getDiscountDate().toLocalDate());
-                    } else if (targetUser.getUserRole().equals(SUPER_USER)) {
+                    if (userOptional.isEmpty()) {
                         if (targetPartner.isValid()) {
-                            partnerDescription = PARTNER_INFO_FOR_ADMIN.formatted(
+                            partnerDescription = PARTNER_INFO_FOR_PARTNERS.formatted(
                                 targetPartner.getName(),
                                 targetPartner.getCategory().getCategoryName(),
                                 targetPartner.getPartnersInfo(),
-                                targetPartner.getDiscountPercent(),
-                                targetPartner.getDiscountDate() == null ? "Неограниченно" :
-                                    targetPartner.getDiscountDate().toLocalDate(),
                                 targetPartner.getPhoneNumber(),
-                                "Да");
+                                getHyperlinkFromAddress(targetPartner.getAddress()));
                         } else {
-                            partnerDescription = PARTNER_INFO_FOR_ADMIN.formatted(
-                                targetPartner.getName(),
-                                targetPartner.getCategory().getCategoryName(),
-                                targetPartner.getPartnersInfo(),
-                                targetPartner.getDiscountPercent(),
-                                targetPartner.getDiscountDate() == null ? "Неограниченно" :
-                                    targetPartner.getDiscountDate().toLocalDate(),
-                                targetPartner.getPhoneNumber(),
-                                "Нет"
-                            );
+                            partnerDescription =
+                                "Информация о партнере (%s) недоступна для просмотра, пока не пройдет проверку администратором"
+                                    .formatted(targetPartner.getName());
                         }
-                    } else if (targetUser.getUserRole().equals(ADMIN)) {
-                        if (targetPartner.isValid()) {
+                    } else {
+                        Role role = userOptional.get().getUserRole();
+                        if (role == USER) {
+                            if (targetPartner.isValid()) {
+                                partnerDescription = PARTNER_INFO_FOR_USERS.formatted(
+                                    targetPartner.getName(),
+                                    targetPartner.getCategory().getCategoryName(),
+                                    targetPartner.getPartnersInfo(),
+                                    targetPartner.getPhoneNumber(),
+                                    getHyperlinkFromAddress(targetPartner.getAddress()),
+                                    targetPartner.getDiscountPercent(),
+                                    targetPartner.getDiscountDate() == null ? "Неограниченно" :
+                                        targetPartner.getDiscountDate().toLocalDate());
+                            } else {
+                                partnerDescription =
+                                    "Информация о партнере (%s) недоступна для просмотра, пока не пройдет проверку администратором"
+                                        .formatted(targetPartner.getName());
+                            }
+                        } else if (role == SUPER_USER || role == ADMIN) {
                             partnerDescription = PARTNER_INFO_FOR_ADMIN.formatted(
                                 targetPartner.getName(),
                                 targetPartner.getCategory().getCategoryName(),
                                 targetPartner.getPartnersInfo(),
-                                targetPartner.getDiscountPercent(),
-                                targetPartner.getDiscountDate() == null ? "Неограниченно" :
-                                    targetPartner.getDiscountDate().toLocalDate(),
                                 targetPartner.getPhoneNumber(),
-                                "Да");
-                        } else {
-                            partnerDescription = PARTNER_INFO_FOR_ADMIN.formatted(
-                                targetPartner.getName(),
-                                targetPartner.getCategory().getCategoryName(),
-                                targetPartner.getPartnersInfo(),
+                                getHyperlinkFromAddress(targetPartner.getAddress()),
                                 targetPartner.getDiscountPercent(),
-                                targetPartner.getDiscountDate() == null ? "Неограниченно" :
-                                    targetPartner.getDiscountDate().toLocalDate(),
-                                targetPartner.getPhoneNumber(),
-                                "Нет"
-                            );
+                                targetPartner.getDiscountDate() == null
+                                    ? "Неограниченно" : targetPartner.getDiscountDate().toLocalDate(),
+                                targetPartner.isValid() ? "Да" : "Нет");
                         }
                     }
-
                     byte[] logo = targetPartner.getLogo();
                     state.setStep(HANDLE_USER_ACTION);
                     state.setTargetPartner(targetPartner);
-
                     if (isLogoPresent(logo)) {
-                        yield generateImageMessage(telegramId, partnerDescription,
+                        SendPhoto sendPhoto = generateImageMessage(telegramId, partnerDescription,
                             getUserActionKeyboard(userOptional, partnerOptional), logo);
+                        sendPhoto.setParseMode("HTML");
+                        yield sendPhoto;
                     } else {
-                        yield generateSendMessage(telegramId, partnerDescription,
+                        SendMessage sendMessage = generateSendMessage(telegramId, partnerDescription,
                             getUserActionKeyboard(userOptional, partnerOptional));
+                        sendMessage.setParseMode("HTML");
+                        yield sendMessage;
                     }
                 } else {
                     yield generateSendMessage(telegramId, "Нет партнера с таким названием.");
@@ -237,7 +222,7 @@ public class ShowPartnersHandler implements MessageHandler {
                     state.setStep(SHOW_PARTNERS_LIST);
                     yield handle(messageDto, telegramId);
                 } else if (CHANGE_DISCOUNT.equalsIgnoreCase(text) &&
-                    basicStates.get(telegramId).getUser().getUserRole() != USER) {
+                           basicStates.get(telegramId).getUser().getUserRole() != USER) {
                     state.setStep(VERIFY_NEW_DISCOUNT_PERCENT);
                     yield generateSendMessage(telegramId, "Пожалуйста, введите новый процент скидки (от 0 до 100):",
                         menus.get(CANCEL_MENU));
@@ -321,16 +306,11 @@ public class ShowPartnersHandler implements MessageHandler {
             }
 
             case SEND_DISCOUNT_CODE -> {
-                yield generateSendMessage(telegramId, """
-                        Ваш скидочный код: %06d
-                        Оставшееся время действия кода(в секундах): %s
-                        Если ваш код, и код у партнера РСМ не совпадают, нажмите "Обновить код".
-                        """.formatted(discountCodeService.getDiscountCode(), discountCodeService.getSecondsLeft()),
+                yield generateSendMessage(telegramId, DISCOUNT_CODE_MESSAGE
+                        .formatted(discountCodeService.getDiscountCode(), discountCodeService.getSecondsLeft()),
                     menus.get(UPDATE_DISCOUNT_CODE_MENU));
             }
-        }
-
-            ;
+        };
     }
 
     private ReplyKeyboard getUserActionKeyboard(Optional<User> userOptional, Optional<Partner> partnerOptional) {
@@ -375,6 +355,12 @@ public class ShowPartnersHandler implements MessageHandler {
             return menuGenerator.generateRoleSpecificMainMenu(telegramId,
                 userRepository.findByTelegramId(telegramId).get().getUserRole());
         }
+    }
+
+    private String getHyperlinkFromAddress(String address) {
+        String encodedAddress = URLEncoder.encode(address, StandardCharsets.UTF_8);
+        String url = "https://yandex.ru/maps/?text=" + encodedAddress;
+        return String.format("<a href=\"%s\">%s</a>", url, address);
     }
 
     private boolean isLogoPresent(byte[] logo) {

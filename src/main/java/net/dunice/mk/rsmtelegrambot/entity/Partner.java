@@ -27,6 +27,9 @@ public class Partner {
     @Column(nullable = false, unique = true, name = "phone_number")
     private String phoneNumber;
 
+    @Column(nullable = false, name = "address")
+    private String address;
+
     @Column(name = "discount_percent")
     private Short discountPercent;
 
