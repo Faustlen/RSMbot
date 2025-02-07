@@ -8,6 +8,7 @@ import static net.dunice.mk.rsmtelegrambot.constant.Menu.GO_TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_PARTNER_MENU;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.PARTNER_REGISTRATION;
+import static net.dunice.mk.rsmtelegrambot.handler.state.PartnerRegistrationState.PartnerRegistrationStep.ADDRESS;
 import static net.dunice.mk.rsmtelegrambot.handler.state.PartnerRegistrationState.PartnerRegistrationStep.CATEGORY;
 import static net.dunice.mk.rsmtelegrambot.handler.state.PartnerRegistrationState.PartnerRegistrationStep.DISCOUNT_DATE;
 import static net.dunice.mk.rsmtelegrambot.handler.state.PartnerRegistrationState.PartnerRegistrationStep.DISCOUNT_PERCENT;
@@ -63,6 +64,7 @@ public class PartnerRegistrationHandler implements MessageHandler {
             return generateSendMessage(telegramId,
                 "Регистрация отменена, введите /start, если хотите попробовать заново:");
         }
+
 
         return switch (state.getStep()) {
             case REQUEST_PARTNER_NAME -> {
@@ -151,13 +153,33 @@ public class PartnerRegistrationHandler implements MessageHandler {
             case PARTNER_INFO -> {
                 if (text != null && text.length() <= 255) {
                     state.setInfo(text.trim());
+                    state.setStep(ADDRESS);
+                    yield generateSendMessage(telegramId,
+                        "Введите адрес (улица и номер дома, например Крестьянская 207): ",
+                        menus.get(CANCEL_MENU));
+                } else {
+                    yield generateSendMessage(telegramId,
+                        "Информация слишком длинная. Повторите ввод (до 255 символов):", menus.get(CANCEL_MENU));
+                }
+            }
+            case ADDRESS -> {
+                if (text != null && text.length() <= 255) {
+                    String address = text.trim();
+                    String[] parts = address.split(" ");
+                    if (parts.length != 2) {
+                        yield generateSendMessage(telegramId,
+                            "Адрес должен соответствовать формату (улица и номер дома, например Крестьянская 207), Повторите ввод (до 255 символов):",
+                            menus.get(CANCEL_MENU));
+                    }
+                    address = "г. Майкоп, ул. %s, д. %s".formatted(parts[0], parts[1]);
+                    state.setAddress(address);
                     savePartner(state, telegramId);
                     state.setStep(FINISH);
                     yield generateSendMessage(telegramId, "Данные добавлены и отправлены на проверку.",
                         menus.get(GO_TO_MAIN_MENU));
                 } else {
                     yield generateSendMessage(telegramId,
-                        "Информация слишком длинная. Повторите ввод (до 255 символов):", menus.get(CANCEL_MENU));
+                        "Адрес слишком длинный. Повторите ввод (до 255 символов):", menus.get(CANCEL_MENU));
                 }
             }
             case FINISH -> {
@@ -180,6 +202,7 @@ public class PartnerRegistrationHandler implements MessageHandler {
         partner.setLogo(state.getLogo());
         partner.setDiscountDate(state.getDiscountDate());
         partner.setPartnersInfo(state.getInfo());
+        partner.setAddress(state.getAddress());
         partner.setValid(false);
         partnerRepository.save(partner);
         eventPublisher.publishEvent(new PartnerRegisteredEvent(partner));

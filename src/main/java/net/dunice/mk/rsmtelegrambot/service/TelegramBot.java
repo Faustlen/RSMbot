@@ -67,7 +67,6 @@ public class TelegramBot extends TelegramLongPollingBot implements MessageGenera
             Long telegramId = message.getFrom().getId();
             Integer userMessageId = message.getMessageId();
             Integer botMessageId = lastBotMessageIdMap.remove(telegramId);
-            //deleteMessage(telegramId, botMessageId);
             String text = message.getText();
             BasicState currentState = basicStates.get(telegramId);
             if (currentState == null) {
@@ -123,7 +122,7 @@ public class TelegramBot extends TelegramLongPollingBot implements MessageGenera
 
     public void sendNoDeleteMessage(PartialBotApiMethod<Message> message) {
         try {
-            Message sentMessage = switch (message) {
+            switch (message) {
                 case SendMessage sendMessage -> execute(sendMessage);
                 case SendPhoto sendPhoto -> execute(sendPhoto);
                 default -> throw new IllegalStateException("Unexpected value: " + message);

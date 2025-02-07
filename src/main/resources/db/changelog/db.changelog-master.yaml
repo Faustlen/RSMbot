@@ -17,3 +17,5 @@ databaseChangeLog:
       file: classpath:/db/changelog/changes/V008_alter_table_partners_partners_info_600_chars.sql
   - include:
       file: classpath:/db/changelog/changes/V009_alter_table_users_drop_constraint_fk_user_card.sql
+  - include:
+      file: classpath:/db/changelog/changes/V010_alter_table_partners_add_address.sql
