@@ -82,7 +82,7 @@ public class ShowEventsHandler implements MessageHandler {
 
         return switch (state.getStep()) {
             case SHOW_EVENTS_LIST -> {
-                List<Event> events = eventRepository.findAll(Sort.by(Sort.Direction.ASC, "title"));
+                List<Event> events = eventRepository.findAll(Sort.by(Sort.Direction.DESC, "eventDate"));
                 state.setStep(SHOW_EVENT_DETAILS);
                 yield generateSendMessage(telegramId, "Выберите интересующее вас мероприятие: ",
                     generateEventListKeyboard(events));
@@ -213,7 +213,10 @@ public class ShowEventsHandler implements MessageHandler {
         for (int i = 0; i < events.size(); ) {
             KeyboardRow row = new KeyboardRow();
             Event event = events.get(i++);
-            row.add("%s | ID: %s".formatted(event.getTitle(), event.getEventId()));
+            row.add("%s\n%s | ID: %s".formatted(
+                event.getTitle(),
+                event.getEventDate().format(DateTimeFormatter.ofPattern("dd.MM.yyyy")),
+                event.getEventId()));
             keyboard.add(row);
         }
         replyMarkup.setKeyboard(keyboard);
