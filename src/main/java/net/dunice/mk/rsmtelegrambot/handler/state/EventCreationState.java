@@ -13,6 +13,7 @@ public class EventCreationState {
     private String eventDescription;
     private LocalDateTime eventDateTime;
     private String eventLink;
+    private String address;
 
     public enum EventCreationStep {
         REQUEST_EVENT_NAME,
@@ -20,6 +21,7 @@ public class EventCreationState {
         VALIDATE_EVENT_DESCRIPTION,
         VALIDATE_EVENT_DATE_TIME,
         VALIDATE_EVENT_LINK,
+        VALIDATE_EVENT_ADDRESS,
         CONFIRM_EVENT,
         FINISH
     }

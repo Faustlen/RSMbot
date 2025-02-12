@@ -58,6 +58,7 @@ public class ShowEventsHandler implements MessageHandler {
         Мероприятие: %s
         Описание: %s
         Ссылка: %s
+        Адресс: %s
         Дата: %s  |  Время: %s
         """;
     private final EventRepository eventRepository;
@@ -200,6 +201,7 @@ public class ShowEventsHandler implements MessageHandler {
             targetEvent.getTitle(),
             targetEvent.getText(),
             targetEvent.getLink(),
+            targetEvent.getAddress(),
             targetEvent.getEventDate().toLocalDate().format(DateTimeFormatter.ofPattern("dd.MM.yyyy")),
             targetEvent.getEventDate().toLocalTime().format(DateTimeFormatter.ofPattern("hh:mm")));
     }

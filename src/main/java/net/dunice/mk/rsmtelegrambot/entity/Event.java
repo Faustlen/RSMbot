@@ -33,4 +33,7 @@ public class Event {
 
     @Column
     private String link;
+
+    @Column(nullable = false, name = "address")
+    private String address;
 }
