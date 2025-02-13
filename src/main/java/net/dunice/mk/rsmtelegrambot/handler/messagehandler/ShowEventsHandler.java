@@ -148,6 +148,11 @@ public class ShowEventsHandler implements MessageHandler {
                     state.setStep(EDIT_EVENT_FIELD);
                     state.setEditingFieldName(text);
                     yield generateSendMessage(telegramId, "Введите новую ссылку:", menus.get(CANCEL_MENU));
+                } else if (text.equalsIgnoreCase("Адресс")){
+                    state.setStep(EDIT_EVENT_FIELD);
+                    state.setEditingFieldName(text);
+                    yield generateSendMessage(telegramId,
+                        "Введите адрес (улица и номер дома, например Крестьянская 207): ", menus.get(CANCEL_MENU));
                 } else {
                     yield generateSendMessage(telegramId, "Неверное поле. Выберите одно из доступных.",
                         menus.get(EVENT_FIELDS_MENU));
@@ -168,6 +173,17 @@ public class ShowEventsHandler implements MessageHandler {
                         case "Дата и Время" -> targetEvent.setEventDate(
                             LocalDateTime.parse(text.trim(), DateTimeFormatter.ofPattern("dd.MM.yyyy-HH:mm")));
                         case "Ссылка" -> targetEvent.setLink(text.trim());
+                        case "Адресс" -> {
+                            if (text != null && text.length() <= 255) {
+                                String address = text.trim();
+                                String[] parts = address.split(" ");
+                                if (parts.length != 2) {
+                                    throw new RuntimeException();
+                                }
+                                address = "г. Майкоп, ул. %s, д. %s".formatted(parts[0], parts[1]);
+                                targetEvent.setAddress(address);
+                            }
+                        }
                     }
                     state.setStep(CONFIRM_EVENT_EDIT);
                     yield generateSendMessage(telegramId,
