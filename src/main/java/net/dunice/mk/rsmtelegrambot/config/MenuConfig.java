@@ -275,36 +275,42 @@ public class MenuConfig {
         return replyMarkup;
     }
 
-    private ReplyKeyboardMarkup getBaseUserMenu() {
+    private ReplyKeyboardMarkup createReplyKeyboard(List<List<String>> buttonRows) {
         ReplyKeyboardMarkup replyMarkup = new ReplyKeyboardMarkup();
         List<KeyboardRow> keyboard = new ArrayList<>();
-        keyboard.add(new KeyboardRow());
-        keyboard.get(0).addAll(List.of(PARTNERS_LIST, EVENTS_LIST));
-        keyboard.add(new KeyboardRow());
-        keyboard.get(1).addAll(List.of(UPDATE_PROFILE));
+        for (List<String> rowButtons : buttonRows) {
+            KeyboardRow row = new KeyboardRow();
+            row.addAll(rowButtons);
+            keyboard.add(row);
+        }
         replyMarkup.setKeyboard(keyboard);
         replyMarkup.setResizeKeyboard(true);
         replyMarkup.setOneTimeKeyboard(false);
         return replyMarkup;
     }
 
+    private ReplyKeyboardMarkup getBaseUserMenu() {
+        return createReplyKeyboard(List.of(
+            List.of(PARTNERS_LIST, EVENTS_LIST),
+            List.of(UPDATE_PROFILE)
+        ));
+    }
+
     private ReplyKeyboardMarkup getBaseAdminMenu() {
-        ReplyKeyboardMarkup replyMarkup = getBaseUserMenu();
-        List<KeyboardRow> keyboard = replyMarkup.getKeyboard();
-        keyboard.add(new KeyboardRow());
-        keyboard.get(1).addAll(List.of(USERS_LIST));
-        keyboard.add(new KeyboardRow());
-        keyboard.get(2).addAll(List.of(ADD_EVENT, SEND_MESSAGE_TO_EVERYONE));
-        return replyMarkup;
+        return createReplyKeyboard(List.of(
+            List.of(PARTNERS_LIST, USERS_LIST),
+            List.of(EVENTS_LIST, ADD_EVENT),
+            List.of(SEND_MESSAGE_TO_EVERYONE, UPDATE_PROFILE)
+        ));
     }
 
     private ReplyKeyboardMarkup getBaseSuperUserMenu() {
-        ReplyKeyboardMarkup replyMarkup = getBaseAdminMenu();
-        List<KeyboardRow> keyboard = replyMarkup.getKeyboard();
-        keyboard.add(new KeyboardRow());
-        keyboard.get(3).addAll(List.of(ADMINS_LIST, PERIOD_ANALYTICS));
-        return replyMarkup;
+        return createReplyKeyboard(List.of(
+            List.of(PARTNERS_LIST, USERS_LIST),
+            List.of(ADMINS_LIST, EVENTS_LIST),
+            List.of(ADD_EVENT, PERIOD_ANALYTICS),
+            List.of(SEND_MESSAGE_TO_EVERYONE, UPDATE_PROFILE)
+        ));
     }
-
 
 }
