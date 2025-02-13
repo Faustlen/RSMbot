@@ -29,17 +29,16 @@ import java.util.Objects;
 import java.util.Optional;
 
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CANCEL;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CANCEL_CHANGES;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CHANGE_ADDRESS;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CHANGE_CATEGORY;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CHANGE_INFO;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CHANGE_LOGO;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CHANGE_NAME;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CHANGE_PHONE_NUMBER;
-import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CONFIRM;
-import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TO_MAIN_MENU;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CONFIRM_CHANGES;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.CANCEL_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.CATEGORY_MENU;
-import static net.dunice.mk.rsmtelegrambot.constant.Menu.GO_TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_PARTNER_MENU;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.PARTNER_EDITING;
 import static net.dunice.mk.rsmtelegrambot.handler.state.PartnerEditingState.PartnerEditingStep.CHOICE_OPTION;
@@ -50,7 +49,6 @@ import static net.dunice.mk.rsmtelegrambot.handler.state.PartnerEditingState.Par
 import static net.dunice.mk.rsmtelegrambot.handler.state.PartnerEditingState.PartnerEditingStep.UPDATE_LOGO;
 import static net.dunice.mk.rsmtelegrambot.handler.state.PartnerEditingState.PartnerEditingStep.UPDATE_NAME;
 import static net.dunice.mk.rsmtelegrambot.handler.state.PartnerEditingState.PartnerEditingStep.UPDATE_PHONE_NUMBER;
-import static net.dunice.mk.rsmtelegrambot.handler.state.PartnerRegistrationState.PartnerRegistrationStep.FINISH;
 
 @Service
 @RequiredArgsConstructor
@@ -86,8 +84,8 @@ public class PartnerEditingHandler implements MessageHandler{
             state.setPartner(partnerRepository.findById(telegramId).get());
         }
 
-        if (StringUtils.equalsAny(text, TO_MAIN_MENU, CONFIRM)) {
-            if (text.equals(CONFIRM)) {
+        if (StringUtils.equalsAny(text, CANCEL_CHANGES, CONFIRM_CHANGES)) {
+            if (text.equals(CONFIRM_CHANGES)) {
                 state.getPartner().setValid(false);
                 partnerRepository.save(state.getPartner());
                 eventPublisher.publishEvent(new PartnerRegisteredEvent(state.getPartner()));
@@ -263,9 +261,9 @@ public class PartnerEditingHandler implements MessageHandler{
         changeAddressButton.setCallbackData(changeAddressButton.getText());
         keyboard.add(List.of(changePhoneNumberButton, changeAddressButton));
 
-        InlineKeyboardButton mainMenuButton = new InlineKeyboardButton(TO_MAIN_MENU);
+        InlineKeyboardButton mainMenuButton = new InlineKeyboardButton(CANCEL_CHANGES);
         mainMenuButton.setCallbackData(mainMenuButton.getText());
-        InlineKeyboardButton confirmButton = new InlineKeyboardButton(CONFIRM);
+        InlineKeyboardButton confirmButton = new InlineKeyboardButton(CONFIRM_CHANGES);
         confirmButton.setCallbackData(confirmButton.getText());
         keyboard.add(List.of(mainMenuButton, confirmButton));
 
