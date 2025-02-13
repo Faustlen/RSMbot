@@ -39,5 +39,6 @@ public class ButtonName {
         CHANGE_NAME = "Изменить название",
         CHANGE_CATEGORY = "Изменить категорию",
         CHANGE_INFO = "Изменить описание",
-        CHANGE_PHONE_NUMBER = "Изменить номер телефона";
+        CHANGE_PHONE_NUMBER = "Изменить номер телефона",
+        CHANGE_ADDRESS = "Изменить адресс";
 }

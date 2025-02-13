@@ -42,6 +42,8 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMar
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -101,7 +103,9 @@ public class ShowEventsHandler implements MessageHandler {
                         state.setTargetEvent(targetEvent);
                         String eventDescription = getEventDescription(targetEvent);
                         state.setStep(HANDLE_USER_ACTION);
-                        yield generateSendMessage(telegramId, eventDescription, getUserActionKeyboard(userOptional));
+                        SendMessage sendMessage = generateSendMessage(telegramId, eventDescription, getUserActionKeyboard(userOptional));
+                        sendMessage.setParseMode("HTML");
+                        yield sendMessage;
                     } else {
                         yield generateSendMessage(telegramId, "Мероприятие не найдено.");
                     }
@@ -186,9 +190,11 @@ public class ShowEventsHandler implements MessageHandler {
                         }
                     }
                     state.setStep(CONFIRM_EVENT_EDIT);
-                    yield generateSendMessage(telegramId,
+                    SendMessage sendMessage = generateSendMessage(telegramId,
                         "Мероприятие с новыми данными:\n" + getEventDescription(targetEvent) + "\nСохранить изменения?",
                         menus.get(SELECTION_MENU));
+                    sendMessage.setParseMode("HTML");
+                    yield sendMessage;
                 } catch (DateTimeParseException e) {
                     yield generateSendMessage(telegramId,
                         "Дата должна быть в формате (ДД.ММ.ГГГГ-ЧЧ:ММ). Повторите ввод:");
@@ -217,7 +223,7 @@ public class ShowEventsHandler implements MessageHandler {
             targetEvent.getTitle(),
             targetEvent.getText(),
             targetEvent.getLink(),
-            targetEvent.getAddress(),
+            getHyperlinkFromAddress(targetEvent.getAddress()),
             targetEvent.getEventDate().toLocalDate().format(DateTimeFormatter.ofPattern("dd.MM.yyyy")),
             targetEvent.getEventDate().toLocalTime().format(DateTimeFormatter.ofPattern("hh:mm")));
     }
@@ -270,5 +276,11 @@ public class ShowEventsHandler implements MessageHandler {
         state.setStep(IN_MAIN_MENU);
         return menuGenerator.generateRoleSpecificMainMenu(telegramId,
             state.getUser().getUserRole());
+    }
+
+    private String getHyperlinkFromAddress(String address) {
+        String encodedAddress = URLEncoder.encode(address, StandardCharsets.UTF_8);
+        String url = "https://yandex.ru/maps/?text=" + encodedAddress;
+        return String.format("<a href=\"%s\">%s</a>", url, address);
     }
 }
