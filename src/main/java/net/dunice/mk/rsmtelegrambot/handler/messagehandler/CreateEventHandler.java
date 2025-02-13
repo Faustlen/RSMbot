@@ -12,6 +12,7 @@ import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.CR
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.handler.state.EventCreationState.EventCreationStep.CONFIRM_EVENT;
 import static net.dunice.mk.rsmtelegrambot.handler.state.EventCreationState.EventCreationStep.FINISH;
+import static net.dunice.mk.rsmtelegrambot.handler.state.EventCreationState.EventCreationStep.VALIDATE_EVENT_ADDRESS;
 import static net.dunice.mk.rsmtelegrambot.handler.state.EventCreationState.EventCreationStep.VALIDATE_EVENT_DATE_TIME;
 import static net.dunice.mk.rsmtelegrambot.handler.state.EventCreationState.EventCreationStep.VALIDATE_EVENT_DESCRIPTION;
 import static net.dunice.mk.rsmtelegrambot.handler.state.EventCreationState.EventCreationStep.VALIDATE_EVENT_LINK;
@@ -44,6 +45,7 @@ public class CreateEventHandler implements MessageHandler {
         Описание: %s
         Дата и время: %s
         Ссылка: %s
+        Адресс: %s
         """;
     private final Map<Long, EventCreationState> eventCreationStates;
     private final Map<Long, BasicState> basicStates;
@@ -128,15 +130,37 @@ public class CreateEventHandler implements MessageHandler {
                         menus.get(CANCEL_MENU));
                 }
                 state.setEventLink(text.strip());
-                state.setStep(CONFIRM_EVENT);
-                yield generateSendMessage(telegramId, "Создать мероприятие?\n" +
-                                                      EVENT_INFO_TEMPLATE.formatted(
-                                                          state.getEventName(),
-                                                          state.getEventDescription(),
-                                                          state.getEventDateTime()
-                                                              .format(
-                                                                  DateTimeFormatter.ofPattern("dd.MM.yyyy | HH:mm")),
-                                                          state.getEventLink()), menus.get(Menu.SELECTION_MENU));
+                state.setStep(VALIDATE_EVENT_ADDRESS);
+                yield generateSendMessage(telegramId,
+                    "Введите адрес (улица и номер дома, например Крестьянская 207): ",
+                    menus.get(CANCEL_MENU));
+            }
+            case VALIDATE_EVENT_ADDRESS -> {
+                if (text != null && text.length() <= 255) {
+                    String address = text.trim();
+                    String[] parts = address.split(" ");
+                    if (parts.length != 2) {
+                        yield generateSendMessage(telegramId,
+                            "Адрес должен соответствовать формату (улица и номер дома, например Крестьянская 207), Повторите ввод (до 255 символов):",
+                            menus.get(CANCEL_MENU));
+                    }
+                    address = "г. Майкоп, ул. %s, д. %s".formatted(parts[0], parts[1]);
+                    state.setAddress(address);
+                    state.setStep(CONFIRM_EVENT);
+                    yield generateSendMessage(telegramId, "Создать мероприятие?\n" +
+                            EVENT_INFO_TEMPLATE.formatted(
+                                state.getEventName(),
+                                state.getEventDescription(),
+                                state.getEventDateTime()
+                                    .format(
+                                        DateTimeFormatter.ofPattern("dd.MM.yyyy | HH:mm")),
+                                state.getEventLink(),
+                                state.getAddress()),
+                        menus.get(Menu.SELECTION_MENU));
+                } else {
+                    yield generateSendMessage(telegramId,
+                        "Адрес слишком длинный. Повторите ввод (до 255 символов):", menus.get(CANCEL_MENU));
+                }
             }
             case CONFIRM_EVENT -> {
                 if (YES.equalsIgnoreCase(text)) {
@@ -165,6 +189,7 @@ public class CreateEventHandler implements MessageHandler {
         event.setTitle(state.getEventName());
         event.setText(state.getEventDescription());
         event.setEventDate(state.getEventDateTime());
+        event.setAddress(state.getAddress());
         event.setLink(state.getEventLink());
         eventRepository.save(event);
     }
