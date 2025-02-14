@@ -10,12 +10,14 @@ import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.YES;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.CANCEL_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.EVENT_FIELDS_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.GO_TO_MAIN_MENU;
+import static net.dunice.mk.rsmtelegrambot.constant.Menu.OK_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.SELECTION_MENU;
 import static net.dunice.mk.rsmtelegrambot.entity.Role.USER;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.SHOW_EVENTS;
 import static net.dunice.mk.rsmtelegrambot.handler.state.ShowEventsState.ShowEventsStep.CONFIRM_EVENT_EDIT;
+import static net.dunice.mk.rsmtelegrambot.handler.state.ShowEventsState.ShowEventsStep.CONFIRM_EVENT_DELETE;
 import static net.dunice.mk.rsmtelegrambot.handler.state.ShowEventsState.ShowEventsStep.EDIT_EVENT_FIELD;
 import static net.dunice.mk.rsmtelegrambot.handler.state.ShowEventsState.ShowEventsStep.HANDLE_USER_ACTION;
 import static net.dunice.mk.rsmtelegrambot.handler.state.ShowEventsState.ShowEventsStep.SELECT_EVENT_FIELD;
@@ -33,7 +35,6 @@ import net.dunice.mk.rsmtelegrambot.handler.state.ShowEventsState;
 import net.dunice.mk.rsmtelegrambot.repository.EventRepository;
 import net.dunice.mk.rsmtelegrambot.repository.UserRepository;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
@@ -120,9 +121,10 @@ public class ShowEventsHandler implements MessageHandler {
                     state.setStep(SHOW_EVENTS_LIST);
                     yield handle(messageDto, telegramId);
                 } else if (text.equals(DELETE_EVENT)) {
-                    eventRepository.delete(state.getTargetEvent());
-                    state.setStep(SHOW_EVENTS_LIST);
-                    yield handle(messageDto, telegramId);
+                    state.setStep(CONFIRM_EVENT_DELETE);
+                    yield generateSendMessage(telegramId,
+                        String.format("Вы точно хотите удалить меропирятие '%s'?", state.getTargetEvent().getTitle()),
+                        menus.get(SELECTION_MENU));
                 } else if (text.equals(EDIT_EVENT)) {
                     state.setStep(SELECT_EVENT_FIELD);
                     yield generateSendMessage(telegramId, "Выберите поле, которое хотите отредактировать:",
@@ -182,7 +184,14 @@ public class ShowEventsHandler implements MessageHandler {
                                 String address = text.trim();
                                 String[] parts = address.split(" ");
                                 if (parts.length != 2) {
-                                    throw new RuntimeException();
+                                    yield generateSendMessage(telegramId,
+                                        "Адрес должен соответствовать формату (улица и номер дома, например Крестьянская 207), Повторите ввод (до 255 символов):",
+                                        menus.get(CANCEL_MENU));
+                                }
+                                if (!parts[1].matches("^[0-9]+[A-Za-zА-Яа-я]?$|^[0-9]+/[0-9]+$|^[0-9]+[A-Za-zА-Яа-я]?/[0-9]+$")) {
+                                    yield generateSendMessage(telegramId,
+                                        "Номер дома должен быть в формате '123', '123А' или '123/456'. Повторите ввод:",
+                                        menus.get(CANCEL_MENU));
                                 }
                                 address = "г. Майкоп, ул. %s, д. %s".formatted(parts[0], parts[1]);
                                 targetEvent.setAddress(address);
@@ -214,6 +223,22 @@ public class ShowEventsHandler implements MessageHandler {
                 } else {
                     yield generateSendMessage(telegramId, "Неверная команда.", menus.get(SELECTION_MENU));
                 }
+            }
+
+            case CONFIRM_EVENT_DELETE -> {
+                String responseMessage;
+                state.setStep(SHOW_EVENTS_LIST);
+
+                if (YES.equalsIgnoreCase(text)) {
+                    eventRepository.delete(state.getTargetEvent());
+                    responseMessage = String.format("Мероприятие '%s' удалено.", state.getTargetEvent().getTitle());
+                } else if (NO.equalsIgnoreCase(text)) {
+                    responseMessage = "Удаление мероприятия отменено.";
+                } else {
+                    responseMessage = "Неверная команда.";
+                }
+                yield generateSendMessage(telegramId, responseMessage,
+                    menus.get(OK_MENU));
             }
         };
     }

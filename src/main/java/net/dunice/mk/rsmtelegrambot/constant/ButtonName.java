@@ -5,6 +5,7 @@ public class ButtonName {
         UPDATE_PROFILE = "⚙ Изменить профиль",
         YES = "Да",
         NO = "Нет",
+        OK = "Ок",
         GRANT_ADMIN = "\uD83C\uDD99 Назначить админом",
         REVOKE_ADMIN = "⛔\uFE0F Отстранить админа",
         ADMINS_LIST = "☰ Список админов",

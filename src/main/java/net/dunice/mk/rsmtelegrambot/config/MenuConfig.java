@@ -6,6 +6,7 @@ import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CANCEL;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.EVENTS_LIST;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.NEW_CHECK;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.NO;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.OK;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.PARTNERS_LIST;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.PERIOD_ANALYTICS;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.RSM_MEMBER;
@@ -24,6 +25,7 @@ import static net.dunice.mk.rsmtelegrambot.constant.Menu.CATEGORY_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.EVENT_FIELDS_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.GO_TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.MAIN_MENU;
+import static net.dunice.mk.rsmtelegrambot.constant.Menu.OK_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.PARTNER_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.SELECTION_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.SELECTION_USER_TYPE_MENU;
@@ -58,8 +60,9 @@ public class MenuConfig {
         ReplyKeyboard tryAgainOrGoToMainMenu, ReplyKeyboard selectionUserTypeMenu,
         ReplyKeyboard partnerMainMenu, ReplyKeyboard cancelMenu,
         ReplyKeyboard categoryMenu, ReplyKeyboard eventFieldsMenu,
-        ReplyKeyboard updateDiscountCodeMenu) {
+        ReplyKeyboard updateDiscountCodeMenu, ReplyKeyboard okMenu) {
         EnumMap<Menu, ReplyKeyboard> menus = new EnumMap<>(Menu.class);
+        menus.put(OK_MENU, okMenu);
         menus.put(SELECTION_MENU, selectionMenu);
         menus.put(SELECTION_USER_TYPE_MENU, selectionUserTypeMenu);
         menus.put(MAIN_MENU, userMainMenu);
@@ -252,6 +255,20 @@ public class MenuConfig {
             }
             keyboard.add(row);
         }
+        inlineKeyboardMarkup.setKeyboard(keyboard);
+        return inlineKeyboardMarkup;
+    }
+
+    @Bean("okMenu")
+    public ReplyKeyboard getOkMenu() {
+        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
+        List<InlineKeyboardButton> row = new ArrayList<>();
+        InlineKeyboardButton buttonOk = new InlineKeyboardButton();
+        buttonOk.setText(OK);
+        buttonOk.setCallbackData(buttonOk.getText());
+        row.add(buttonOk);
+        keyboard.add(row);
         inlineKeyboardMarkup.setKeyboard(keyboard);
         return inlineKeyboardMarkup;
     }

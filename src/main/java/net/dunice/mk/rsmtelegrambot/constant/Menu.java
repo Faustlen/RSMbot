@@ -1,6 +1,7 @@
 package net.dunice.mk.rsmtelegrambot.constant;
 
 public enum Menu {
+    OK_MENU,
     SELECTION_MENU,
     SELECTION_USER_TYPE_MENU,
     MAIN_MENU,
