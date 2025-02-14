@@ -114,10 +114,10 @@ public class ShowAnalyticsHandler implements MessageHandler {
                     } else {
                         yield generateSendMessage(telegramId,
                             "Аналитика:\n" +
-                            "Средний чек: " + analytics.getAvgCheck() + "\n" +
-                            "Сумма чеков: " + analytics.getTotalSum() + "\n" +
-                            "Сумма скидок: " + analytics.getTotalDiscount() + "\n" +
-                            "Количество чеков: " + analytics.getCheckCount(),
+                                "Средний чек: " + Math.round(analytics.getAvgCheck()) + " р.\n" +
+                                "Сумма чеков: " + Math.round(analytics.getTotalSum()) + " р.\n" +
+                                "Сумма скидок: " + Math.round(analytics.getTotalDiscount()) + " р.\n" +
+                                "Количество чеков: " + analytics.getCheckCount(),
                             menuConfig.getGoToMainMenu());
                     }
                 } catch (Exception e) {
