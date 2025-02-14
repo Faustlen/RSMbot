@@ -42,6 +42,8 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMar
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -58,7 +60,7 @@ public class ShowEventsHandler implements MessageHandler {
         Мероприятие: %s
         Описание: %s
         Ссылка: %s
-        Адресс: %s
+        Адрес: %s
         Дата: %s  |  Время: %s
         """;
     private final EventRepository eventRepository;
@@ -83,7 +85,7 @@ public class ShowEventsHandler implements MessageHandler {
 
         return switch (state.getStep()) {
             case SHOW_EVENTS_LIST -> {
-                List<Event> events = eventRepository.findAll(Sort.by(Sort.Direction.DESC, "eventDate"));
+                List<Event> events = eventRepository.findAllByEventDateAfterOrderByEventDateAsc(LocalDateTime.now());
                 state.setStep(SHOW_EVENT_DETAILS);
                 yield generateSendMessage(telegramId, "Выберите интересующее вас мероприятие: ",
                     generateEventListKeyboard(events));
@@ -101,7 +103,9 @@ public class ShowEventsHandler implements MessageHandler {
                         state.setTargetEvent(targetEvent);
                         String eventDescription = getEventDescription(targetEvent);
                         state.setStep(HANDLE_USER_ACTION);
-                        yield generateSendMessage(telegramId, eventDescription, getUserActionKeyboard(userOptional));
+                        SendMessage sendMessage = generateSendMessage(telegramId, eventDescription, getUserActionKeyboard(userOptional));
+                        sendMessage.setParseMode("HTML");
+                        yield sendMessage;
                     } else {
                         yield generateSendMessage(telegramId, "Мероприятие не найдено.");
                     }
@@ -148,6 +152,11 @@ public class ShowEventsHandler implements MessageHandler {
                     state.setStep(EDIT_EVENT_FIELD);
                     state.setEditingFieldName(text);
                     yield generateSendMessage(telegramId, "Введите новую ссылку:", menus.get(CANCEL_MENU));
+                } else if (text.equalsIgnoreCase("Адрес")){
+                    state.setStep(EDIT_EVENT_FIELD);
+                    state.setEditingFieldName(text);
+                    yield generateSendMessage(telegramId,
+                        "Введите адрес (улица и номер дома, например Крестьянская 207): ", menus.get(CANCEL_MENU));
                 } else {
                     yield generateSendMessage(telegramId, "Неверное поле. Выберите одно из доступных.",
                         menus.get(EVENT_FIELDS_MENU));
@@ -168,11 +177,24 @@ public class ShowEventsHandler implements MessageHandler {
                         case "Дата и Время" -> targetEvent.setEventDate(
                             LocalDateTime.parse(text.trim(), DateTimeFormatter.ofPattern("dd.MM.yyyy-HH:mm")));
                         case "Ссылка" -> targetEvent.setLink(text.trim());
+                        case "Адрес" -> {
+                            if (text != null && text.length() <= 255) {
+                                String address = text.trim();
+                                String[] parts = address.split(" ");
+                                if (parts.length != 2) {
+                                    throw new RuntimeException();
+                                }
+                                address = "г. Майкоп, ул. %s, д. %s".formatted(parts[0], parts[1]);
+                                targetEvent.setAddress(address);
+                            }
+                        }
                     }
                     state.setStep(CONFIRM_EVENT_EDIT);
-                    yield generateSendMessage(telegramId,
+                    SendMessage sendMessage = generateSendMessage(telegramId,
                         "Мероприятие с новыми данными:\n" + getEventDescription(targetEvent) + "\nСохранить изменения?",
                         menus.get(SELECTION_MENU));
+                    sendMessage.setParseMode("HTML");
+                    yield sendMessage;
                 } catch (DateTimeParseException e) {
                     yield generateSendMessage(telegramId,
                         "Дата должна быть в формате (ДД.ММ.ГГГГ-ЧЧ:ММ). Повторите ввод:");
@@ -201,7 +223,7 @@ public class ShowEventsHandler implements MessageHandler {
             targetEvent.getTitle(),
             targetEvent.getText(),
             targetEvent.getLink(),
-            targetEvent.getAddress(),
+            getHyperlinkFromAddress(targetEvent.getAddress()),
             targetEvent.getEventDate().toLocalDate().format(DateTimeFormatter.ofPattern("dd.MM.yyyy")),
             targetEvent.getEventDate().toLocalTime().format(DateTimeFormatter.ofPattern("hh:mm")));
     }
@@ -254,5 +276,11 @@ public class ShowEventsHandler implements MessageHandler {
         state.setStep(IN_MAIN_MENU);
         return menuGenerator.generateRoleSpecificMainMenu(telegramId,
             state.getUser().getUserRole());
+    }
+
+    private String getHyperlinkFromAddress(String address) {
+        String encodedAddress = URLEncoder.encode(address, StandardCharsets.UTF_8);
+        String url = "https://yandex.ru/maps/?text=" + encodedAddress;
+        return String.format("<a href=\"%s\">%s</a>", url, address);
     }
 }

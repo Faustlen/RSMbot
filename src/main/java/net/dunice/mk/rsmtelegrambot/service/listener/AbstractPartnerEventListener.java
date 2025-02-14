@@ -6,9 +6,12 @@ import net.dunice.mk.rsmtelegrambot.entity.User;
 import net.dunice.mk.rsmtelegrambot.handler.MessageGenerator;
 import net.dunice.mk.rsmtelegrambot.repository.UserRepository;
 import net.dunice.mk.rsmtelegrambot.service.TelegramBot;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -23,6 +26,7 @@ public abstract class AbstractPartnerEventListener implements MessageGenerator {
         ID партнера: %s
         Название: %s
         Телефон: %s
+        Адрес: %s
         Скидка: %s%%
         Категория: %s
         Дата окончания скидки: %s
@@ -38,6 +42,7 @@ public abstract class AbstractPartnerEventListener implements MessageGenerator {
             partner.getPartnerTelegramId(),
             partner.getName(),
             partner.getPhoneNumber(),
+            getHyperlinkFromAddress(partner.getAddress()),
             partner.getDiscountPercent(),
             partner.getCategory().getCategoryName(),
             partner.getDiscountDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
@@ -54,7 +59,16 @@ public abstract class AbstractPartnerEventListener implements MessageGenerator {
         markup.setKeyboard(List.of(buttons));
 
         List<User> admins = userRepository.findAllByUserRole(ADMIN);
-        admins.forEach(admin ->
-            telegramBot.sendNoDeleteMessage(generateSendMessage(admin.getTelegramId(), notification, markup)));
+        admins.forEach(admin -> {
+            SendMessage sendMessage = generateSendMessage(admin.getTelegramId(), notification, markup);
+            sendMessage.setParseMode("HTML");
+            telegramBot.sendNoDeleteMessage(sendMessage);
+        });
+    }
+
+    private String getHyperlinkFromAddress(String address) {
+        String encodedAddress = URLEncoder.encode(address, StandardCharsets.UTF_8);
+        String url = "https://yandex.ru/maps/?text=" + encodedAddress;
+        return String.format("<a href=\"%s\">%s</a>", url, address);
     }
 }
