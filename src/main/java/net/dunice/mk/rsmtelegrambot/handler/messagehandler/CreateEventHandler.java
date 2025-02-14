@@ -45,7 +45,7 @@ public class CreateEventHandler implements MessageHandler {
         Описание: %s
         Дата и время: %s
         Ссылка: %s
-        Адресс: %s
+        Адрес: %s
         """;
     private final Map<Long, EventCreationState> eventCreationStates;
     private final Map<Long, BasicState> basicStates;

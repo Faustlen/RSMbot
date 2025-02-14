@@ -59,7 +59,7 @@ public class PartnerEditingHandler implements MessageHandler{
         Категория: %s
         Информация о партнере: %s
         Номер телефона: %s
-        Адресс: %s
+        Адрес: %s
         Выберите, что хотите изменить:
         """;
 
@@ -156,7 +156,7 @@ public class PartnerEditingHandler implements MessageHandler{
             }
             case CHANGE_ADDRESS -> {
                 state.setStep(UPDATE_ADDRESS);
-                yield generateSendMessage(telegramId, "Введите адресс партнёра:", menus.get(CANCEL_MENU));
+                yield generateSendMessage(telegramId, "Введите адрес партнёра:", menus.get(CANCEL_MENU));
             }
             default -> generateSendMessage(telegramId, "Неизвестная команда: " + text, menus.get(CANCEL_MENU));
         };

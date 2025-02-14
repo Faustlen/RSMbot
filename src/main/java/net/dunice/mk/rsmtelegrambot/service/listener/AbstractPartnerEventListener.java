@@ -26,7 +26,7 @@ public abstract class AbstractPartnerEventListener implements MessageGenerator {
         ID партнера: %s
         Название: %s
         Телефон: %s
-        Адресс: %s
+        Адрес: %s
         Скидка: %s%%
         Категория: %s
         Дата окончания скидки: %s

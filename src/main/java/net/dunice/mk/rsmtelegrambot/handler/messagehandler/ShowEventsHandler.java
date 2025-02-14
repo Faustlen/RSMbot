@@ -60,7 +60,7 @@ public class ShowEventsHandler implements MessageHandler {
         Мероприятие: %s
         Описание: %s
         Ссылка: %s
-        Адресс: %s
+        Адрес: %s
         Дата: %s  |  Время: %s
         """;
     private final EventRepository eventRepository;
@@ -85,7 +85,7 @@ public class ShowEventsHandler implements MessageHandler {
 
         return switch (state.getStep()) {
             case SHOW_EVENTS_LIST -> {
-                List<Event> events = eventRepository.findAll(Sort.by(Sort.Direction.DESC, "eventDate"));
+                List<Event> events = eventRepository.findAllByEventDateAfterOrderByEventDateAsc(LocalDateTime.now());
                 state.setStep(SHOW_EVENT_DETAILS);
                 yield generateSendMessage(telegramId, "Выберите интересующее вас мероприятие: ",
                     generateEventListKeyboard(events));
@@ -152,7 +152,7 @@ public class ShowEventsHandler implements MessageHandler {
                     state.setStep(EDIT_EVENT_FIELD);
                     state.setEditingFieldName(text);
                     yield generateSendMessage(telegramId, "Введите новую ссылку:", menus.get(CANCEL_MENU));
-                } else if (text.equalsIgnoreCase("Адресс")){
+                } else if (text.equalsIgnoreCase("Адрес")){
                     state.setStep(EDIT_EVENT_FIELD);
                     state.setEditingFieldName(text);
                     yield generateSendMessage(telegramId,
@@ -177,7 +177,7 @@ public class ShowEventsHandler implements MessageHandler {
                         case "Дата и Время" -> targetEvent.setEventDate(
                             LocalDateTime.parse(text.trim(), DateTimeFormatter.ofPattern("dd.MM.yyyy-HH:mm")));
                         case "Ссылка" -> targetEvent.setLink(text.trim());
-                        case "Адресс" -> {
+                        case "Адрес" -> {
                             if (text != null && text.length() <= 255) {
                                 String address = text.trim();
                                 String[] parts = address.split(" ");
