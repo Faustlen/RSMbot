@@ -224,11 +224,18 @@ public class PartnerEditingHandler implements MessageHandler{
         if (text != null && text.length() <= 255) {
             String address = text.trim();
             String[] parts = address.split(" ");
+
             if (parts.length != 2) {
                 return generateSendMessage(telegramId,
                     "Адрес должен соответствовать формату (улица и номер дома, например Крестьянская 207), Повторите ввод (до 255 символов):",
                     menus.get(CANCEL_MENU));
             }
+            if (!parts[1].matches("^[0-9]+[A-Za-zА-Яа-я]?$|^[0-9]+/[0-9]+$|^[0-9]+[A-Za-zА-Яа-я]?/[0-9]+$")) {
+                return generateSendMessage(telegramId,
+                    "Номер дома должен быть в формате '123', '123А' или '123/456'. Повторите ввод:",
+                    menus.get(CANCEL_MENU));
+            }
+
             address = "г. Майкоп, ул. %s, д. %s".formatted(parts[0], parts[1]);
             state.getPartner().setAddress(address);
             state.setStep(CHOICE_OPTION);
