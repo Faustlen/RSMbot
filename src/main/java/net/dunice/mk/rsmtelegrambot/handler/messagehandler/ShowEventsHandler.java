@@ -12,7 +12,6 @@ import static net.dunice.mk.rsmtelegrambot.constant.Menu.EVENT_FIELDS_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.GO_TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.OK_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.SELECTION_MENU;
-import static net.dunice.mk.rsmtelegrambot.constant.Menu.SKIP_MENU;
 import static net.dunice.mk.rsmtelegrambot.entity.Role.USER;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_MAIN_MENU;
@@ -37,7 +36,10 @@ import net.dunice.mk.rsmtelegrambot.repository.EventRepository;
 import net.dunice.mk.rsmtelegrambot.repository.UserRepository;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
+import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
+import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
@@ -78,7 +80,7 @@ public class ShowEventsHandler implements MessageHandler {
     }
 
     @Override
-    public SendMessage handle(MessageDto messageDto, Long telegramId) {
+    public PartialBotApiMethod<Message> handle(MessageDto messageDto, Long telegramId) {
         String text = messageDto.getText();
         ShowEventsState state = showEventStates.get(telegramId);
         if (state == null) {
@@ -105,9 +107,18 @@ public class ShowEventsHandler implements MessageHandler {
                         state.setTargetEvent(targetEvent);
                         String eventDescription = getEventDescription(targetEvent);
                         state.setStep(HANDLE_USER_ACTION);
-                        SendMessage sendMessage = generateSendMessage(telegramId, eventDescription, getUserActionKeyboard(userOptional));
-                        sendMessage.setParseMode("HTML");
-                        yield sendMessage;
+
+                        if (isLogoPresent(targetEvent.getLogo())) {
+                            SendPhoto sendPhoto = generateImageMessage(telegramId,
+                                eventDescription, getUserActionKeyboard(userOptional), targetEvent.getLogo());
+                            sendPhoto.setParseMode("HTML");
+                            yield sendPhoto;
+                        } else {
+                            SendMessage sendMessage = generateSendMessage(telegramId,
+                                eventDescription, getUserActionKeyboard(userOptional));
+                            sendMessage.setParseMode("HTML");
+                            yield sendMessage;
+                        }
                     } else {
                         yield generateSendMessage(telegramId, "Мероприятие не найдено.");
                     }
@@ -213,12 +224,21 @@ public class ShowEventsHandler implements MessageHandler {
                             }
                         }
                     }
+
                     state.setStep(CONFIRM_EVENT_EDIT);
-                    SendMessage sendMessage = generateSendMessage(telegramId,
-                        "Мероприятие с новыми данными:\n" + getEventDescription(targetEvent) + "\nСохранить изменения?",
-                        menus.get(SELECTION_MENU));
-                    sendMessage.setParseMode("HTML");
-                    yield sendMessage;
+                    if (isLogoPresent(targetEvent.getLogo())) {
+                        SendPhoto sendPhoto = generateImageMessage(telegramId,
+                            "Мероприятие с новыми данными:\n" + getEventDescription(targetEvent) + "\nСохранить изменения?",
+                            menus.get(SELECTION_MENU), targetEvent.getLogo());
+                        sendPhoto.setParseMode("HTML");
+                        yield sendPhoto;
+                    } else {
+                        SendMessage sendMessage = generateSendMessage(telegramId,
+                            "Мероприятие с новыми данными:\n" + getEventDescription(targetEvent) + "\nСохранить изменения?",
+                            menus.get(SELECTION_MENU));
+                        sendMessage.setParseMode("HTML");
+                        yield sendMessage;
+                    }
                 } catch (DateTimeParseException e) {
                     yield generateSendMessage(telegramId,
                         "Дата должна быть в формате (ДД.ММ.ГГГГ-ЧЧ:ММ). Повторите ввод:");
@@ -324,5 +344,9 @@ public class ShowEventsHandler implements MessageHandler {
         String encodedAddress = URLEncoder.encode(address, StandardCharsets.UTF_8);
         String url = "https://yandex.ru/maps/?text=" + encodedAddress;
         return String.format("<a href=\"%s\">%s</a>", url, address);
+    }
+
+    private boolean isLogoPresent(byte[] logo) {
+        return logo != null && logo.length > 0;
     }
 }
