@@ -31,7 +31,10 @@ import net.dunice.mk.rsmtelegrambot.handler.state.EventCreationState;
 import net.dunice.mk.rsmtelegrambot.repository.EventRepository;
 import net.dunice.mk.rsmtelegrambot.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
+import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 
 import java.time.LocalDateTime;
@@ -58,7 +61,7 @@ public class CreateEventHandler implements MessageHandler {
     private final UserRepository userRepository;
 
     @Override
-    public SendMessage handle(MessageDto messageDto, Long telegramId) {
+    public PartialBotApiMethod<Message> handle(MessageDto messageDto, Long telegramId) {
         String text = messageDto.getText();
         EventCreationState state = eventCreationStates.get(telegramId);
         if (state == null) {
@@ -177,16 +180,26 @@ public class CreateEventHandler implements MessageHandler {
                     address = "г. Майкоп, ул. %s, д. %s".formatted(parts[0], parts[1]);
                     state.setAddress(address);
                     state.setStep(CONFIRM_EVENT);
-                    yield generateSendMessage(telegramId, "Создать мероприятие?\n" +
-                            EVENT_INFO_TEMPLATE.formatted(
-                                state.getEventName(),
-                                state.getEventDescription(),
-                                state.getEventDateTime()
-                                    .format(
-                                        DateTimeFormatter.ofPattern("dd.MM.yyyy | HH:mm")),
-                                state.getEventLink(),
-                                state.getAddress()),
-                        menus.get(Menu.SELECTION_MENU));
+                    String message = EVENT_INFO_TEMPLATE.formatted(
+                        state.getEventName(),
+                        state.getEventDescription(),
+                        state.getEventDateTime()
+                            .format(
+                                DateTimeFormatter.ofPattern("dd.MM.yyyy | HH:mm")),
+                        state.getEventLink(),
+                        state.getAddress());
+
+                    if (isLogoPresent(state.getLogo())) {
+                        SendPhoto sendPhoto = generateImageMessage(telegramId, message,
+                            menus.get(SELECTION_MENU), state.getLogo());
+                        sendPhoto.setParseMode("HTML");
+                        yield sendPhoto;
+                    } else {
+                        SendMessage sendMessage = generateSendMessage(telegramId, message,
+                            menus.get(SELECTION_MENU));
+                        sendMessage.setParseMode("HTML");
+                        yield sendMessage;
+                    }
                 } else {
                     yield generateSendMessage(telegramId,
                         "Адрес слишком длинный. Повторите ввод (до 255 символов):", menus.get(CANCEL_MENU));
@@ -236,5 +249,9 @@ public class CreateEventHandler implements MessageHandler {
         state.setStep(IN_MAIN_MENU);
         return menuGenerator.generateRoleSpecificMainMenu(telegramId,
             state.getUser().getUserRole());
+    }
+
+    private boolean isLogoPresent(byte[] logo) {
+        return logo != null && logo.length > 0;
     }
 }
