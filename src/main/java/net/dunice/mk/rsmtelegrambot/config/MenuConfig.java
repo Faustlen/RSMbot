@@ -257,7 +257,8 @@ public class MenuConfig {
     public ReplyKeyboard getEventFieldsMenu() {
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
-        InlineKeyboardButton[] buttons = Stream.of("Название", "Дата и Время", "Описание", "Ссылка", "Адрес")
+        InlineKeyboardButton[] buttons = Stream
+            .of("Название", "Дата и Время", "Описание","Логотип", "Ссылка", "Адрес")
             .map(category -> {
                 InlineKeyboardButton button = new InlineKeyboardButton(category);
                 button.setCallbackData(button.getText());

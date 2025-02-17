@@ -12,6 +12,7 @@ import static net.dunice.mk.rsmtelegrambot.constant.Menu.EVENT_FIELDS_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.GO_TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.OK_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.SELECTION_MENU;
+import static net.dunice.mk.rsmtelegrambot.constant.Menu.SKIP_MENU;
 import static net.dunice.mk.rsmtelegrambot.entity.Role.USER;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_MAIN_MENU;
@@ -159,6 +160,11 @@ public class ShowEventsHandler implements MessageHandler {
                     state.setEditingFieldName(text);
                     yield generateSendMessage(telegramId,
                         "Введите адрес (улица и номер дома, например Крестьянская 207): ", menus.get(CANCEL_MENU));
+                } else if (text.equalsIgnoreCase("Логотип")){
+                    state.setStep(EDIT_EVENT_FIELD);
+                    state.setEditingFieldName(text);
+                    yield generateSendMessage(telegramId,
+                        "Отправьте логотип мероприятия (изображение): ", menus.get(CANCEL_MENU));
                 } else {
                     yield generateSendMessage(telegramId, "Неверное поле. Выберите одно из доступных.",
                         menus.get(EVENT_FIELDS_MENU));
@@ -197,6 +203,15 @@ public class ShowEventsHandler implements MessageHandler {
                                 targetEvent.setAddress(address);
                             }
                         }
+                        case "Логотип" -> {
+                            if (messageDto.getImage() != null) {
+                                targetEvent.setLogo(messageDto.getImage());
+                            } else {
+                                yield generateSendMessage(telegramId,
+                                    "Логотип должен быть изображением. Повторите ввод:",
+                                    menus.get(CANCEL_MENU));
+                            }
+                        }
                     }
                     state.setStep(CONFIRM_EVENT_EDIT);
                     SendMessage sendMessage = generateSendMessage(telegramId,
@@ -208,7 +223,9 @@ public class ShowEventsHandler implements MessageHandler {
                     yield generateSendMessage(telegramId,
                         "Дата должна быть в формате (ДД.ММ.ГГГГ-ЧЧ:ММ). Повторите ввод:");
                 } catch (Exception e) {
-                    yield generateSendMessage(telegramId, "Ошибка при редактировании поля. Повторите ввод:");
+                    yield generateSendMessage(telegramId,
+                        "Ошибка при редактировании поля. Повторите ввод:",
+                        menus.get(CANCEL_MENU));
                 }
             }
 
