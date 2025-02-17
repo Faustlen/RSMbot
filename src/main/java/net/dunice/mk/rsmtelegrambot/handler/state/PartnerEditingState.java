@@ -18,6 +18,7 @@ public class PartnerEditingState {
         UPDATE_NAME,
         UPDATE_CATEGORY,
         UPDATE_INFO,
-        UPDATE_PHONE_NUMBER
+        UPDATE_PHONE_NUMBER,
+        UPDATE_ADDRESS
     }
 }

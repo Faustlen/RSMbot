@@ -361,9 +361,6 @@ public class ShowUsersHandler implements MessageHandler {
         InlineKeyboardButton toUsersButton = new InlineKeyboardButton(USERS_LIST);
         toUsersButton.setCallbackData(toUsersButton.getText());
         keyboard.add(List.of(toMainMenuButton, toUsersButton));
-        InlineKeyboardButton deleteUserButton = new InlineKeyboardButton(DELETE_USER);
-        deleteUserButton.setCallbackData(deleteUserButton.getText());
-        keyboard.add(List.of(deleteUserButton));
         if (role == SUPER_USER) {
             if (!targetUser.isBanned()) {
                 InlineKeyboardButton banButton = new InlineKeyboardButton(BAN);
@@ -374,6 +371,9 @@ public class ShowUsersHandler implements MessageHandler {
                 unbanButton.setCallbackData(unbanButton.getText());
                 keyboard.add(List.of(unbanButton));
             }
+            InlineKeyboardButton deleteUserButton = new InlineKeyboardButton(DELETE_USER);
+            deleteUserButton.setCallbackData(deleteUserButton.getText());
+            keyboard.add(List.of(deleteUserButton));
             if (targetUser.getUserRole() != ADMIN) {
                 InlineKeyboardButton grantAdminButton = new InlineKeyboardButton(GRANT_ADMIN);
                 grantAdminButton.setCallbackData(grantAdminButton.getText());

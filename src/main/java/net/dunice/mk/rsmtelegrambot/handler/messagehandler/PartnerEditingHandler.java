@@ -14,11 +14,14 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -26,19 +29,21 @@ import java.util.Objects;
 import java.util.Optional;
 
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CANCEL;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CANCEL_CHANGES;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CHANGE_ADDRESS;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CHANGE_CATEGORY;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CHANGE_INFO;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CHANGE_LOGO;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CHANGE_NAME;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CHANGE_PHONE_NUMBER;
-import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CONFIRM;
-import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TO_MAIN_MENU;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CONFIRM_CHANGES;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.CANCEL_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.CATEGORY_MENU;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_PARTNER_MENU;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.PARTNER_EDITING;
 import static net.dunice.mk.rsmtelegrambot.handler.state.PartnerEditingState.PartnerEditingStep.CHOICE_OPTION;
 import static net.dunice.mk.rsmtelegrambot.handler.state.PartnerEditingState.PartnerEditingStep.SHOW_PARTNERS_DETAILS;
+import static net.dunice.mk.rsmtelegrambot.handler.state.PartnerEditingState.PartnerEditingStep.UPDATE_ADDRESS;
 import static net.dunice.mk.rsmtelegrambot.handler.state.PartnerEditingState.PartnerEditingStep.UPDATE_CATEGORY;
 import static net.dunice.mk.rsmtelegrambot.handler.state.PartnerEditingState.PartnerEditingStep.UPDATE_INFO;
 import static net.dunice.mk.rsmtelegrambot.handler.state.PartnerEditingState.PartnerEditingStep.UPDATE_LOGO;
@@ -54,6 +59,7 @@ public class PartnerEditingHandler implements MessageHandler{
         Категория: %s
         Информация о партнере: %s
         Номер телефона: %s
+        Адрес: %s
         Выберите, что хотите изменить:
         """;
 
@@ -78,8 +84,8 @@ public class PartnerEditingHandler implements MessageHandler{
             state.setPartner(partnerRepository.findById(telegramId).get());
         }
 
-        if (StringUtils.equalsAny(text, TO_MAIN_MENU, CONFIRM)) {
-            if (text.equals(CONFIRM)) {
+        if (StringUtils.equalsAny(text, CANCEL_CHANGES, CONFIRM_CHANGES)) {
+            if (text.equals(CONFIRM_CHANGES)) {
                 state.getPartner().setValid(false);
                 partnerRepository.save(state.getPartner());
                 eventPublisher.publishEvent(new PartnerRegisteredEvent(state.getPartner()));
@@ -99,6 +105,7 @@ public class PartnerEditingHandler implements MessageHandler{
             case UPDATE_CATEGORY -> handleUpdateCategory(state, telegramId, text);
             case UPDATE_INFO -> handleUpdateInfo(state, telegramId, text);
             case UPDATE_PHONE_NUMBER -> handleUpdatePhoneNumber(state, telegramId, text);
+            case UPDATE_ADDRESS -> handleUpdateAddress(state, telegramId, text);
         };
     }
 
@@ -107,15 +114,20 @@ public class PartnerEditingHandler implements MessageHandler{
             state.getPartner().getName(),
             state.getPartner().getCategory().getCategoryName(),
             state.getPartner().getPartnersInfo(),
-            state.getPartner().getPhoneNumber());
+            state.getPartner().getPhoneNumber(),
+            getHyperlinkFromAddress(state.getPartner().getAddress()));
 
         state.setStep(CHOICE_OPTION);
 
         byte[] logo = state.getPartner().getLogo();
         if (logo != null && logo.length > 0) {
-            return generateImageMessage(telegramId, partnerDescription, PARTNER_UPDATE_OPTIONS, logo);
+            SendPhoto sendPhoto = generateImageMessage(telegramId, partnerDescription, PARTNER_UPDATE_OPTIONS, logo);
+            sendPhoto.setParseMode("HTML");
+            return sendPhoto;
         } else {
-            return generateSendMessage(telegramId, partnerDescription, PARTNER_UPDATE_OPTIONS);
+            SendMessage sendMessage = generateSendMessage(telegramId, partnerDescription, PARTNER_UPDATE_OPTIONS);
+            sendMessage.setParseMode("HTML");
+            return sendMessage;
         }
     }
 
@@ -141,6 +153,10 @@ public class PartnerEditingHandler implements MessageHandler{
             case CHANGE_PHONE_NUMBER -> {
                 state.setStep(UPDATE_PHONE_NUMBER);
                 yield generateSendMessage(telegramId, "Введите номер телефона:", menus.get(CANCEL_MENU));
+            }
+            case CHANGE_ADDRESS -> {
+                state.setStep(UPDATE_ADDRESS);
+                yield generateSendMessage(telegramId, "Введите адрес партнёра:", menus.get(CANCEL_MENU));
             }
             default -> generateSendMessage(telegramId, "Неизвестная команда: " + text, menus.get(CANCEL_MENU));
         };
@@ -204,6 +220,32 @@ public class PartnerEditingHandler implements MessageHandler{
         }
     }
 
+    private PartialBotApiMethod<Message> handleUpdateAddress(PartnerEditingState state, Long telegramId, String text) {
+        if (text != null && text.length() <= 255) {
+            String address = text.trim();
+            String[] parts = address.split(" ");
+
+            if (parts.length != 2) {
+                return generateSendMessage(telegramId,
+                    "Адрес должен соответствовать формату (улица и номер дома, например Крестьянская 207), Повторите ввод (до 255 символов):",
+                    menus.get(CANCEL_MENU));
+            }
+            if (!parts[1].matches("^[0-9]+[A-Za-zА-Яа-я]?$|^[0-9]+/[0-9]+$|^[0-9]+[A-Za-zА-Яа-я]?/[0-9]+$")) {
+                return generateSendMessage(telegramId,
+                    "Номер дома должен быть в формате '123', '123А' или '123/456'. Повторите ввод:",
+                    menus.get(CANCEL_MENU));
+            }
+
+            address = "г. Майкоп, ул. %s, д. %s".formatted(parts[0], parts[1]);
+            state.getPartner().setAddress(address);
+            state.setStep(CHOICE_OPTION);
+            return handleShowPartnersDetails(state, telegramId);
+        } else {
+            return generateSendMessage(telegramId,
+                "Адрес слишком длинный. Повторите ввод (до 255 символов):", menus.get(CANCEL_MENU));
+        }
+    }
+
     private static ReplyKeyboard createPartnerUpdateOptions() {
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
@@ -222,11 +264,13 @@ public class PartnerEditingHandler implements MessageHandler{
 
         InlineKeyboardButton changePhoneNumberButton = new InlineKeyboardButton(CHANGE_PHONE_NUMBER);
         changePhoneNumberButton.setCallbackData(changePhoneNumberButton.getText());
-        keyboard.add(List.of(changePhoneNumberButton));
+        InlineKeyboardButton changeAddressButton = new InlineKeyboardButton(CHANGE_ADDRESS);
+        changeAddressButton.setCallbackData(changeAddressButton.getText());
+        keyboard.add(List.of(changePhoneNumberButton, changeAddressButton));
 
-        InlineKeyboardButton mainMenuButton = new InlineKeyboardButton(TO_MAIN_MENU);
+        InlineKeyboardButton mainMenuButton = new InlineKeyboardButton(CANCEL_CHANGES);
         mainMenuButton.setCallbackData(mainMenuButton.getText());
-        InlineKeyboardButton confirmButton = new InlineKeyboardButton(CONFIRM);
+        InlineKeyboardButton confirmButton = new InlineKeyboardButton(CONFIRM_CHANGES);
         confirmButton.setCallbackData(confirmButton.getText());
         keyboard.add(List.of(mainMenuButton, confirmButton));
 
@@ -238,5 +282,11 @@ public class PartnerEditingHandler implements MessageHandler{
         basicStates.get(telegramId).setStep(IN_PARTNER_MENU);
         partnerEditingStates.remove(telegramId);
         return generateSendMessage(telegramId, "Выберите раздел:", menus.get(Menu.PARTNER_MAIN_MENU));
+    }
+
+    private String getHyperlinkFromAddress(String address) {
+        String encodedAddress = URLEncoder.encode(address, StandardCharsets.UTF_8);
+        String url = "https://yandex.ru/maps/?text=" + encodedAddress;
+        return String.format("<a href=\"%s\">%s</a>", url, address);
     }
 }
