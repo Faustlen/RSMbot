@@ -1,9 +1,11 @@
 package net.dunice.mk.rsmtelegrambot.config;
 
 import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
+import net.dunice.mk.rsmtelegrambot.handler.state.CreateCheckState;
 import net.dunice.mk.rsmtelegrambot.handler.state.EventCreationState;
 import net.dunice.mk.rsmtelegrambot.handler.state.GrantAdminState;
 import net.dunice.mk.rsmtelegrambot.handler.state.MessageBroadcastState;
+import net.dunice.mk.rsmtelegrambot.handler.state.PartnerEditingState;
 import net.dunice.mk.rsmtelegrambot.handler.state.PartnerRegistrationState;
 import net.dunice.mk.rsmtelegrambot.handler.state.SelectRegistrationState;
 import net.dunice.mk.rsmtelegrambot.handler.state.ShowAdminsState;
@@ -88,6 +90,16 @@ public class StatesConfig {
         return new ConcurrentHashMap<>();
     }
 
+    @Bean("creatingCheckStates")
+    public Map<Long, CreateCheckState> getCreateCheckStatesMap() {
+        return new ConcurrentHashMap<>();
+    }
+
+    @Bean("partnerEditingStates")
+    public Map<Long, PartnerEditingState> getPartnerEditingStatesMap() {
+        return new ConcurrentHashMap<>();
+    }
+
     @Bean("allStatesMap")
     public List<Map<Long, ?>> getAllStatesMap(Map<Long, GrantAdminState> grantAdminStates,
                                               Map<Long, UserRegistrationState> registrationStates,
@@ -100,9 +112,11 @@ public class StatesConfig {
                                               Map<Long, ShowUsersState> showUsersStates,
                                               Map<Long, SelectRegistrationState> selectRegistrationStates,
                                               Map<Long, MessageBroadcastState> messageBroadcastStates,
-                                              Map<Long, ShowAnalyticsState> showAnalyticsStates) {
+                                              Map<Long, ShowAnalyticsState> showAnalyticsStates,
+                                              Map<Long, CreateCheckState> createCheckStates,
+                                              Map<Long, PartnerEditingState> partnerEditingStates) {
         return List.of(grantAdminStates, registrationStates, updateProfileStates, showEventStates, showPartnersStates,
             eventCreationStates, partnerRegistrationStates, showAdminsStates, showUsersStates, selectRegistrationStates,
-            messageBroadcastStates, showAnalyticsStates);
+            messageBroadcastStates, showAnalyticsStates, createCheckStates, partnerEditingStates);
     }
 }
