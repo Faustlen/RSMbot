@@ -2,11 +2,13 @@ package net.dunice.mk.rsmtelegrambot.handler.messagehandler;
 
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CANCEL;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.NO;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.SKIP;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.YES;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.CANCEL_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.GO_TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.SELECTION_MENU;
+import static net.dunice.mk.rsmtelegrambot.constant.Menu.SKIP_MENU;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.CREATE_EVENT;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_MAIN_MENU;
@@ -16,6 +18,7 @@ import static net.dunice.mk.rsmtelegrambot.handler.state.EventCreationState.Even
 import static net.dunice.mk.rsmtelegrambot.handler.state.EventCreationState.EventCreationStep.VALIDATE_EVENT_DATE_TIME;
 import static net.dunice.mk.rsmtelegrambot.handler.state.EventCreationState.EventCreationStep.VALIDATE_EVENT_DESCRIPTION;
 import static net.dunice.mk.rsmtelegrambot.handler.state.EventCreationState.EventCreationStep.VALIDATE_EVENT_LINK;
+import static net.dunice.mk.rsmtelegrambot.handler.state.EventCreationState.EventCreationStep.VALIDATE_EVENT_LOGO;
 import static net.dunice.mk.rsmtelegrambot.handler.state.EventCreationState.EventCreationStep.VALIDATE_EVENT_NAME;
 
 import lombok.RequiredArgsConstructor;
@@ -67,10 +70,30 @@ public class CreateEventHandler implements MessageHandler {
         }
 
         return switch (state.getStep()) {
-            case REQUEST_EVENT_NAME -> {
-                state.setStep(VALIDATE_EVENT_NAME);
-                yield generateSendMessage(telegramId, "Введите название мероприятия (не более 100 символов):",
-                    menus.get(CANCEL_MENU));
+            case REQUEST_EVENT_LOGO -> {
+                state.setStep(VALIDATE_EVENT_LOGO);
+                yield generateSendMessage(telegramId,
+                    "Отправьте логотип мероприятия (изображение) или нажмите 'Пропустить'.",
+                    menus.get(SKIP_MENU));
+            }
+            case VALIDATE_EVENT_LOGO -> {
+                if (messageDto.getImage() != null) {
+                    state.setLogo(messageDto.getImage());
+                    state.setStep(VALIDATE_EVENT_NAME);
+                    yield generateSendMessage(telegramId,
+                        "Логотип успешно загружен. Введите название мероприятия:",
+                        menus.get(CANCEL_MENU));
+                } else if (SKIP.equalsIgnoreCase(text)) {
+                    state.setLogo(null);
+                    state.setStep(VALIDATE_EVENT_NAME);
+                    yield generateSendMessage(telegramId,
+                        "Вы пропустили загрузку логотипа. Введите название мероприятия:",
+                        menus.get(CANCEL_MENU));
+                } else {
+                    yield generateSendMessage(telegramId,
+                        "Логотип должен быть изображением. Повторите ввод:",
+                        menus.get(SKIP_MENU));
+                }
             }
             case VALIDATE_EVENT_NAME -> {
                 if (CANCEL.equalsIgnoreCase(text)) {
@@ -198,6 +221,7 @@ public class CreateEventHandler implements MessageHandler {
         event.setEventDate(state.getEventDateTime());
         event.setAddress(state.getAddress());
         event.setLink(state.getEventLink());
+        event.setLogo(state.getLogo());
         eventRepository.save(event);
     }
 

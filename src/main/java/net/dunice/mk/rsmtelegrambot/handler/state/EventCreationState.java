@@ -8,15 +8,17 @@ import java.time.LocalDateTime;
 @Setter
 @Getter
 public class EventCreationState {
-    private EventCreationStep step = EventCreationStep.REQUEST_EVENT_NAME;
+    private EventCreationStep step = EventCreationStep.REQUEST_EVENT_LOGO;
     private String eventName;
     private String eventDescription;
     private LocalDateTime eventDateTime;
     private String eventLink;
     private String address;
+    private byte[] logo;
 
     public enum EventCreationStep {
-        REQUEST_EVENT_NAME,
+        REQUEST_EVENT_LOGO,
+        VALIDATE_EVENT_LOGO,
         VALIDATE_EVENT_NAME,
         VALIDATE_EVENT_DESCRIPTION,
         VALIDATE_EVENT_DATE_TIME,

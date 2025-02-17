@@ -12,6 +12,7 @@ import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.PERIOD_ANALYTICS;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.RSM_MEMBER;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.RSM_PARTNER;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.SEND_MESSAGE_TO_EVERYONE;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.SKIP;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TRY_AGAIN;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.UPDATE_DISCOUNT_CODE;
@@ -29,6 +30,7 @@ import static net.dunice.mk.rsmtelegrambot.constant.Menu.OK_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.PARTNER_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.SELECTION_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.SELECTION_USER_TYPE_MENU;
+import static net.dunice.mk.rsmtelegrambot.constant.Menu.SKIP_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.SUPERUSER_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.TRY_AGAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.TRY_AGAIN_OR_GO_TO_MAIN_MENU;
@@ -60,7 +62,8 @@ public class MenuConfig {
         ReplyKeyboard tryAgainOrGoToMainMenu, ReplyKeyboard selectionUserTypeMenu,
         ReplyKeyboard partnerMainMenu, ReplyKeyboard cancelMenu,
         ReplyKeyboard categoryMenu, ReplyKeyboard eventFieldsMenu,
-        ReplyKeyboard updateDiscountCodeMenu, ReplyKeyboard okMenu) {
+        ReplyKeyboard updateDiscountCodeMenu, ReplyKeyboard okMenu,
+        ReplyKeyboard skipMenu) {
         EnumMap<Menu, ReplyKeyboard> menus = new EnumMap<>(Menu.class);
         menus.put(OK_MENU, okMenu);
         menus.put(SELECTION_MENU, selectionMenu);
@@ -73,6 +76,7 @@ public class MenuConfig {
         menus.put(TRY_AGAIN_MENU, tryAgainMenu);
         menus.put(TRY_AGAIN_OR_GO_TO_MAIN_MENU, tryAgainOrGoToMainMenu);
         menus.put(CANCEL_MENU, cancelMenu);
+        menus.put(SKIP_MENU, skipMenu);
         menus.put(CATEGORY_MENU, categoryMenu);
         menus.put(EVENT_FIELDS_MENU, eventFieldsMenu);
         menus.put(UPDATE_DISCOUNT_CODE_MENU, updateDiscountCodeMenu);
@@ -198,6 +202,19 @@ public class MenuConfig {
         InlineKeyboardButton cancelButton = new InlineKeyboardButton(CANCEL);
         cancelButton.setCallbackData(cancelButton.getText());
         keyboard.add(List.of(cancelButton));
+        inlineKeyboardMarkup.setKeyboard(keyboard);
+        return inlineKeyboardMarkup;
+    }
+
+    @Bean("skipMenu")
+    public ReplyKeyboard getSkipMenu() {
+        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
+        InlineKeyboardButton skipButton = new InlineKeyboardButton(SKIP);
+        skipButton.setCallbackData(skipButton.getText());
+        InlineKeyboardButton cancelButton = new InlineKeyboardButton(CANCEL);
+        cancelButton.setCallbackData(cancelButton.getText());
+        keyboard.add(List.of(skipButton, cancelButton));
         inlineKeyboardMarkup.setKeyboard(keyboard);
         return inlineKeyboardMarkup;
     }
