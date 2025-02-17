@@ -21,3 +21,5 @@ databaseChangeLog:
       file: classpath:/db/changelog/changes/V010_alter_table_partners_add_address.sql
   - include:
       file: classpath:/db/changelog/changes/V011_alter_table_events_add_address.sql
+  - include:
+      file: classpath:/db/changelog/changes/V012_alter_table_events_add_logo.sql

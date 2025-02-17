@@ -34,9 +34,11 @@ import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
 import net.dunice.mk.rsmtelegrambot.handler.state.ShowEventsState;
 import net.dunice.mk.rsmtelegrambot.repository.EventRepository;
 import net.dunice.mk.rsmtelegrambot.repository.UserRepository;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
+import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
+import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
@@ -64,6 +66,7 @@ public class ShowEventsHandler implements MessageHandler {
         Адрес: %s
         Дата: %s  |  Время: %s
         """;
+
     private final EventRepository eventRepository;
     private final MenuGenerator menuGenerator;
     private final Map<Long, BasicState> basicStates;
@@ -77,170 +80,231 @@ public class ShowEventsHandler implements MessageHandler {
     }
 
     @Override
-    public SendMessage handle(MessageDto messageDto, Long telegramId) {
-        String text = messageDto.getText();
+    public PartialBotApiMethod<Message> handle(MessageDto messageDto, Long telegramId) {
         ShowEventsState state = showEventStates.get(telegramId);
         if (state == null) {
-            showEventStates.put(telegramId, (state = new ShowEventsState()));
+            state = new ShowEventsState();
+            showEventStates.put(telegramId, state);
         }
 
         return switch (state.getStep()) {
-            case SHOW_EVENTS_LIST -> {
-                List<Event> events = eventRepository.findAllByEventDateAfterOrderByEventDateAsc(LocalDateTime.now());
-                state.setStep(SHOW_EVENT_DETAILS);
-                yield generateSendMessage(telegramId, "Выберите интересующее вас мероприятие: ",
-                    generateEventListKeyboard(events));
-            }
-            case SHOW_EVENT_DETAILS -> {
-                if (TO_MAIN_MENU.equalsIgnoreCase(text)) {
-                    yield goToMainMenu(telegramId);
-                }
-                try {
-                    Integer eventId = Integer.valueOf(text.substring(text.lastIndexOf(' ') + 1));
-                    Optional<Event> eventOptional = eventRepository.findById(eventId);
-                    if (eventOptional.isPresent()) {
-                        Optional<User> userOptional = userRepository.findById(telegramId);
-                        Event targetEvent = eventOptional.get();
-                        state.setTargetEvent(targetEvent);
-                        String eventDescription = getEventDescription(targetEvent);
-                        state.setStep(HANDLE_USER_ACTION);
-                        SendMessage sendMessage = generateSendMessage(telegramId, eventDescription, getUserActionKeyboard(userOptional));
-                        sendMessage.setParseMode("HTML");
-                        yield sendMessage;
-                    } else {
-                        yield generateSendMessage(telegramId, "Мероприятие не найдено.");
-                    }
-                } catch (NumberFormatException e) {
-                    yield generateSendMessage(telegramId, "Неверный ID мероприятия.");
-                }
-            }
-            case HANDLE_USER_ACTION -> {
-                if (TO_MAIN_MENU.equalsIgnoreCase(text)) {
-                    yield goToMainMenu(telegramId);
-                } else if (EVENTS_LIST.equalsIgnoreCase(text)) {
-                    state.setStep(SHOW_EVENTS_LIST);
-                    yield handle(messageDto, telegramId);
-                } else if (text.equals(DELETE_EVENT)) {
-                    state.setStep(CONFIRM_EVENT_DELETE);
-                    yield generateSendMessage(telegramId,
-                        String.format("Вы точно хотите удалить меропирятие '%s'?", state.getTargetEvent().getTitle()),
-                        menus.get(SELECTION_MENU));
-                } else if (text.equals(EDIT_EVENT)) {
-                    state.setStep(SELECT_EVENT_FIELD);
-                    yield generateSendMessage(telegramId, "Выберите поле, которое хотите отредактировать:",
-                        menus.get(EVENT_FIELDS_MENU));
-                } else {
-                    yield generateSendMessage(telegramId, "Неверная команда", menus.get(GO_TO_MAIN_MENU));
-                }
-            }
-
-            case SELECT_EVENT_FIELD -> {
-                if (text.equalsIgnoreCase("Название")) {
-                    state.setStep(EDIT_EVENT_FIELD);
-                    state.setEditingFieldName(text);
-                    yield generateSendMessage(telegramId, "Введите новое название мероприятия:",
-                        menus.get(CANCEL_MENU));
-                } else if (text.equalsIgnoreCase("Описание")) {
-                    state.setStep(EDIT_EVENT_FIELD);
-                    state.setEditingFieldName(text);
-                    yield generateSendMessage(telegramId, "Введите новое описание мероприятиям",
-                        menus.get(CANCEL_MENU));
-                } else if (text.equalsIgnoreCase("Дата и Время")) {
-                    state.setStep(EDIT_EVENT_FIELD);
-                    state.setEditingFieldName(text);
-                    yield generateSendMessage(telegramId,
-                        "Введите новую дату мероприятия в формате (ДД.ММ.ГГГГ-ЧЧ:ММ) :", menus.get(CANCEL_MENU));
-                } else if (text.equalsIgnoreCase("Ссылка")) {
-                    state.setStep(EDIT_EVENT_FIELD);
-                    state.setEditingFieldName(text);
-                    yield generateSendMessage(telegramId, "Введите новую ссылку:", menus.get(CANCEL_MENU));
-                } else if (text.equalsIgnoreCase("Адрес")){
-                    state.setStep(EDIT_EVENT_FIELD);
-                    state.setEditingFieldName(text);
-                    yield generateSendMessage(telegramId,
-                        "Введите адрес (улица и номер дома, например Крестьянская 207): ", menus.get(CANCEL_MENU));
-                } else {
-                    yield generateSendMessage(telegramId, "Неверное поле. Выберите одно из доступных.",
-                        menus.get(EVENT_FIELDS_MENU));
-                }
-            }
-
-            case EDIT_EVENT_FIELD -> {
-                if (CANCEL.equalsIgnoreCase(text)) {
-                    state.setStep(SHOW_EVENT_DETAILS);
-                    messageDto.setText(" " + state.getTargetEvent().getEventId());
-                    yield handle(messageDto, telegramId);
-                }
-                try {
-                    Event targetEvent = state.getTargetEvent();
-                    switch (state.getEditingFieldName()) {
-                        case "Название" -> targetEvent.setTitle(text.trim());
-                        case "Описание" -> targetEvent.setText(text.trim());
-                        case "Дата и Время" -> targetEvent.setEventDate(
-                            LocalDateTime.parse(text.trim(), DateTimeFormatter.ofPattern("dd.MM.yyyy-HH:mm")));
-                        case "Ссылка" -> targetEvent.setLink(text.trim());
-                        case "Адрес" -> {
-                            if (text != null && text.length() <= 255) {
-                                String address = text.trim();
-                                String[] parts = address.split(" ");
-                                if (parts.length != 2) {
-                                    yield generateSendMessage(telegramId,
-                                        "Адрес должен соответствовать формату (улица и номер дома, например Крестьянская 207), Повторите ввод (до 255 символов):",
-                                        menus.get(CANCEL_MENU));
-                                }
-                                if (!parts[1].matches("^[0-9]+[A-Za-zА-Яа-я]?$|^[0-9]+/[0-9]+$|^[0-9]+[A-Za-zА-Яа-я]?/[0-9]+$")) {
-                                    yield generateSendMessage(telegramId,
-                                        "Номер дома должен быть в формате '123', '123А' или '123/456'. Повторите ввод:",
-                                        menus.get(CANCEL_MENU));
-                                }
-                                address = "г. Майкоп, ул. %s, д. %s".formatted(parts[0], parts[1]);
-                                targetEvent.setAddress(address);
-                            }
-                        }
-                    }
-                    state.setStep(CONFIRM_EVENT_EDIT);
-                    SendMessage sendMessage = generateSendMessage(telegramId,
-                        "Мероприятие с новыми данными:\n" + getEventDescription(targetEvent) + "\nСохранить изменения?",
-                        menus.get(SELECTION_MENU));
-                    sendMessage.setParseMode("HTML");
-                    yield sendMessage;
-                } catch (DateTimeParseException e) {
-                    yield generateSendMessage(telegramId,
-                        "Дата должна быть в формате (ДД.ММ.ГГГГ-ЧЧ:ММ). Повторите ввод:");
-                } catch (Exception e) {
-                    yield generateSendMessage(telegramId, "Ошибка при редактировании поля. Повторите ввод:");
-                }
-            }
-
-            case CONFIRM_EVENT_EDIT -> {
-                if (StringUtils.equalsAny(text, YES, NO)) {
-                    if (YES.equalsIgnoreCase(text)) {
-                        eventRepository.save(state.getTargetEvent());
-                    }
-                    state.setStep(SHOW_EVENT_DETAILS);
-                    messageDto.setText(" " + state.getTargetEvent().getEventId());
-                    yield handle(messageDto, telegramId);
-                } else {
-                    yield generateSendMessage(telegramId, "Неверная команда.", menus.get(SELECTION_MENU));
-                }
-            }
-
-            case CONFIRM_EVENT_DELETE -> {
-                String responseMessage;
-                state.setStep(SHOW_EVENTS_LIST);
-
-                if (YES.equalsIgnoreCase(text)) {
-                    eventRepository.delete(state.getTargetEvent());
-                    responseMessage = String.format("Мероприятие '%s' удалено.", state.getTargetEvent().getTitle());
-                } else if (NO.equalsIgnoreCase(text)) {
-                    responseMessage = "Удаление мероприятия отменено.";
-                } else {
-                    responseMessage = "Неверная команда.";
-                }
-                yield generateSendMessage(telegramId, responseMessage,
-                    menus.get(OK_MENU));
-            }
+            case SHOW_EVENTS_LIST -> handleShowEventsList(telegramId, state);
+            case SHOW_EVENT_DETAILS -> handleShowEventDetails(messageDto, telegramId, state);
+            case HANDLE_USER_ACTION -> handleUserAction(messageDto, telegramId, state);
+            case SELECT_EVENT_FIELD -> handleSelectEventField(messageDto, telegramId, state);
+            case EDIT_EVENT_FIELD -> handleEditEventField(messageDto, telegramId, state);
+            case CONFIRM_EVENT_EDIT -> handleConfirmEventEdit(messageDto, telegramId, state);
+            case CONFIRM_EVENT_DELETE -> handleConfirmEventDelete(messageDto, telegramId, state);
         };
+    }
+
+    private PartialBotApiMethod<Message> handleShowEventsList(Long telegramId, ShowEventsState state) {
+        List<Event> events = eventRepository.findAllByEventDateAfterOrderByEventDateAsc(LocalDateTime.now());
+        state.setStep(SHOW_EVENT_DETAILS);
+
+        return generateSendMessage(
+            telegramId,
+            "Выберите интересующее вас мероприятие:",
+            generateEventListKeyboard(events)
+        );
+    }
+
+    private PartialBotApiMethod<Message> handleShowEventDetails(MessageDto messageDto,
+                                                                Long telegramId,
+                                                                ShowEventsState state) {
+        String text = messageDto.getText();
+        if (TO_MAIN_MENU.equalsIgnoreCase(text)) {
+            return goToMainMenu(telegramId);
+        }
+        try {
+            Integer eventId = Integer.valueOf(text.substring(text.lastIndexOf(' ') + 1));
+            Optional<Event> eventOptional = eventRepository.findById(eventId);
+
+            if (eventOptional.isPresent()) {
+                Event targetEvent = eventOptional.get();
+                state.setTargetEvent(targetEvent);
+                state.setStep(HANDLE_USER_ACTION);
+                String eventDescription = getEventDescription(targetEvent);
+
+                Optional<User> userOptional = userRepository.findById(telegramId);
+
+                if (isLogoPresent(targetEvent.getLogo())) {
+                    SendPhoto sendPhoto = generateImageMessage(
+                        telegramId,
+                        eventDescription,
+                        getUserActionKeyboard(userOptional),
+                        targetEvent.getLogo()
+                    );
+                    sendPhoto.setParseMode("HTML");
+                    return sendPhoto;
+                } else {
+                    SendMessage sendMessage = generateSendMessage(
+                        telegramId,
+                        eventDescription,
+                        getUserActionKeyboard(userOptional)
+                    );
+                    sendMessage.setParseMode("HTML");
+                    return sendMessage;
+                }
+            } else {
+                return generateSendMessage(telegramId, "Мероприятие не найдено.");
+            }
+        } catch (NumberFormatException e) {
+            return generateSendMessage(telegramId, "Неверный ID мероприятия.");
+        }
+    }
+
+    private PartialBotApiMethod<Message> handleUserAction(MessageDto messageDto,
+                                                          Long telegramId,
+                                                          ShowEventsState state) {
+        String text = messageDto.getText();
+        if (TO_MAIN_MENU.equalsIgnoreCase(text)) {
+            return goToMainMenu(telegramId);
+        } else if (EVENTS_LIST.equalsIgnoreCase(text)) {
+            state.setStep(SHOW_EVENTS_LIST);
+            return handleShowEventsList(telegramId, state);
+        } else if (DELETE_EVENT.equalsIgnoreCase(text)) {
+            state.setStep(CONFIRM_EVENT_DELETE);
+            return generateSendMessage(
+                telegramId,
+                String.format("Вы точно хотите удалить меропирятие '%s'?", state.getTargetEvent().getTitle()),
+                menus.get(SELECTION_MENU)
+            );
+        } else if (EDIT_EVENT.equalsIgnoreCase(text)) {
+            state.setStep(SELECT_EVENT_FIELD);
+            return generateSendMessage(
+                telegramId,
+                "Выберите поле, которое хотите отредактировать:",
+                menus.get(EVENT_FIELDS_MENU)
+            );
+        } else {
+            return generateSendMessage(telegramId, "Неверная команда", menus.get(GO_TO_MAIN_MENU));
+        }
+    }
+
+    private PartialBotApiMethod<Message> handleSelectEventField(MessageDto messageDto,
+                                                                Long telegramId,
+                                                                ShowEventsState state) {
+        String text = messageDto.getText();
+
+        if (isFieldName(text)) {
+            state.setStep(EDIT_EVENT_FIELD);
+            state.setEditingFieldName(text);
+            String question = switch (text) {
+                case "Название" -> "Введите новое название мероприятия:";
+                case "Описание" -> "Введите новое описание мероприятиям";
+                case "Дата и Время" ->
+                    "Введите новую дату мероприятия в формате (ДД.ММ.ГГГГ-ЧЧ:ММ):";
+                case "Ссылка" -> "Введите новую ссылку:";
+                case "Адрес" -> "Введите адрес (улица и номер дома, например Крестьянская 207):";
+                case "Логотип" -> "Отправьте логотип мероприятия (изображение):";
+                default -> "Поле неизвестно";
+            };
+            return generateSendMessage(telegramId, question, menus.get(CANCEL_MENU));
+        } else {
+            return generateSendMessage(
+                telegramId,
+                "Неверное поле. Выберите одно из доступных.",
+                menus.get(EVENT_FIELDS_MENU)
+            );
+        }
+    }
+
+    private PartialBotApiMethod<Message> handleEditEventField(MessageDto messageDto,
+                                                              Long telegramId,
+                                                              ShowEventsState state) {
+        String text = messageDto.getText();
+        if (CANCEL.equalsIgnoreCase(text)) {
+            state.setStep(SHOW_EVENT_DETAILS);
+            messageDto.setText(" " + state.getTargetEvent().getEventId());
+            return handleShowEventDetails(messageDto, telegramId, state);
+        }
+
+        Event targetEvent = state.getTargetEvent();
+        try {
+            switch (state.getEditingFieldName()) {
+                case "Название" -> targetEvent.setTitle(text.trim());
+                case "Описание" -> targetEvent.setText(text.trim());
+                case "Дата и Время" ->
+                    targetEvent.setEventDate(LocalDateTime.parse(
+                        text.trim(),
+                        DateTimeFormatter.ofPattern("dd.MM.yyyy-HH:mm"))
+                    );
+                case "Ссылка" -> targetEvent.setLink(text.trim());
+                case "Адрес" -> {
+                    if (!validateAddress(text)) {
+                        return generateSendMessage(
+                            telegramId,
+                            "Адрес должен соответствовать формату (улица и номер дома, например Крестьянская 207). Повторите ввод:",
+                            menus.get(CANCEL_MENU)
+                        );
+                    }
+                    targetEvent.setAddress(formatAddress(text.trim()));
+                }
+                case "Логотип" -> {
+                    if (messageDto.getImage() != null) {
+                        targetEvent.setLogo(messageDto.getImage());
+                    } else {
+                        return generateSendMessage(
+                            telegramId,
+                            "Логотип должен быть изображением. Повторите ввод:",
+                            menus.get(CANCEL_MENU)
+                        );
+                    }
+                }
+                default -> {
+                    return generateSendMessage(telegramId, "Неверное поле", menus.get(CANCEL_MENU));
+                }
+            }
+            state.setStep(CONFIRM_EVENT_EDIT);
+            return buildEventConfirmMessage(telegramId, targetEvent);
+
+        } catch (DateTimeParseException e) {
+            return generateSendMessage(
+                telegramId,
+                "Дата должна быть в формате (ДД.ММ.ГГГГ-ЧЧ:ММ). Повторите ввод:",
+                menus.get(CANCEL_MENU)
+            );
+        } catch (Exception e) {
+            return generateSendMessage(
+                telegramId,
+                "Ошибка при редактировании поля. Повторите ввод:",
+                menus.get(CANCEL_MENU)
+            );
+        }
+    }
+
+    private PartialBotApiMethod<Message> handleConfirmEventEdit(MessageDto messageDto,
+                                                                Long telegramId,
+                                                                ShowEventsState state) {
+        String text = messageDto.getText();
+        if (YES.equalsIgnoreCase(text)) {
+            eventRepository.save(state.getTargetEvent());
+        } else if (!NO.equalsIgnoreCase(text)) {
+            return generateSendMessage(telegramId, "Неверная команда.", menus.get(SELECTION_MENU));
+        }
+        state.setStep(SHOW_EVENT_DETAILS);
+        messageDto.setText(" " + state.getTargetEvent().getEventId());
+        return handleShowEventDetails(messageDto, telegramId, state);
+    }
+
+    private PartialBotApiMethod<Message> handleConfirmEventDelete(MessageDto messageDto,
+                                                                  Long telegramId,
+                                                                  ShowEventsState state) {
+        String text = messageDto.getText();
+        String response;
+        state.setStep(SHOW_EVENTS_LIST);
+
+        if (YES.equalsIgnoreCase(text)) {
+            eventRepository.delete(state.getTargetEvent());
+            response = String.format("Мероприятие '%s' удалено.", state.getTargetEvent().getTitle());
+        } else if (NO.equalsIgnoreCase(text)) {
+            response = "Удаление мероприятия отменено.";
+        } else {
+            response = "Неверная команда.";
+        }
+
+        return generateSendMessage(telegramId, response, menus.get(OK_MENU));
     }
 
     private String getEventDescription(Event targetEvent) {
@@ -250,24 +314,28 @@ public class ShowEventsHandler implements MessageHandler {
             targetEvent.getLink(),
             getHyperlinkFromAddress(targetEvent.getAddress()),
             targetEvent.getEventDate().toLocalDate().format(DateTimeFormatter.ofPattern("dd.MM.yyyy")),
-            targetEvent.getEventDate().toLocalTime().format(DateTimeFormatter.ofPattern("hh:mm")));
+            targetEvent.getEventDate().toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm"))
+        );
     }
 
     private ReplyKeyboardMarkup generateEventListKeyboard(List<Event> events) {
         ReplyKeyboardMarkup replyMarkup = new ReplyKeyboardMarkup();
         List<KeyboardRow> keyboard = new ArrayList<>();
-        KeyboardRow firstRow = new KeyboardRow();
-        firstRow.add(TO_MAIN_MENU);
-        keyboard.add(firstRow);
-        for (int i = 0; i < events.size(); ) {
+
+        KeyboardRow mainMenuRow = new KeyboardRow();
+        mainMenuRow.add(TO_MAIN_MENU);
+        keyboard.add(mainMenuRow);
+
+        for (Event event : events) {
             KeyboardRow row = new KeyboardRow();
-            Event event = events.get(i++);
             row.add("%s\n%s | ID: %s".formatted(
                 event.getTitle(),
                 event.getEventDate().format(DateTimeFormatter.ofPattern("dd.MM.yyyy")),
-                event.getEventId()));
+                event.getEventId())
+            );
             keyboard.add(row);
         }
+
         replyMarkup.setKeyboard(keyboard);
         replyMarkup.setResizeKeyboard(true);
         replyMarkup.setOneTimeKeyboard(false);
@@ -277,20 +345,27 @@ public class ShowEventsHandler implements MessageHandler {
     private ReplyKeyboard getUserActionKeyboard(Optional<User> userOptional) {
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
+
         InlineKeyboardButton toMainMenuButton = new InlineKeyboardButton(TO_MAIN_MENU);
-        toMainMenuButton.setCallbackData(toMainMenuButton.getText());
+        toMainMenuButton.setCallbackData(TO_MAIN_MENU);
+
         InlineKeyboardButton toEventsButton = new InlineKeyboardButton(EVENTS_LIST);
-        toEventsButton.setCallbackData(toEventsButton.getText());
+        toEventsButton.setCallbackData(EVENTS_LIST);
+
         keyboard.add(List.of(toMainMenuButton));
         keyboard.add(List.of(toEventsButton));
+
         if (userOptional.isPresent() && userOptional.get().getUserRole() != USER) {
-            InlineKeyboardButton deleteEventButton = new InlineKeyboardButton(DELETE_EVENT);
-            deleteEventButton.setCallbackData(deleteEventButton.getText());
-            keyboard.add(List.of(deleteEventButton));
-            InlineKeyboardButton editEventButton = new InlineKeyboardButton(EDIT_EVENT);
-            editEventButton.setCallbackData(editEventButton.getText());
-            keyboard.add(List.of(editEventButton));
+            InlineKeyboardButton deleteButton = new InlineKeyboardButton(DELETE_EVENT);
+            deleteButton.setCallbackData(DELETE_EVENT);
+
+            InlineKeyboardButton editButton = new InlineKeyboardButton(EDIT_EVENT);
+            editButton.setCallbackData(EDIT_EVENT);
+
+            keyboard.add(List.of(deleteButton));
+            keyboard.add(List.of(editButton));
         }
+
         inlineKeyboardMarkup.setKeyboard(keyboard);
         return inlineKeyboardMarkup;
     }
@@ -299,13 +374,53 @@ public class ShowEventsHandler implements MessageHandler {
         BasicState state = basicStates.get(telegramId);
         showEventStates.remove(telegramId);
         state.setStep(IN_MAIN_MENU);
-        return menuGenerator.generateRoleSpecificMainMenu(telegramId,
-            state.getUser().getUserRole());
+        return menuGenerator.generateRoleSpecificMainMenu(telegramId, state.getUser().getUserRole());
     }
 
     private String getHyperlinkFromAddress(String address) {
         String encodedAddress = URLEncoder.encode(address, StandardCharsets.UTF_8);
         String url = "https://yandex.ru/maps/?text=" + encodedAddress;
         return String.format("<a href=\"%s\">%s</a>", url, address);
+    }
+
+    private boolean isLogoPresent(byte[] logo) {
+        return logo != null && logo.length > 0;
+    }
+
+    private PartialBotApiMethod<Message> buildEventConfirmMessage(Long telegramId, Event targetEvent) {
+        String text = "Мероприятие с новыми данными:\n" +
+            getEventDescription(targetEvent) +
+            "\nСохранить изменения?";
+
+        if (isLogoPresent(targetEvent.getLogo())) {
+            SendPhoto sendPhoto = generateImageMessage(telegramId, text, menus.get(SELECTION_MENU), targetEvent.getLogo());
+            sendPhoto.setParseMode("HTML");
+            return sendPhoto;
+        } else {
+            SendMessage sendMessage = generateSendMessage(telegramId, text, menus.get(SELECTION_MENU));
+            sendMessage.setParseMode("HTML");
+            return sendMessage;
+        }
+    }
+
+    private boolean validateAddress(String text) {
+        if (text == null || text.length() > 255) {
+            return false;
+        }
+        String[] parts = text.split(" ");
+        if (parts.length != 2) {
+            return false;
+        }
+        return parts[1].matches("^[0-9]+[A-Za-zА-Яа-я]?$|^[0-9]+/[0-9]+$|^[0-9]+[A-Za-zА-Яа-я]?/[0-9]+$");
+    }
+
+    private String formatAddress(String text) {
+        String[] parts = text.split(" ");
+        return "г. Майкоп, ул. %s, д. %s".formatted(parts[0], parts[1]);
+    }
+
+    private boolean isFieldName(String text) {
+        return List.of("Название", "Описание", "Дата и Время", "Ссылка", "Адрес", "Логотип")
+            .contains(text);
     }
 }

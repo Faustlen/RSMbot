@@ -32,6 +32,9 @@ public class Event {
     private String text;
 
     @Column
+    private byte[] logo;
+
+    @Column
     private String link;
 
     @Column(nullable = false, name = "address")
