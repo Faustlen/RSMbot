@@ -44,10 +44,7 @@ public class MessageBroadcastHandler implements MessageHandler {
     @Override
     public SendMessage handle(MessageDto messageDto, Long telegramId) {
         String messageText = messageDto.getText();
-        MessageBroadcastState state = states.get(telegramId);
-        if (state == null) {
-            states.put(telegramId, (state = new MessageBroadcastState()));
-        }
+        MessageBroadcastState state = getStateForUser(telegramId);
         ReplyKeyboard mainMenu = menus.get(GO_TO_MAIN_MENU);
 
         if (TO_MAIN_MENU.equals(messageText)) {
@@ -55,37 +52,9 @@ public class MessageBroadcastHandler implements MessageHandler {
         }
 
         return switch (state.getStep()) {
-            case REQUEST_MESSAGE_TEXT -> {
-                state.setStep(VERIFY_MESSAGE_TEXT);
-                yield generateSendMessage(telegramId,
-                    "Введите текст сообщения, которое хотите отправить всем пользователям.");
-            }
-            case VERIFY_MESSAGE_TEXT -> {
-                state.setStep(CONFIRM_MESSAGE_TEXT);
-                String sender = userRepository.findByTelegramId(telegramId).get().getFullName();
-                state.setText(messageText + "\n\nОтправлено пользователем: " + sender);
-                String formattedMessage = String.format(
-                    "Вы хотите отправить следующее сообщение:\n\n" +
-                    "---------------\n%s\n---------------\n\nПодтвердите отправку.",
-                    state.getText()
-                );
-                yield generateSendMessage(telegramId, formattedMessage, menus.get(SELECTION_MENU));
-            }
-            case CONFIRM_MESSAGE_TEXT -> {
-                if ("Да".equalsIgnoreCase(messageText)) {
-                    broadcastMessage(state.getText());
-                    states.remove(telegramId);
-                    yield generateSendMessage(telegramId, "Сообщение успешно разослано всем пользователям.",
-                        mainMenu);
-                } else if ("Нет".equalsIgnoreCase(messageText)) {
-                    state.setStep(REQUEST_MESSAGE_TEXT);
-                    yield generateSendMessage(telegramId, "Отправка сообщения отменена.", mainMenu);
-                } else {
-                    yield generateSendMessage(telegramId,
-                        "Неверная команда. Отправка сообщения отменена.",
-                        mainMenu);
-                }
-            }
+            case REQUEST_MESSAGE_TEXT -> handleRequestMessageText(telegramId, state);
+            case VERIFY_MESSAGE_TEXT  -> handleVerifyMessageText(telegramId, state, messageText);
+            case CONFIRM_MESSAGE_TEXT -> handleConfirmMessageText(telegramId, state, messageText, mainMenu);
         };
     }
 
@@ -94,12 +63,56 @@ public class MessageBroadcastHandler implements MessageHandler {
         return SEND_MESSAGE_TO_EVERYBODY;
     }
 
+    private MessageBroadcastState getStateForUser(Long telegramId) {
+        MessageBroadcastState state = states.get(telegramId);
+        if (state == null) {
+            state = new MessageBroadcastState();
+            states.put(telegramId, state);
+        }
+        return state;
+    }
+
+    private SendMessage handleRequestMessageText(Long telegramId, MessageBroadcastState state) {
+        state.setStep(VERIFY_MESSAGE_TEXT);
+        return generateSendMessage(telegramId,
+            "Введите текст сообщения, которое хотите отправить всем пользователям.");
+    }
+
+    private SendMessage handleVerifyMessageText(Long telegramId, MessageBroadcastState state, String messageText) {
+        if (messageText == null) {
+            return handleRequestMessageText(telegramId, state);
+        }
+
+        state.setStep(CONFIRM_MESSAGE_TEXT);
+        String sender = userRepository.findByTelegramId(telegramId).get().getFullName();
+        state.setText(messageText + "\n\nОтправлено пользователем: " + sender);
+
+        String formattedMessage = String.format(
+            "Вы хотите отправить следующее сообщение:\n\n" +
+                "---------------\n%s\n---------------\n\nПодтвердите отправку.",
+            state.getText()
+        );
+        return generateSendMessage(telegramId, formattedMessage, menus.get(SELECTION_MENU));
+    }
+
+    private SendMessage handleConfirmMessageText(Long telegramId, MessageBroadcastState state, String messageText, ReplyKeyboard mainMenu) {
+        if ("Да".equalsIgnoreCase(messageText)) {
+            broadcastMessage(state.getText());
+            states.remove(telegramId);
+            return generateSendMessage(telegramId, "Сообщение успешно разослано всем пользователям.", mainMenu);
+        } else if ("Нет".equalsIgnoreCase(messageText)) {
+            state.setStep(REQUEST_MESSAGE_TEXT);
+            return generateSendMessage(telegramId, "Отправка сообщения отменена.", mainMenu);
+        } else {
+            return generateSendMessage(telegramId, "Неверная команда. Отправка сообщения отменена.", mainMenu);
+        }
+    }
+
     private SendMessage switchToMainMenu(Long telegramId) {
         BasicState state = basicStates.get(telegramId);
         states.remove(telegramId);
         state.setStep(IN_MAIN_MENU);
-        return menuGenerator.generateRoleSpecificMainMenu(telegramId,
-            state.getUser().getUserRole());
+        return menuGenerator.generateRoleSpecificMainMenu(telegramId, state.getUser().getUserRole());
     }
 
     public void broadcastMessage(String text) {

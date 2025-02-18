@@ -132,6 +132,10 @@ public class PartnerEditingHandler implements MessageHandler{
     }
 
     private PartialBotApiMethod<Message> handleChoiceOption(PartnerEditingState state, Long telegramId, String text) {
+        if (text == null) {
+            state.setStep(SHOW_PARTNERS_DETAILS);
+            return handleShowPartnersDetails(state, telegramId);
+        }
         return switch (text) {
             case CHANGE_LOGO -> {
                 state.setStep(UPDATE_LOGO);
@@ -197,7 +201,7 @@ public class PartnerEditingHandler implements MessageHandler{
     }
 
     private PartialBotApiMethod<Message> handleUpdateInfo(PartnerEditingState state, Long telegramId, String text) {
-        if (text != null && text.length() <= 255) {
+        if (text != null && text.length() <= 250) {
             state.getPartner().setPartnersInfo(text.strip());
             state.setStep(CHOICE_OPTION);
             return handleShowPartnersDetails(state, telegramId);

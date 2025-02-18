@@ -90,7 +90,7 @@ public class ShowPartnersHandler implements MessageHandler {
     private static final String CHANGE_DISCOUNT_NOTIFICATION = """
         Ваши данные были изменены администратором:
         Процент скидки: %s%%
-        Дата окончания скидки %S
+        Дата окончания скидки %s
         """;
 
     private static final String DISCOUNT_CODE_MESSAGE = """
@@ -117,244 +117,365 @@ public class ShowPartnersHandler implements MessageHandler {
     @Override
     public PartialBotApiMethod<Message> handle(MessageDto messageDto, Long telegramId) {
         String text = messageDto.getText();
+
         ShowPartnersState state = showPartnersStates.get(telegramId);
         if (state == null) {
-            showPartnersStates.put(telegramId, (state = new ShowPartnersState()));
+            state = new ShowPartnersState();
+            showPartnersStates.put(telegramId, state);
         }
+
         if (StringUtils.equalsAny(text, TO_MAIN_MENU, CANCEL)) {
             return goToMainMenu(telegramId);
         }
 
         return switch (state.getStep()) {
-            case SHOW_PARTNERS_LIST -> {
-                List<Partner> partners = partnerRepository.findAll();
-                Optional<User> userOptional = userRepository.findById(telegramId);
-                state.setStep(SHOW_PARTNER_DETAILS);
-
-                if (userOptional.isEmpty() || userOptional.get().getUserRole() == USER) {
-                    partners = partners.stream()
-                        .filter(partner ->
-                            partner.isValid() &&
-                            partner.getDiscountDate().isAfter(LocalDateTime.now()))
-                        .toList();
-                    yield generateSendMessage(telegramId, "Партнеры РСМ: ",
-                        menuConfig.getPartnersListKeyboard(partners, true));
-                } else {
-                    yield generateSendMessage(telegramId, "Партнеры РСМ: ",
-                        menuConfig.getPartnersListKeyboard(partners, false));
-                }
-            }
-
-            case SHOW_PARTNER_DETAILS -> {
-                if (text.endsWith("✅") || text.endsWith("❌")) {
-                    text = text.substring(0, text.length() - 2).trim();
-                }
-                Optional<Partner> partnerOptional = partnerRepository.findByName(text);
-                if (partnerOptional.isPresent()) {
-                    Partner targetPartner = partnerOptional.get();
-                    Optional<User> userOptional = userRepository.findById(telegramId);
-                    String partnerDescription = "";
-                    if (userOptional.isEmpty()) {
-                        if (targetPartner.isValid()) {
-                            partnerDescription = PARTNER_INFO_FOR_PARTNERS.formatted(
-                                targetPartner.getName(),
-                                targetPartner.getCategory().getCategoryName(),
-                                targetPartner.getPartnersInfo(),
-                                targetPartner.getPhoneNumber(),
-                                getHyperlinkFromAddress(targetPartner.getAddress()));
-                        } else {
-                            partnerDescription =
-                                "Информация о партнере (%s) недоступна для просмотра, пока не пройдет проверку администратором"
-                                    .formatted(targetPartner.getName());
-                        }
-                    } else {
-                        Role role = userOptional.get().getUserRole();
-                        if (role == USER) {
-                            if (targetPartner.isValid()) {
-                                partnerDescription = PARTNER_INFO_FOR_USERS.formatted(
-                                    targetPartner.getName(),
-                                    targetPartner.getCategory().getCategoryName(),
-                                    targetPartner.getPartnersInfo(),
-                                    targetPartner.getPhoneNumber(),
-                                    getHyperlinkFromAddress(targetPartner.getAddress()),
-                                    targetPartner.getDiscountPercent(),
-                                    targetPartner.getDiscountDate() == null ? "Неограниченно" :
-                                        targetPartner.getDiscountDate().toLocalDate());
-                            } else {
-                                partnerDescription =
-                                    "Информация о партнере (%s) недоступна для просмотра, пока не пройдет проверку администратором"
-                                        .formatted(targetPartner.getName());
-                            }
-                        } else if (role == SUPER_USER || role == ADMIN) {
-                            partnerDescription = PARTNER_INFO_FOR_ADMIN.formatted(
-                                targetPartner.getName(),
-                                targetPartner.getCategory().getCategoryName(),
-                                targetPartner.getPartnersInfo(),
-                                targetPartner.getPhoneNumber(),
-                                getHyperlinkFromAddress(targetPartner.getAddress()),
-                                targetPartner.getDiscountPercent(),
-                                targetPartner.getDiscountDate() == null
-                                    ? "Неограниченно" : targetPartner.getDiscountDate().toLocalDate(),
-                                targetPartner.isValid() ? "Да" : "Нет");
-                        }
-                    }
-                    byte[] logo = targetPartner.getLogo();
-                    state.setStep(HANDLE_USER_ACTION);
-                    state.setTargetPartner(targetPartner);
-                    if (isLogoPresent(logo)) {
-                        SendPhoto sendPhoto = generateImageMessage(telegramId, partnerDescription,
-                            getUserActionKeyboard(userOptional, partnerOptional), logo);
-                        sendPhoto.setParseMode("HTML");
-                        yield sendPhoto;
-                    } else {
-                        SendMessage sendMessage = generateSendMessage(telegramId, partnerDescription,
-                            getUserActionKeyboard(userOptional, partnerOptional));
-                        sendMessage.setParseMode("HTML");
-                        yield sendMessage;
-                    }
-                } else {
-                    yield generateSendMessage(telegramId, "Нет партнера с таким названием.");
-                }
-            }
-
-            case HANDLE_USER_ACTION -> {
-                if (PARTNERS_LIST.equalsIgnoreCase(text)) {
-                    state.setStep(SHOW_PARTNERS_LIST);
-                    yield handle(messageDto, telegramId);
-                } else if (CHANGE_DISCOUNT.equalsIgnoreCase(text) &&
-                           basicStates.get(telegramId).getUser().getUserRole() != USER) {
-                    state.setStep(VERIFY_NEW_DISCOUNT_PERCENT);
-                    yield generateSendMessage(telegramId, "Пожалуйста, введите новый процент скидки (от 0 до 100):",
-                        menus.get(CANCEL_MENU));
-                } else if (GET_DISCOUNT_CODE.equalsIgnoreCase(text)) {
-                    state.setStep(SEND_DISCOUNT_CODE);
-                    yield handle(messageDto, telegramId);
-                } else if (ACTIVATE_PARTNER.equalsIgnoreCase(text)) {
-                    Partner currentPartner = state.getTargetPartner();
-                    currentPartner.setValid(true);
-                    partnerRepository.save(currentPartner);
-                    yield generateSendMessage(telegramId, "Партнёр успешно активирован.",
-                        getUserActionKeyboard(userRepository.findById(telegramId),
-                            Optional.ofNullable(state.getTargetPartner())));
-                } else if (DEACTIVATE_PARTNER.equalsIgnoreCase(text)) {
-                    Partner currentPartner = state.getTargetPartner();
-                    currentPartner.setValid(false);
-                    partnerRepository.save(currentPartner);
-                    yield generateSendMessage(telegramId, "Партнёр успешно деактивирован.",
-                        getUserActionKeyboard(userRepository.findById(telegramId),
-                            Optional.ofNullable(state.getTargetPartner())));
-                } else {
-                    yield goToMainMenu(telegramId);
-                }
-            }
-
-            case VERIFY_NEW_DISCOUNT_PERCENT -> {
-                try {
-                    short discountPercent = Short.parseShort(text);
-                    if (discountPercent >= 100 || discountPercent < 0) {
-                        yield generateSendMessage(telegramId,
-                            "Процент скидки должен быть от 0 до 100. Повторите ввод:", menus.get(CANCEL_MENU));
-                    }
-                    state.setDiscountPercent(discountPercent);
-                    state.setStep(VERIFY_NEW_DISCOUNT_DATE);
-                    yield generateSendMessage(telegramId,
-                        "Пожалуйста, введите дату конца действия скидки в формате (ДД.ММ.ГГГГ-ЧЧ:ММ)",
-                        menus.get(CANCEL_MENU));
-                } catch (NumberFormatException e) {
-                    yield generateSendMessage(telegramId, "Процент скидки должен быть числом. Повторите ввод:",
-                        menus.get(CANCEL_MENU));
-                }
-            }
-
-            case VERIFY_NEW_DISCOUNT_DATE -> {
-                try {
-                    state.setDiscountDate(
-                        LocalDateTime.parse(text.trim(), DateTimeFormatter.ofPattern("dd.MM.yyyy-HH:mm")));
-                    state.setStep(CONFIRM_CHANGE);
-                    yield generateSendMessage(telegramId,
-                        CHANGE_DISCOUNT_INFO.formatted(state.getTargetPartner().getName(),
-                            state.getDiscountPercent(),
-                            state.getDiscountDate().format(DateTimeFormatter.ofPattern("dd.MM.yyyy | HH:mm"))),
-                        menus.get(SELECTION_MENU));
-                } catch (DateTimeParseException e) {
-                    yield generateSendMessage(telegramId,
-                        "Дата должна быть в формате (ДД.ММ.ГГГГ-ЧЧ:ММ). Повторите ввод:", menus.get(CANCEL_MENU));
-                }
-            }
-
-            case CONFIRM_CHANGE -> {
-                String responseMessage;
-                if ("Да".equalsIgnoreCase(text)) {
-                    Partner currentPartner = state.getTargetPartner();
-                    currentPartner.setDiscountPercent(state.getDiscountPercent());
-                    currentPartner.setDiscountDate(state.getDiscountDate());
-                    partnerRepository.save(currentPartner);
-                    responseMessage = "Данные партнера успешно изменены.";
-                    eventPublisher.publishEvent(new BroadcastPartnersEvent(
-                        CHANGE_DISCOUNT_NOTIFICATION.formatted(
-                            currentPartner.getDiscountPercent(),
-                            currentPartner.getDiscountDate() == null ? "Неограниченно" :
-                                currentPartner.getDiscountDate().toLocalDate())
-                        , List.of(state.getTargetPartner())));
-                } else if ("Нет".equalsIgnoreCase(text)) {
-                    responseMessage = "Изменение данных партнера отменено.";
-                } else {
-                    responseMessage = "Неверная команда.";
-                }
-                yield generateSendMessage(telegramId, responseMessage,
-                    menus.get(GO_TO_MAIN_MENU));
-            }
-
-            case SEND_DISCOUNT_CODE -> {
-                yield generateSendMessage(telegramId, DISCOUNT_CODE_MESSAGE
-                        .formatted(discountCodeService.getDiscountCode(), discountCodeService.getSecondsLeft()),
-                    menus.get(UPDATE_DISCOUNT_CODE_MENU));
-            }
+            case SHOW_PARTNERS_LIST -> handleShowPartnersList(telegramId, state);
+            case SHOW_PARTNER_DETAILS -> handleShowPartnerDetails(messageDto, telegramId, state);
+            case HANDLE_USER_ACTION -> handleUserAction(messageDto, telegramId, state);
+            case VERIFY_NEW_DISCOUNT_PERCENT -> handleVerifyNewDiscountPercent(messageDto, telegramId, state);
+            case VERIFY_NEW_DISCOUNT_DATE -> handleVerifyNewDiscountDate(messageDto, telegramId, state);
+            case CONFIRM_CHANGE -> handleConfirmChange(messageDto, telegramId, state);
+            case SEND_DISCOUNT_CODE -> handleSendDiscountCode(telegramId);
         };
+    }
+
+    private PartialBotApiMethod<Message> handleShowPartnersList(Long telegramId, ShowPartnersState state) {
+        List<Partner> partners = partnerRepository.findAll();
+        Optional<User> userOptional = userRepository.findById(telegramId);
+        state.setStep(SHOW_PARTNER_DETAILS);
+
+        if (userOptional.isEmpty() || userOptional.get().getUserRole() == USER) {
+            partners = partners.stream()
+                .filter(partner -> partner.isValid()
+                    && partner.getDiscountDate().isAfter(LocalDateTime.now()))
+                .toList();
+            return generateSendMessage(telegramId,
+                "Партнеры РСМ:",
+                menuConfig.getPartnersListKeyboard(partners, true));
+        } else {
+            return generateSendMessage(telegramId,
+                "Партнеры РСМ:",
+                menuConfig.getPartnersListKeyboard(partners, false));
+        }
+    }
+
+    private PartialBotApiMethod<Message> handleShowPartnerDetails(MessageDto messageDto,
+                                                                  Long telegramId,
+                                                                  ShowPartnersState state) {
+        String text = messageDto.getText();
+
+        if (text == null) {
+            state.setStep(SHOW_PARTNERS_LIST);
+            return handleShowPartnersList(telegramId, state);
+        }
+
+        if (text.endsWith("✅") || text.endsWith("❌")) {
+            text = text.substring(0, text.length() - 2).trim();
+        }
+
+        Optional<Partner> partnerOptional = partnerRepository.findByName(text);
+        if (partnerOptional.isEmpty()) {
+            return generateSendMessage(telegramId, "Нет партнера с таким названием.");
+        }
+
+        Partner targetPartner = partnerOptional.get();
+        Optional<User> userOptional = userRepository.findById(telegramId);
+        String description = getPartnerDescription(targetPartner, userOptional);
+
+        state.setTargetPartner(targetPartner);
+        state.setStep(HANDLE_USER_ACTION);
+
+        byte[] logo = targetPartner.getLogo();
+        if (isLogoPresent(logo)) {
+            SendPhoto sendPhoto = generateImageMessage(
+                telegramId,
+                description,
+                getUserActionKeyboard(userOptional, partnerOptional),
+                logo
+            );
+            sendPhoto.setParseMode("HTML");
+            return sendPhoto;
+        } else {
+            SendMessage sendMessage = generateSendMessage(
+                telegramId,
+                description,
+                getUserActionKeyboard(userOptional, partnerOptional)
+            );
+            sendMessage.setParseMode("HTML");
+            return sendMessage;
+        }
+    }
+
+    private PartialBotApiMethod<Message> handleUserAction(MessageDto messageDto,
+                                                          Long telegramId,
+                                                          ShowPartnersState state) {
+        String text = messageDto.getText();
+
+        if (PARTNERS_LIST.equalsIgnoreCase(text)) {
+            state.setStep(SHOW_PARTNERS_LIST);
+            return handleShowPartnersList(telegramId, state);
+
+        } else if (CHANGE_DISCOUNT.equalsIgnoreCase(text) &&
+            basicStates.get(telegramId).getUser().getUserRole() != USER) {
+            state.setStep(VERIFY_NEW_DISCOUNT_PERCENT);
+            return generateSendMessage(
+                telegramId,
+                "Пожалуйста, введите новый процент скидки (от 0 до 100):",
+                menus.get(CANCEL_MENU)
+            );
+
+        } else if (GET_DISCOUNT_CODE.equalsIgnoreCase(text)) {
+            state.setStep(SEND_DISCOUNT_CODE);
+            return handleSendDiscountCode(telegramId);
+
+        } else if (ACTIVATE_PARTNER.equalsIgnoreCase(text)) {
+            Partner currentPartner = state.getTargetPartner();
+            currentPartner.setValid(true);
+            partnerRepository.save(currentPartner);
+
+            return generateSendMessage(
+                telegramId,
+                "Партнёр успешно активирован.",
+                getUserActionKeyboard(userRepository.findById(telegramId),
+                    Optional.of(currentPartner))
+            );
+
+        } else if (DEACTIVATE_PARTNER.equalsIgnoreCase(text)) {
+            Partner currentPartner = state.getTargetPartner();
+            currentPartner.setValid(false);
+            partnerRepository.save(currentPartner);
+
+            return generateSendMessage(
+                telegramId,
+                "Партнёр успешно деактивирован.",
+                getUserActionKeyboard(userRepository.findById(telegramId),
+                    Optional.of(currentPartner))
+            );
+        }
+        return goToMainMenu(telegramId);
+    }
+
+    private PartialBotApiMethod<Message> handleVerifyNewDiscountPercent(MessageDto messageDto,
+                                                                        Long telegramId,
+                                                                        ShowPartnersState state) {
+        String text = messageDto.getText();
+        try {
+            short discountPercent = Short.parseShort(text);
+            if (discountPercent < 0 || discountPercent >= 100) {
+                return generateSendMessage(
+                    telegramId,
+                    "Процент скидки должен быть от 0 до 100. Повторите ввод:",
+                    menus.get(CANCEL_MENU)
+                );
+            }
+            state.setDiscountPercent(discountPercent);
+            state.setStep(VERIFY_NEW_DISCOUNT_DATE);
+
+            return generateSendMessage(
+                telegramId,
+                "Пожалуйста, введите дату конца действия скидки в формате (ДД.ММ.ГГГГ-ЧЧ:ММ)",
+                menus.get(CANCEL_MENU)
+            );
+
+        } catch (NumberFormatException e) {
+            return generateSendMessage(
+                telegramId,
+                "Процент скидки должен быть числом. Повторите ввод:",
+                menus.get(CANCEL_MENU)
+            );
+        }
+    }
+
+    private PartialBotApiMethod<Message> handleVerifyNewDiscountDate(MessageDto messageDto,
+                                                                     Long telegramId,
+                                                                     ShowPartnersState state) {
+        String text = messageDto.getText();
+
+        if (text == null) {
+            return generateSendMessage(
+                telegramId,
+                "Пожалуйста, введите дату конца действия скидки в формате (ДД.ММ.ГГГГ-ЧЧ:ММ)",
+                menus.get(CANCEL_MENU)
+            );
+        }
+
+        try {
+            LocalDateTime discountDate = LocalDateTime.parse(
+                text.trim(),
+                DateTimeFormatter.ofPattern("dd.MM.yyyy-HH:mm")
+            );
+            state.setDiscountDate(discountDate);
+            state.setStep(CONFIRM_CHANGE);
+
+            String msg = CHANGE_DISCOUNT_INFO.formatted(
+                state.getTargetPartner().getName(),
+                state.getDiscountPercent(),
+                discountDate.format(DateTimeFormatter.ofPattern("dd.MM.yyyy | HH:mm"))
+            );
+            return generateSendMessage(telegramId, msg, menus.get(SELECTION_MENU));
+
+        } catch (DateTimeParseException | NullPointerException e) {
+            return generateSendMessage(
+                telegramId,
+                "Дата должна быть в формате (ДД.ММ.ГГГГ-ЧЧ:ММ). Повторите ввод:",
+                menus.get(CANCEL_MENU)
+            );
+        }
+    }
+
+    private PartialBotApiMethod<Message> handleConfirmChange(MessageDto messageDto,
+                                                             Long telegramId,
+                                                             ShowPartnersState state) {
+        String text = messageDto.getText();
+        String responseMessage;
+
+        if ("Да".equalsIgnoreCase(text)) {
+            Partner currentPartner = state.getTargetPartner();
+            currentPartner.setDiscountPercent(state.getDiscountPercent());
+            currentPartner.setDiscountDate(state.getDiscountDate());
+            partnerRepository.save(currentPartner);
+
+            responseMessage = "Данные партнера успешно изменены.";
+            eventPublisher.publishEvent(
+                new BroadcastPartnersEvent(
+                    CHANGE_DISCOUNT_NOTIFICATION.formatted(
+                        currentPartner.getDiscountPercent(),
+                        currentPartner.getDiscountDate() == null
+                            ? "Неограниченно"
+                            : currentPartner.getDiscountDate().toLocalDate()
+                    ),
+                    List.of(currentPartner)
+                )
+            );
+        }
+        else if ("Нет".equalsIgnoreCase(text)) {
+            responseMessage = "Изменение данных партнера отменено.";
+        } else {
+            String msg = CHANGE_DISCOUNT_INFO.formatted(
+                state.getTargetPartner().getName(),
+                state.getDiscountPercent(),
+                state.getDiscountDate().format(DateTimeFormatter.ofPattern("dd.MM.yyyy | HH:mm"))
+            );
+            return generateSendMessage(telegramId, msg, menus.get(SELECTION_MENU));
+        }
+
+        return generateSendMessage(telegramId, responseMessage, menus.get(GO_TO_MAIN_MENU));
+    }
+
+    private PartialBotApiMethod<Message> handleSendDiscountCode(Long telegramId) {
+        return generateSendMessage(
+            telegramId,
+            DISCOUNT_CODE_MESSAGE.formatted(
+                discountCodeService.getDiscountCode(),
+                discountCodeService.getSecondsLeft()
+            ),
+            menus.get(UPDATE_DISCOUNT_CODE_MENU)
+        );
+    }
+
+    private SendMessage goToMainMenu(Long telegramId) {
+        showPartnersStates.remove(telegramId);
+
+        if (isTgUserPartner(telegramId)) {
+            basicStates.get(telegramId).setStep(IN_PARTNER_MENU);
+            return generateSendMessage(
+                telegramId,
+                "Выберите раздел:",
+                menus.get(Menu.PARTNER_MAIN_MENU)
+            );
+        } else {
+            basicStates.get(telegramId).setStep(IN_MAIN_MENU);
+            return menuGenerator.generateRoleSpecificMainMenu(
+                telegramId,
+                userRepository.findByTelegramId(telegramId).get().getUserRole()
+            );
+        }
+    }
+
+    private String getPartnerDescription(Partner partner, Optional<User> userOptional) {
+        if (userOptional.isEmpty()) {
+            return partner.isValid()
+                ? PARTNER_INFO_FOR_PARTNERS.formatted(
+                partner.getName(),
+                partner.getCategory().getCategoryName(),
+                partner.getPartnersInfo(),
+                partner.getPhoneNumber(),
+                getHyperlinkFromAddress(partner.getAddress())
+            )
+                : "Информация о партнёре (%s) недоступна, пока не пройдет проверку администратором."
+                .formatted(partner.getName());
+        }
+
+        Role role = userOptional.get().getUserRole();
+        if (role == USER) {
+            return partner.isValid()
+                ? PARTNER_INFO_FOR_USERS.formatted(
+                partner.getName(),
+                partner.getCategory().getCategoryName(),
+                partner.getPartnersInfo(),
+                partner.getPhoneNumber(),
+                getHyperlinkFromAddress(partner.getAddress()),
+                partner.getDiscountPercent(),
+                partner.getDiscountDate() == null
+                    ? "Неограниченно"
+                    : partner.getDiscountDate().toLocalDate()
+            )
+                : "Информация о партнёре (%s) недоступна, пока не пройдет проверку администратором."
+                .formatted(partner.getName());
+        }
+        return PARTNER_INFO_FOR_ADMIN.formatted(
+            partner.getName(),
+            partner.getCategory().getCategoryName(),
+            partner.getPartnersInfo(),
+            partner.getPhoneNumber(),
+            getHyperlinkFromAddress(partner.getAddress()),
+            partner.getDiscountPercent(),
+            partner.getDiscountDate() == null
+                ? "Неограниченно"
+                : partner.getDiscountDate().toLocalDate(),
+            partner.isValid() ? "Да" : "Нет"
+        );
     }
 
     private ReplyKeyboard getUserActionKeyboard(Optional<User> userOptional, Optional<Partner> partnerOptional) {
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
+
         InlineKeyboardButton toMainMenuButton = new InlineKeyboardButton(TO_MAIN_MENU);
-        toMainMenuButton.setCallbackData(toMainMenuButton.getText());
+        toMainMenuButton.setCallbackData(TO_MAIN_MENU);
+
         InlineKeyboardButton toPartnersButton = new InlineKeyboardButton(PARTNERS_LIST);
-        toPartnersButton.setCallbackData(toPartnersButton.getText());
+        toPartnersButton.setCallbackData(PARTNERS_LIST);
+
         keyboard.add(List.of(toMainMenuButton));
         keyboard.add(List.of(toPartnersButton));
+
         if (userOptional.isPresent() && userOptional.get().getUserRole() != USER) {
-            if (partnerOptional.isPresent() && partnerOptional.get().isValid()) {
-                InlineKeyboardButton changeDiscountButton = new InlineKeyboardButton(CHANGE_DISCOUNT);
-                changeDiscountButton.setCallbackData(changeDiscountButton.getText());
-                InlineKeyboardButton deactivatePartner = new InlineKeyboardButton(DEACTIVATE_PARTNER);
-                deactivatePartner.setCallbackData(deactivatePartner.getText());
-                keyboard.add(List.of(changeDiscountButton, deactivatePartner));
+            if (partnerOptional.isPresent()) {
+                Partner partner = partnerOptional.get();
+                if (partner.isValid()) {
+                    InlineKeyboardButton changeDiscountButton = new InlineKeyboardButton(CHANGE_DISCOUNT);
+                    changeDiscountButton.setCallbackData(CHANGE_DISCOUNT);
 
-            } else if (partnerOptional.isPresent() && !partnerOptional.get().isValid()) {
-                InlineKeyboardButton activatePartner = new InlineKeyboardButton(ACTIVATE_PARTNER);
-                activatePartner.setCallbackData(activatePartner.getText());
-                keyboard.add(List.of(activatePartner));
+                    InlineKeyboardButton deactivateButton = new InlineKeyboardButton(DEACTIVATE_PARTNER);
+                    deactivateButton.setCallbackData(DEACTIVATE_PARTNER);
+
+                    keyboard.add(List.of(changeDiscountButton, deactivateButton));
+                } else {
+                    InlineKeyboardButton activatePartner = new InlineKeyboardButton(ACTIVATE_PARTNER);
+                    activatePartner.setCallbackData(ACTIVATE_PARTNER);
+
+                    keyboard.add(List.of(activatePartner));
+                }
             }
-
-            InlineKeyboardButton getDiscountButton = new InlineKeyboardButton(GET_DISCOUNT_CODE);
-            getDiscountButton.setCallbackData(getDiscountButton.getText());
-            keyboard.add(List.of(getDiscountButton));
-
         }
+
+        InlineKeyboardButton getDiscountButton = new InlineKeyboardButton(GET_DISCOUNT_CODE);
+        getDiscountButton.setCallbackData(GET_DISCOUNT_CODE);
+        keyboard.add(List.of(getDiscountButton));
+
         inlineKeyboardMarkup.setKeyboard(keyboard);
         return inlineKeyboardMarkup;
-    }
-
-    private SendMessage goToMainMenu(Long telegramId) {
-        showPartnersStates.remove(telegramId);
-        if (isTgUserPartner(telegramId)) {
-            basicStates.get(telegramId).setStep(IN_PARTNER_MENU);
-            return generateSendMessage(telegramId, "Выберите раздел:", menus.get(Menu.PARTNER_MAIN_MENU));
-        } else {
-            basicStates.get(telegramId).setStep(IN_MAIN_MENU);
-            return menuGenerator.generateRoleSpecificMainMenu(telegramId,
-                userRepository.findByTelegramId(telegramId).get().getUserRole());
-        }
     }
 
     private String getHyperlinkFromAddress(String address) {

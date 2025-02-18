@@ -87,6 +87,10 @@ public class ShowEventsHandler implements MessageHandler {
             showEventStates.put(telegramId, state);
         }
 
+        if (TO_MAIN_MENU.equalsIgnoreCase(messageDto.getText())) {
+            return goToMainMenu(telegramId);
+        }
+
         return switch (state.getStep()) {
             case SHOW_EVENTS_LIST -> handleShowEventsList(telegramId, state);
             case SHOW_EVENT_DETAILS -> handleShowEventDetails(messageDto, telegramId, state);
@@ -113,9 +117,11 @@ public class ShowEventsHandler implements MessageHandler {
                                                                 Long telegramId,
                                                                 ShowEventsState state) {
         String text = messageDto.getText();
-        if (TO_MAIN_MENU.equalsIgnoreCase(text)) {
-            return goToMainMenu(telegramId);
+
+        if (text == null) {
+            return handleShowEventsList(telegramId, state);
         }
+
         try {
             Integer eventId = Integer.valueOf(text.substring(text.lastIndexOf(' ') + 1));
             Optional<Event> eventOptional = eventRepository.findById(eventId);
@@ -158,9 +164,7 @@ public class ShowEventsHandler implements MessageHandler {
                                                           Long telegramId,
                                                           ShowEventsState state) {
         String text = messageDto.getText();
-        if (TO_MAIN_MENU.equalsIgnoreCase(text)) {
-            return goToMainMenu(telegramId);
-        } else if (EVENTS_LIST.equalsIgnoreCase(text)) {
+        if (EVENTS_LIST.equalsIgnoreCase(text)) {
             state.setStep(SHOW_EVENTS_LIST);
             return handleShowEventsList(telegramId, state);
         } else if (DELETE_EVENT.equalsIgnoreCase(text)) {
@@ -214,7 +218,7 @@ public class ShowEventsHandler implements MessageHandler {
                                                               Long telegramId,
                                                               ShowEventsState state) {
         String text = messageDto.getText();
-        if (CANCEL.equalsIgnoreCase(text)) {
+        if (CANCEL.equalsIgnoreCase(text) || text == null) {
             state.setStep(SHOW_EVENT_DETAILS);
             messageDto.setText(" " + state.getTargetEvent().getEventId());
             return handleShowEventDetails(messageDto, telegramId, state);
@@ -281,7 +285,7 @@ public class ShowEventsHandler implements MessageHandler {
         if (YES.equalsIgnoreCase(text)) {
             eventRepository.save(state.getTargetEvent());
         } else if (!NO.equalsIgnoreCase(text)) {
-            return generateSendMessage(telegramId, "Неверная команда.", menus.get(SELECTION_MENU));
+            return buildEventConfirmMessage(telegramId, state.getTargetEvent());
         }
         state.setStep(SHOW_EVENT_DETAILS);
         messageDto.setText(" " + state.getTargetEvent().getEventId());
@@ -420,6 +424,9 @@ public class ShowEventsHandler implements MessageHandler {
     }
 
     private boolean isFieldName(String text) {
+        if (text == null) {
+            return false;
+        }
         return List.of("Название", "Описание", "Дата и Время", "Ссылка", "Адрес", "Логотип")
             .contains(text);
     }

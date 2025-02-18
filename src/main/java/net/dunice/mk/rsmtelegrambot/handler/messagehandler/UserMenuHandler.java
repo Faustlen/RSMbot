@@ -49,6 +49,9 @@ public class UserMenuHandler implements MessageHandler {
     public PartialBotApiMethod<Message> handle(MessageDto messageDto, Long telegramId) {
         String text = messageDto.getText();
         BasicState state = basicStates.get(telegramId);
+        if (text == null) {
+            return generateSendMessage(telegramId, "Неверная команда");
+        }
         Optional<PartialBotApiMethod<Message>> sendMessage = Optional.ofNullable(
             switch (text) {
                 case UPDATE_PROFILE -> {
