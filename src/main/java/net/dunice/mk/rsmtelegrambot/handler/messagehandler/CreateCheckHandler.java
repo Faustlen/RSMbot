@@ -48,6 +48,15 @@ public class CreateCheckHandler implements MessageHandler {
     @Override
     public SendMessage handle(MessageDto messageDto, Long telegramId) {
         String text = messageDto.getText();
+
+        if (text == null) {
+            return generateSendMessage(
+                telegramId,
+                "Некорректный ввод. Пожалуйста, введите нужную информацию или нажмите «Отмена».",
+                menus.get(CANCEL_MENU)
+            );
+        }
+
         CreateCheckState state = createCheckStates.get(telegramId);
         if (state == null) {
             createCheckStates.put(telegramId, (state = new CreateCheckState()));
@@ -102,7 +111,7 @@ public class CreateCheckHandler implements MessageHandler {
             state.setStep(CONFIRM_CHECK_CREATION);
             return generateSendMessage(telegramId, String.format("""
                     Сумма чека: %.2f
-                    Суммачека с учётом скидки: %.2f
+                    Сумма чека с учётом скидки: %.2f
                     Процент скидки: %d%%
                     Дата подтверждения: %s
                     Сформировать чек?

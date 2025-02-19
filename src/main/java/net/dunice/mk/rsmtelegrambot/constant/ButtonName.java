@@ -20,7 +20,7 @@ public class ButtonName {
         TRY_AGAIN = "\uD83D\uDD01 Попробовать eще раз",
         RSM_MEMBER = "Член РСМ",
         RSM_PARTNER = "Партнер РСМ",
-        SKIP = "Пропустить",
+        SKIP = "⏭\uFE0F Пропустить",
         CANCEL = "❌ Отмена",
         CANCEL_CHANGES = "❌ Отменить изменения",
         DELETE_EVENT = "\uD83D\uDDD1 Удалить мероприятие",

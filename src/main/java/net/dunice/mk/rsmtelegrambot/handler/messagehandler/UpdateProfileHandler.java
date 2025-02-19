@@ -49,10 +49,10 @@ public class UpdateProfileHandler implements MessageHandler {
             case REQUEST_USER_INFO -> {
                 state.setStep(VERIFY_USER_INFO);
                 yield generateSendMessage(telegramId,
-                    "Введите дополнительное описание о себе (до 255 символов):", menus.get(CANCEL_MENU));
+                    "Введите дополнительное описание о себе (до 250 символов):", menus.get(CANCEL_MENU));
             }
             case VERIFY_USER_INFO -> {
-                if (text.length() <= 255) {
+                if (text != null && text.length() <= 250) {
                     userRepository.updateInfoById(telegramId, text);
                     yield generateSendMessage(telegramId, "Вы успешно изменили свои данные!",
                         menus.get(GO_TO_MAIN_MENU));

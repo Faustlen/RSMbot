@@ -42,6 +42,9 @@ public class PartnerMenuHandler implements MessageHandler {
     @Override
     public PartialBotApiMethod<Message> handle(MessageDto messageDto, Long telegramId) {
         String text = messageDto.getText();
+        if (text == null) {
+            return generateSendMessage(telegramId, "Неверная команда");
+        }
         Optional<PartialBotApiMethod<Message>> sendMessage = Optional.ofNullable(
             switch (text) {
                 case PARTNERS_LIST -> {
