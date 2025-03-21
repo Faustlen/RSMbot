@@ -304,7 +304,6 @@ public class CreateEventHandler implements MessageHandler {
     private SendMessage goToMainMenu(Long telegramId) {
         BasicState baseState = basicStates.get(telegramId);
         eventCreationStates.remove(telegramId);
-
         baseState.setStep(IN_MAIN_MENU);
         return menuGenerator.generateRoleSpecificMainMenu(
             telegramId,

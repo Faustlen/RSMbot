@@ -51,10 +51,10 @@ public class GoogleSheetUpdater {
         }
     }
 
-    private LocalDate parseDate(String value, String fieldName, int rowIndex) {
+    private String parseDate(String value, String fieldName, int rowIndex) {
         try {
             return value != null && !value.trim().isEmpty()
-                ? LocalDate.parse(value.trim(), DATE_FORMATTER)
+                ? value.trim()
                 : null;
         } catch (DateTimeParseException e) {
             log.warn("Некорректная дата {} в строке {}: {}", fieldName, rowIndex, value);

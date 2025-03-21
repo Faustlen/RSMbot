@@ -9,8 +9,6 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDate;
-
 @Getter
 @Setter
 @Entity
@@ -32,7 +30,7 @@ public class User {
     private Role userRole;
 
     @Column(nullable = false, name = "birth_date")
-    private LocalDate birthDate;
+    private String birthDate;
 
     @Column(nullable = false)
     private String name;

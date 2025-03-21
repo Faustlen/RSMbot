@@ -3,8 +3,6 @@ package net.dunice.mk.rsmtelegrambot.handler.state;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDate;
-
 @Setter
 @Getter
 public class UserRegistrationState {
@@ -16,7 +14,7 @@ public class UserRegistrationState {
     private String patronymic;
     private String phoneNumber;
     private String info;
-    private LocalDate birthDate;
+    private String birthDate;
 
     public enum UserRegistrationStep {
         REQUEST_MEMBERSHIP_NUMBER,

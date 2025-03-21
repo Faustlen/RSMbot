@@ -15,13 +15,13 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class GoogleSheetDownloader {
-    private static final String SPREADSHEET_ID = "13v3tG9t2oKNWDPB__IkbV4MxNeJ-8EO8DdtNvpsDiWQ";
+    private static final String SPREADSHEET_ID = "1rJR5XI14UvcIP2wiJp52GMErTwL4129iDfzcktivNh0";
     private static final String SHEET_NAME = "Лист1";
     private static final String URL_TEMPLATE = "https://docs.google.com/spreadsheets/d/%s/gviz/tq?tqx=out:csv&sheet=%s";
 
     public List<String[]> downloadSheet() {
         try {
-            String sheetUrl = String.format(URL_TEMPLATE, SPREADSHEET_ID, SHEET_NAME);
+            String sheetUrl = URL_TEMPLATE.formatted(SPREADSHEET_ID, SHEET_NAME);
             URL url = new URI(sheetUrl).toURL();
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");

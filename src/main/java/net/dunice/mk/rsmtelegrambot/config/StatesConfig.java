@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Configuration
 public class StatesConfig {
 
-    @Bean
+    @Bean("basicStates")
     public Map<Long, BasicState> getInteractionStatesMap() {
         return new ConcurrentHashMap<>();
     }
@@ -80,7 +80,7 @@ public class StatesConfig {
         return new ConcurrentHashMap<>();
     }
 
-    @Bean("selectRegistrationSteps")
+    @Bean("selectRegistrationStates")
     public Map<Long, SelectRegistrationState> getSelectRegistrationStatesMap() {
         return new ConcurrentHashMap<>();
     }
@@ -100,9 +100,10 @@ public class StatesConfig {
         return new ConcurrentHashMap<>();
     }
 
-    @Bean("allStatesMap")
-    public List<Map<Long, ?>> getAllStatesMap(Map<Long, GrantAdminState> grantAdminStates,
-                                              Map<Long, UserRegistrationState> registrationStates,
+    @Bean("allStates")
+    public List<Map<Long, ?>> getAllStatesMap(Map<Long, BasicState> basicStates,
+                                              Map<Long, GrantAdminState> grantAdminStates,
+                                              Map<Long, UserRegistrationState> userRegistrationStates,
                                               Map<Long, UpdateProfileState> updateProfileStates,
                                               Map<Long, ShowEventsState> showEventStates,
                                               Map<Long, ShowPartnersState> showPartnersStates,
@@ -113,10 +114,10 @@ public class StatesConfig {
                                               Map<Long, SelectRegistrationState> selectRegistrationStates,
                                               Map<Long, MessageBroadcastState> messageBroadcastStates,
                                               Map<Long, ShowAnalyticsState> showAnalyticsStates,
-                                              Map<Long, CreateCheckState> createCheckStates,
+                                              Map<Long, CreateCheckState> creatingCheckStates,
                                               Map<Long, PartnerEditingState> partnerEditingStates) {
-        return List.of(grantAdminStates, registrationStates, updateProfileStates, showEventStates, showPartnersStates,
+        return List.of(basicStates, grantAdminStates, userRegistrationStates, updateProfileStates, showEventStates, showPartnersStates,
             eventCreationStates, partnerRegistrationStates, showAdminsStates, showUsersStates, selectRegistrationStates,
-            messageBroadcastStates, showAnalyticsStates, createCheckStates, partnerEditingStates);
+            messageBroadcastStates, showAnalyticsStates, creatingCheckStates, partnerEditingStates);
     }
 }

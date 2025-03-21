@@ -26,5 +26,5 @@ public class UsersList {
     private String phoneNumber;
 
     @Column(name = "birth_date", nullable = false)
-    private LocalDate birthDate;
+    private String birthDate;
 }

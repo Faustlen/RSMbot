@@ -8,10 +8,7 @@ import static net.dunice.mk.rsmtelegrambot.constant.Menu.SELECTION_MENU;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.USER_REGISTRATION;
-import static net.dunice.mk.rsmtelegrambot.handler.state.UserRegistrationState.UserRegistrationStep.CHECK_CONFIRMATION;
 import static net.dunice.mk.rsmtelegrambot.handler.state.UserRegistrationState.UserRegistrationStep.FINISH;
-import static net.dunice.mk.rsmtelegrambot.handler.state.UserRegistrationState.UserRegistrationStep.VALIDATE_INFO;
-import static net.dunice.mk.rsmtelegrambot.handler.state.UserRegistrationState.UserRegistrationStep.VALIDATE_MEMBERSHIP_NUMBER;
 
 import lombok.RequiredArgsConstructor;
 import net.dunice.mk.rsmtelegrambot.constant.Menu;
@@ -27,8 +24,6 @@ import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -105,14 +100,26 @@ public class UserRegistrationHandler implements MessageHandler {
         String[] userRow = findUserRowByMembershipNumber(sheet, text);
 
         if (userRow != null) {
-            fillRegistrationState(state, userRow);
-            state.setStep(UserRegistrationState.UserRegistrationStep.CHECK_CONFIRMATION);
-            return generateSendMessage(
-                telegramId,
-                getUserData(state),
-                menus.get(SELECTION_MENU)
-            );
-        } else {
+            try {
+                fillRegistrationState(state, userRow);
+                state.setStep(UserRegistrationState.UserRegistrationStep.CHECK_CONFIRMATION);
+                return generateSendMessage(
+                    telegramId,
+                    getUserData(state),
+                    menus.get(SELECTION_MENU)
+                );
+            } catch (Exception e) {
+                return generateSendMessage(
+                    telegramId,
+                    """
+                        Не верный формат данных о пользователе.
+                        Обратитесь к своему руководителю РСМ для исправления данных в таблице членов РСМ.
+                        """,
+                    menus.get(CANCEL_MENU)
+                );
+            }
+        }
+        else {
             return generateSendMessage(
                 telegramId,
                 """
@@ -216,7 +223,7 @@ public class UserRegistrationHandler implements MessageHandler {
         String phoneNumber = row[4];
         String fullName = lastName + " " + firstName + " " + patronymic;
         Integer membershipNumber = Integer.parseInt(row[5].strip());
-        LocalDate birthDate = LocalDate.parse(row[6], DateTimeFormatter.ofPattern("dd.MM.yyyy"));
+        String birthDate = row[6];
 
         state.setFullName(fullName);
         state.setFirstName(firstName);
@@ -236,20 +243,27 @@ public class UserRegistrationHandler implements MessageHandler {
     }
 
     private String getHiddenPhoneNumber(UserRegistrationState state) {
-        StringBuilder hiddenNumber = new StringBuilder(state.getPhoneNumber());
-        int replaced = 0;
-        for (int i = 1; i < hiddenNumber.length() && replaced < 5; i++) {
-            if (Character.isDigit(hiddenNumber.charAt(i))) {
-                hiddenNumber.setCharAt(i, '*');
-                replaced++;
+        String phoneNumber = state.getPhoneNumber();
+        if (isEmptyOrHasLetter(phoneNumber)) return phoneNumber;
+        else {
+            StringBuilder hiddenNumber = new StringBuilder(state.getPhoneNumber());
+            int replaced = 0;
+            int i = hiddenNumber.charAt(0) == '+' ? 2 : 1;
+            while (i < hiddenNumber.length() && replaced < 5) {
+                if (Character.isDigit(hiddenNumber.charAt(i))) {
+                    hiddenNumber.setCharAt(i, '*');
+                    replaced++;
+                }
+                i++;
             }
+            return hiddenNumber.toString();
         }
-        return hiddenNumber.toString();
     }
 
     private String getHiddenBirthDate(UserRegistrationState state) {
-        String birthDate = state.getBirthDate().format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
-        return birthDate.substring(0, birthDate.length() - 4)
+        String birthDate = state.getBirthDate();
+        if (isEmptyOrHasLetter(birthDate)) return birthDate;
+        else return birthDate.substring(0, birthDate.length() - 4)
             + "*".repeat(4);
     }
 
@@ -260,8 +274,13 @@ public class UserRegistrationHandler implements MessageHandler {
 
     private String getHiddenMembershipNumber(UserRegistrationState state) {
         String membershipNumber = state.getMembershipNumber().toString();
-        String last3Digits = membershipNumber.substring(membershipNumber.length() - 3);
-        return "*".repeat(3) + last3Digits;
+        if (isEmptyOrHasLetter(membershipNumber)) return membershipNumber;
+        else return "*".repeat(3)
+                    + membershipNumber.substring(membershipNumber.length() - 3);
+    }
+
+    private boolean isEmptyOrHasLetter(String text) {
+        return text.isEmpty() || text.matches("\".*[a-zA-Zа-яА-ЯёЁ].*\"");
     }
 
     private SendMessage goToMainMenu(Long telegramId) {
