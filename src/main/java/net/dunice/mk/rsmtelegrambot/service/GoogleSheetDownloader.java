@@ -19,8 +19,7 @@ public class GoogleSheetDownloader {
     private static final String SHEET_NAME = "Лист1";
     private static final String URL_TEMPLATE = "https://docs.google.com/spreadsheets/d/%s/gviz/tq?tqx=out:csv&sheet=%s";
 
-    public List<String[]> downloadSheet() {
-        try {
+    public List<String[]> downloadSheet() throws Exception {
             String sheetUrl = String.format(URL_TEMPLATE, SPREADSHEET_ID, SHEET_NAME);
             URL url = new URI(sheetUrl).toURL();
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -39,9 +38,5 @@ public class GoogleSheetDownloader {
             return allRows.stream()
                 .skip(2)
                 .toList();
-
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage(), e);
-        }
     }
 }
