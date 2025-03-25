@@ -204,6 +204,7 @@ public class UserRegistrationHandler implements MessageHandler {
         user.setUserRole(Role.USER);
         user.setBirthDate(state.getBirthDate());
         userRepository.save(user);
+        basicStates.get(telegramId).setUser(user);
     }
 
     private String[] findUserRowByMembershipNumber(List<String[]> sheet, String text) {
@@ -284,11 +285,9 @@ public class UserRegistrationHandler implements MessageHandler {
     }
 
     private SendMessage goToMainMenu(Long telegramId) {
+        BasicState state = basicStates.get(telegramId);
         userRegistrationStates.remove(telegramId);
-        basicStates.get(telegramId).setStep(IN_MAIN_MENU);
-        return menuGenerator.generateRoleSpecificMainMenu(
-            telegramId,
-            userRepository.findByTelegramId(telegramId).get().getUserRole()
-        );
+        state.setStep(IN_MAIN_MENU);
+        return menuGenerator.generateRoleSpecificMainMenu(telegramId, state.getUser().getUserRole());
     }
 }

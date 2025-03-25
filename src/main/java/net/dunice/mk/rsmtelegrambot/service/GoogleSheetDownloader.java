@@ -37,7 +37,7 @@ public class GoogleSheetDownloader {
 
             // Пропускаем первые три лишние строки
             return allRows.stream()
-                .skip(2)
+                .skip(1)
                 .toList();
 
         } catch (Exception e) {

@@ -1,8 +1,6 @@
 package net.dunice.mk.rsmtelegrambot.service;
 
 import static net.dunice.mk.rsmtelegrambot.constant.Command.START;
-import static net.dunice.mk.rsmtelegrambot.service.UpdateType.CALLBACK;
-import static net.dunice.mk.rsmtelegrambot.service.UpdateType.MESSAGE;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -63,16 +61,6 @@ public class TelegramBot extends TelegramLongPollingBot implements MessageGenera
 
     @Override
     public void onUpdateReceived(Update update) {
-        UpdateDescriptor updateDescriptor = getDescriptorFromUpdate(update);
-
-        log.info("Received {} with text \"{}\", user tgID - {}, user state - {}", text, telegramId,
-            currentState == null ? null : currentState.getStep());
-
-
-
-
-
-
 
         MessageDto messageDto = new MessageDto();
         if (update.hasMessage()) {
@@ -135,55 +123,6 @@ public class TelegramBot extends TelegramLongPollingBot implements MessageGenera
                 }
             }
         }
-    }
-
-    private UpdateDescriptor getDescriptorFromUpdate(Update update) {
-        UpdateType type = update.hasMessage()
-            ? MESSAGE
-            : update.hasCallbackQuery() ? CALLBACK
-            : null;
-
-        String text;
-        String imageId;
-        Long telegramId;
-        Integer userMessageId;
-        Integer botMessageId;
-        BasicState currentState;
-
-        switch (type) {
-            case MESSAGE -> {
-                Message message = update.getMessage();
-                telegramId = message.getFrom().getId();
-                text = message.getText();
-                userMessageId = message.getMessageId();
-                imageId = message.hasPhoto()
-                    ? message.getPhoto().getLast().getFileId()
-                    : message.hasDocument() ? message.getDocument().getFileId()
-                    : null;
-                currentState = basicStates.get(telegramId);
-            }
-            case CALLBACK -> {
-                telegramId = update.getCallbackQuery().getFrom().getId();
-                text = update.getCallbackQuery().getData();
-                userMessageId = null;
-                imageId = null;
-                currentState = basicStates.get(telegramId);
-            }
-            case null -> {
-                telegramId = null;
-                text = null;
-                userMessageId = null;
-                imageId = null;
-                currentState = null;
-            }
-        }
-        UpdateDescriptor updateDescriptor = new UpdateDescriptor();
-        updateDescriptor.setTelegramId(telegramId);
-        updateDescriptor.setText(text);
-        updateDescriptor.setImageId(imageId);
-        updateDescriptor.setUpdateType(type);
-        updateDescriptor.setState(currentState);
-        return updateDescriptor;
     }
 
     public void sendMessage(PartialBotApiMethod<Message> message) {
