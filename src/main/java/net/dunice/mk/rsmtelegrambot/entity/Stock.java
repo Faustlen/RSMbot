@@ -38,6 +38,5 @@ public class Stock {
     @Column(nullable = false, name = "period_stocks_s")
     private LocalDate periodStocksEnd;
 
-    @Column(nullable = false)
     private String description;
 }

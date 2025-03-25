@@ -1,7 +1,7 @@
 CREATE TABLE stocks (
     stocks_id         INTEGER       NOT NULL,
     partner_tg_id     INTEGER       NOT NULL,
-    image             BYTEA         NOT NULL,
+    image             BYTEA,
     head              VARCHAR(100)  NOT NULL,
     period_stocks_s   DATE          NOT NULL,
     period_stocks_e   DATE          NOT NULL,
