@@ -15,6 +15,7 @@ public class ButtonName {
         ADD_EVENT = "\uD83D\uDDD3 Добавить мероприятие",
         TO_MAIN_MENU = "⌂ В главное меню",
         EVENTS_LIST = "☰ Мероприятия",
+        STOCKS_LIST = "☰ Акции",
         PARTNERS_LIST = "☰ Партнеры",
         USERS_LIST = "☰ Пользователи",
         TRY_AGAIN = "\uD83D\uDD01 Попробовать eще раз",

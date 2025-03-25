@@ -33,10 +33,10 @@ public class Stock {
     private String head;
 
     @Column(nullable = false)
-    private LocalDate periodStocksS;
+    private LocalDate periodStocksStart;
 
     @Column(nullable = false)
-    private LocalDate periodStocksE;
+    private LocalDate periodStocksEnd;
 
     @Column(nullable = false)
     private String description;

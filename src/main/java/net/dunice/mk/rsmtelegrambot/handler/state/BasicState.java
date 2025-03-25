@@ -32,6 +32,7 @@ public class BasicState {
         SEND_MESSAGE_TO_EVERYBODY,
         SHOW_ANALYTICS,
         REQUEST_VERIFICATION_CODE,
-        CREATE_CHECK;
+        CREATE_CHECK,
+        SHOW_STOCKS;
     }
 }
