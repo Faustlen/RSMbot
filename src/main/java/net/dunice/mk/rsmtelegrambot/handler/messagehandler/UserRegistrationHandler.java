@@ -15,9 +15,11 @@ import net.dunice.mk.rsmtelegrambot.constant.Menu;
 import net.dunice.mk.rsmtelegrambot.dto.MessageDto;
 import net.dunice.mk.rsmtelegrambot.entity.Role;
 import net.dunice.mk.rsmtelegrambot.entity.User;
+import net.dunice.mk.rsmtelegrambot.entity.UsersList;
 import net.dunice.mk.rsmtelegrambot.handler.MenuGenerator;
 import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
 import net.dunice.mk.rsmtelegrambot.handler.state.UserRegistrationState;
+import net.dunice.mk.rsmtelegrambot.repository.UserListRepository;
 import net.dunice.mk.rsmtelegrambot.repository.UserRepository;
 import net.dunice.mk.rsmtelegrambot.service.GoogleSheetDownloader;
 import org.springframework.stereotype.Service;
@@ -27,6 +29,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -47,6 +50,7 @@ public class UserRegistrationHandler implements MessageHandler {
     private final MenuGenerator menuGenerator;
     private final UserRepository userRepository;
     private final GoogleSheetDownloader sheetDownloader;
+    private final UserListRepository userListRepository;
 
     @Override
     public BasicStep getStep() {
@@ -96,8 +100,25 @@ public class UserRegistrationHandler implements MessageHandler {
             return handleRequestMembershipNumber(telegramId, state);
         }
 
-        List<String[]> sheet = sheetDownloader.downloadSheet();
-        String[] userRow = findUserRowByMembershipNumber(sheet, text);
+        String[] userRow = null;
+
+        try {
+            List<String[]> sheet = sheetDownloader.downloadSheet();
+            userRow = findUserRowByMembershipNumber(sheet, text);
+        } catch (Exception e) {
+            Optional<UsersList> userOpt = userListRepository.findById(Integer.parseInt(text));
+            if (userOpt.isPresent()) {
+                UsersList user = userOpt.get();
+                userRow = new String[7];
+                String[] nameParts = user.getFullName().split(" ", 3);
+                userRow[1] = nameParts[0];
+                userRow[2] = nameParts[1];
+                userRow[3] = nameParts[2];
+                userRow[4] = user.getPhoneNumber();
+                userRow[5] = user.getUserCard().toString();
+                userRow[6] = user.getBirthDate();
+            }
+        }
 
         if (userRow != null) {
             try {

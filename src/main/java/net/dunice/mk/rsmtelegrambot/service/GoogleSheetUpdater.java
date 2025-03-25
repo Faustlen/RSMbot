@@ -21,24 +21,28 @@ public class GoogleSheetUpdater {
     private final UserListRepository userListRepository;
 
     public void updateSheet() {
-        List<String[]> rows = googleSheetDownloader.downloadSheet();
+        try {
+            List<String[]> rows = googleSheetDownloader.downloadSheet();
 
-        for (int i = 1; i < rows.size(); i++) {
-            String[] row = rows.get(i);
-            try {
-                UsersList user = new UsersList();
+            for (int i = 1; i < rows.size(); i++) {
+                String[] row = rows.get(i);
+                try {
+                    UsersList user = new UsersList();
 
-                user.setUserCard(parseInteger(row[5], "userCard", i));
-                // Сразу с ФИО в одну ячейку
-                user.setFullName(formatFullName(row[1], row[2], row[3], i));
-                user.setPhoneNumber(row[4] != null ? row[4].trim() : null);
-                user.setBirthDate(parseDate(row[6], "birthDate", i));
+                    user.setUserCard(parseInteger(row[5], "userCard", i));
+                    // Сразу с ФИО в одну ячейку
+                    user.setFullName(formatFullName(row[1], row[2], row[3], i));
+                    user.setPhoneNumber(row[4] != null ? row[4].trim() : null);
+                    user.setBirthDate(parseDate(row[6], "birthDate", i));
 
-                userListRepository.save(user);
-            } catch (Exception e) {
-                log.error("Не удалось сохранить данные из Google таблицы", e);
-                log.error("Ошибка обработки строки: {}, данные: {}", i, String.join(", ", row));
+                    userListRepository.save(user);
+                } catch (Exception e) {
+                    log.error("Не удалось сохранить данные из Google таблицы", e);
+                    log.error("Ошибка обработки строки: {}, данные: {}", i, String.join(", ", row));
+                }
             }
+        } catch (Exception e){
+            throw new RuntimeException(e.getMessage(), e);
         }
     }
 
