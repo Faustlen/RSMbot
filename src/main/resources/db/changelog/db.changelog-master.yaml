@@ -23,3 +23,5 @@ databaseChangeLog:
       file: classpath:/db/changelog/changes/V011_alter_table_events_add_address.sql
   - include:
       file: classpath:/db/changelog/changes/V012_alter_table_events_add_logo.sql
+  - include:
+      file: classpath:/db/changelog/changes/V013_create_table_stocks.sql
