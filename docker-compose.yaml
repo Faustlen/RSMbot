@@ -15,7 +15,7 @@ services:
       - DB_USERNAME=postgres
       - DB_PASSWORD=postgres789456
       - BOT_NAME=bot
-      - TG_TOKEN=7274628225:AAGukzY_RtjzxD2n1yIQMATX3IsUvv9W5v4
+      - BOT_TOKEN=7274628225:AAGukzY_RtjzxD2n1yIQMATX3IsUvv9W5v4
 
   db:
     image: 'postgres:15-alpine'
