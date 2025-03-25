@@ -24,7 +24,7 @@ public class Stock {
 
     @ManyToOne
     @JoinColumn(name = "partner_tg_id", nullable = false)
-    private Partner partnerTgId;
+    private Partner partnerTelegramId;
 
     @Column(nullable = false)
     private byte[] image;
