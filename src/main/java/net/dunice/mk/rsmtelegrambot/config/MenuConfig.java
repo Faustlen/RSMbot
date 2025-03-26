@@ -1,25 +1,6 @@
 package net.dunice.mk.rsmtelegrambot.config;
 
-import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.ADD_EVENT;
-import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.ADMINS_LIST;
-import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CANCEL;
-import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.EVENTS_LIST;
-import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.NEW_CHECK;
-import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.NO;
-import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.OK;
-import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.PARTNERS_LIST;
-import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.PERIOD_ANALYTICS;
-import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.RSM_MEMBER;
-import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.RSM_PARTNER;
-import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.SEND_MESSAGE_TO_EVERYONE;
-import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.SKIP;
-import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TO_MAIN_MENU;
-import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TRY_AGAIN;
-import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.UPDATE_DISCOUNT_CODE;
-import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.UPDATE_PROFILE;
-import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.USERS_LIST;
-import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.VERIFICATION_CODE;
-import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.YES;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.*;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.ADMIN_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.CANCEL_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.CATEGORY_MENU;
@@ -327,24 +308,27 @@ public class MenuConfig {
     private ReplyKeyboardMarkup getBaseUserMenu() {
         return createReplyKeyboard(List.of(
             List.of(PARTNERS_LIST, EVENTS_LIST),
-            List.of(UPDATE_PROFILE)
+            List.of(STOCKS_LIST, UPDATE_PROFILE)
         ));
     }
 
     private ReplyKeyboardMarkup getBaseAdminMenu() {
         return createReplyKeyboard(List.of(
             List.of(PARTNERS_LIST, USERS_LIST),
-            List.of(EVENTS_LIST, ADD_EVENT),
-            List.of(SEND_MESSAGE_TO_EVERYONE, UPDATE_PROFILE)
+            List.of(STOCKS_LIST, EVENTS_LIST),
+            List.of(ADD_EVENT, UPDATE_PROFILE),
+            List.of(SEND_MESSAGE_TO_EVERYONE)
+
         ));
     }
 
     private ReplyKeyboardMarkup getBaseSuperUserMenu() {
         return createReplyKeyboard(List.of(
             List.of(PARTNERS_LIST, USERS_LIST),
-            List.of(ADMINS_LIST, EVENTS_LIST),
-            List.of(ADD_EVENT, PERIOD_ANALYTICS),
-            List.of(SEND_MESSAGE_TO_EVERYONE, UPDATE_PROFILE)
+            List.of(ADMINS_LIST, STOCKS_LIST),
+            List.of(EVENTS_LIST, ADD_EVENT),
+            List.of(PERIOD_ANALYTICS, UPDATE_PROFILE),
+            List.of(SEND_MESSAGE_TO_EVERYONE)
         ));
     }
 

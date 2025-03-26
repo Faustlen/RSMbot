@@ -25,3 +25,5 @@ databaseChangeLog:
       file: classpath:/db/changelog/changes/V012_alter_table_events_add_logo.sql
   - include:
       file: classpath:/db/changelog/changes/V013_alter_table_users_change_birth_date_to_varchar.sql
+  - include:
+      file: classpath:/db/changelog/changes/V014_create_table_stocks.sql

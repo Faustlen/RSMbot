@@ -1,20 +1,6 @@
 package net.dunice.mk.rsmtelegrambot.config;
 
-import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
-import net.dunice.mk.rsmtelegrambot.handler.state.CreateCheckState;
-import net.dunice.mk.rsmtelegrambot.handler.state.EventCreationState;
-import net.dunice.mk.rsmtelegrambot.handler.state.GrantAdminState;
-import net.dunice.mk.rsmtelegrambot.handler.state.MessageBroadcastState;
-import net.dunice.mk.rsmtelegrambot.handler.state.PartnerEditingState;
-import net.dunice.mk.rsmtelegrambot.handler.state.PartnerRegistrationState;
-import net.dunice.mk.rsmtelegrambot.handler.state.SelectRegistrationState;
-import net.dunice.mk.rsmtelegrambot.handler.state.ShowAdminsState;
-import net.dunice.mk.rsmtelegrambot.handler.state.ShowAnalyticsState;
-import net.dunice.mk.rsmtelegrambot.handler.state.ShowEventsState;
-import net.dunice.mk.rsmtelegrambot.handler.state.ShowPartnersState;
-import net.dunice.mk.rsmtelegrambot.handler.state.ShowUsersState;
-import net.dunice.mk.rsmtelegrambot.handler.state.UpdateProfileState;
-import net.dunice.mk.rsmtelegrambot.handler.state.UserRegistrationState;
+import net.dunice.mk.rsmtelegrambot.handler.state.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -25,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Configuration
 public class StatesConfig {
 
-    @Bean("basicStates")
+    @Bean
     public Map<Long, BasicState> getInteractionStatesMap() {
         return new ConcurrentHashMap<>();
     }
@@ -80,7 +66,7 @@ public class StatesConfig {
         return new ConcurrentHashMap<>();
     }
 
-    @Bean("selectRegistrationStates")
+    @Bean("selectRegistrationSteps")
     public Map<Long, SelectRegistrationState> getSelectRegistrationStatesMap() {
         return new ConcurrentHashMap<>();
     }
@@ -100,6 +86,11 @@ public class StatesConfig {
         return new ConcurrentHashMap<>();
     }
 
+    @Bean("showStocksStates")
+    public Map<Long, ShowStocksState> getShowStocksStatesMap() {
+        return new ConcurrentHashMap<>();
+    }
+
     @Bean("allStates")
     public List<Map<Long, ?>> getAllStatesMap(Map<Long, BasicState> basicStates,
                                               Map<Long, GrantAdminState> grantAdminStates,
@@ -115,9 +106,10 @@ public class StatesConfig {
                                               Map<Long, MessageBroadcastState> messageBroadcastStates,
                                               Map<Long, ShowAnalyticsState> showAnalyticsStates,
                                               Map<Long, CreateCheckState> creatingCheckStates,
+                                              Map<Long, ShowStocksState> showStocksStates,
                                               Map<Long, PartnerEditingState> partnerEditingStates) {
         return List.of(basicStates, grantAdminStates, userRegistrationStates, updateProfileStates, showEventStates, showPartnersStates,
             eventCreationStates, partnerRegistrationStates, showAdminsStates, showUsersStates, selectRegistrationStates,
-            messageBroadcastStates, showAnalyticsStates, creatingCheckStates, partnerEditingStates);
+            messageBroadcastStates, showAnalyticsStates, creatingCheckStates, showStocksStates, partnerEditingStates);
     }
 }
