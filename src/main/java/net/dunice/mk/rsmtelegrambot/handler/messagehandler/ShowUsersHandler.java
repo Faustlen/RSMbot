@@ -113,8 +113,11 @@ public class ShowUsersHandler implements MessageHandler {
         state.setStep(SHOW_USER_DETAILS);
 
         return generateSendMessage(telegramId,
-            "Всего пользователей - (%s).\nВыберите пользователя из списка," +
-                "\nлибо введите часть ФИО для уточнения поиска (минимум 3 символа) :"
+            """
+                Всего пользователей - (%s).
+                Выберите пользователя из списка,
+                или введите часть ФИО для уточнения поиска.
+                (минимум 3 символа) :"""
                     .formatted(state.getUsersToDisplay().size()),
             generateUserListKeyboard(state.getUsersToDisplay(), state.getPage()));
     }

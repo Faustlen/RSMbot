@@ -39,9 +39,9 @@ public class TelegramBot extends TelegramLongPollingBot implements MessageGenera
     private final CommandHandler commandHandler;
     private final BroadcastResponseHandler broadcastResponseHandler;
     private final Map<Long, BasicState> basicStates;
+    private final List<Map<Long, ?>> allStates;
     private final Set<MessageHandler> messageHandlers;
     private final Map<Long, Integer> lastBotMessageIdMap;
-    private final List<Map<Long, ?>> allStatesMap;
 
     @Value("${bot.name}")
     private String BOT_NAME;
@@ -61,6 +61,7 @@ public class TelegramBot extends TelegramLongPollingBot implements MessageGenera
 
     @Override
     public void onUpdateReceived(Update update) {
+
         MessageDto messageDto = new MessageDto();
         if (update.hasMessage()) {
             Message message = update.getMessage();
@@ -69,12 +70,14 @@ public class TelegramBot extends TelegramLongPollingBot implements MessageGenera
             Integer botMessageId = lastBotMessageIdMap.remove(telegramId);
             String text = message.getText();
             BasicState currentState = basicStates.get(telegramId);
-            if (currentState == null) {
-                text = START.getStringValue();
-            }
+
+            log.info("Received message with text \"{}\", user tgID - {}, user state - {}", text, telegramId,
+                currentState == null ? null : currentState.getStep());
+
+            if (currentState == null) text = START.getStringValue();
+
             if (Command.isValidCommand(text)) {
-                basicStates.remove(telegramId);
-                allStatesMap.forEach(map -> map.remove(telegramId));
+                allStates.forEach(map -> map.remove(telegramId));
                 messageDto.setText(text);
                 sendMessage(commandHandler.handle(messageDto, telegramId));
             } else {
@@ -87,7 +90,8 @@ public class TelegramBot extends TelegramLongPollingBot implements MessageGenera
                     : generateSendMessage(telegramId, "Обработчик команды не найден"));
             }
             deletePreviousMessages(telegramId, userMessageId, botMessageId);
-        } else if (update.hasCallbackQuery()) {
+        }
+        else if (update.hasCallbackQuery()) {
             Long telegramId = update.getCallbackQuery().getFrom().getId();
             Integer botMessageId = lastBotMessageIdMap.remove(telegramId);
             String text = update.getCallbackQuery().getData();
@@ -97,12 +101,26 @@ public class TelegramBot extends TelegramLongPollingBot implements MessageGenera
                 deleteMessage(telegramId, update.getCallbackQuery().getMessage().getMessageId());
             } else {
                 BasicState currentState = basicStates.get(telegramId);
-                Optional<MessageHandler> handler = getMessageHandlerForState(currentState);
-                messageDto.setText(text);
-                sendMessage(handler.isPresent()
-                    ? handler.get().handle(messageDto, telegramId)
-                    : generateSendMessage(telegramId, "Обработчик команды не найден"));
-                deleteMessage(telegramId, botMessageId);
+
+                log.info("Received callback query with text \"{}\", user tgID - {}, user state - {}", text, telegramId,
+                    currentState == null ? null : currentState.getStep());
+
+                if (currentState == null) text = START.getStringValue();
+
+                if (Command.isValidCommand(text)) {
+                    allStates.forEach(map -> map.remove(telegramId));
+                    messageDto.setText(text);
+                    sendMessage(commandHandler.handle(messageDto, telegramId));
+                }
+
+                else {
+                    Optional<MessageHandler> handler = getMessageHandlerForState(currentState);
+                    messageDto.setText(text);
+                    sendMessage(handler.isPresent()
+                        ? handler.get().handle(messageDto, telegramId)
+                        : generateSendMessage(telegramId, "Обработчик команды не найден"));
+                    deleteMessage(telegramId, botMessageId);
+                }
             }
         }
     }
@@ -115,6 +133,7 @@ public class TelegramBot extends TelegramLongPollingBot implements MessageGenera
                 default -> throw new IllegalStateException("Unexpected value: " + message);
             };
             lastBotMessageIdMap.put(sentMessage.getChatId(), sentMessage.getMessageId());
+            log.info("Sent response with text \"{}\" to user {}", sentMessage.getText(), sentMessage.getChatId());
         } catch (TelegramApiException e) {
             log.error("Не удалось отправить сообщение", e);
         }
