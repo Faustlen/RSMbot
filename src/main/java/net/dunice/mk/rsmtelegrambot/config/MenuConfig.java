@@ -79,6 +79,11 @@ public class MenuConfig {
         return getBaseSuperUserMenu();
     }
 
+    @Bean("partnerMainMenu")
+    public ReplyKeyboard getPartnerMenu() {
+        return getBasePartnerMenu();
+    }
+
     @Bean("selectionMenu")
     public ReplyKeyboard getSelectionMenu() {
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
@@ -213,27 +218,6 @@ public class MenuConfig {
         return inlineKeyboardMarkup;
     }
 
-    @Bean("partnerMainMenu")
-    public ReplyKeyboard getPartnerMenu() {
-        ReplyKeyboardMarkup replyMarkup = new ReplyKeyboardMarkup();
-        List<KeyboardRow> keyboard = new ArrayList<>();
-        keyboard.add(new KeyboardRow());
-        keyboard.get(0).addAll(List.of(
-            PARTNERS_LIST,
-            PERIOD_ANALYTICS));
-        keyboard.add(new KeyboardRow());
-        keyboard.get(1).addAll(List.of(
-            VERIFICATION_CODE,
-            NEW_CHECK));
-        keyboard.add(new KeyboardRow());
-        keyboard.get(2).addAll(List.of(
-            UPDATE_PROFILE));
-        replyMarkup.setKeyboard(keyboard);
-        replyMarkup.setResizeKeyboard(true);
-        replyMarkup.setOneTimeKeyboard(false);
-        return replyMarkup;
-    }
-
     @Bean("eventFieldsMenu")
     public ReplyKeyboard getEventFieldsMenu() {
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
@@ -329,6 +313,14 @@ public class MenuConfig {
             List.of(EVENTS_LIST, ADD_EVENT),
             List.of(PERIOD_ANALYTICS, UPDATE_PROFILE),
             List.of(SEND_MESSAGE_TO_EVERYONE)
+        ));
+    }
+
+    private ReplyKeyboardMarkup getBasePartnerMenu() {
+        return createReplyKeyboard(List.of(
+            List.of(PARTNERS_LIST, ADD_STOCK),
+            List.of(PERIOD_ANALYTICS, NEW_CHECK),
+            List.of(VERIFICATION_CODE, UPDATE_PROFILE)
         ));
     }
 

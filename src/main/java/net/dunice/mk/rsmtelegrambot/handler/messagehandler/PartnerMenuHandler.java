@@ -1,17 +1,8 @@
 package net.dunice.mk.rsmtelegrambot.handler.messagehandler;
 
-import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.NEW_CHECK;
-import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.PARTNERS_LIST;
-import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.PERIOD_ANALYTICS;
-import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.UPDATE_PROFILE;
-import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.VERIFICATION_CODE;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.*;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep;
-import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.CREATE_CHECK;
-import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_PARTNER_MENU;
-import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.PARTNER_EDITING;
-import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.REQUEST_VERIFICATION_CODE;
-import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.SHOW_ANALYTICS;
-import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.SHOW_PARTNERS;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.*;
 
 import lombok.RequiredArgsConstructor;
 import net.dunice.mk.rsmtelegrambot.dto.MessageDto;
@@ -33,6 +24,7 @@ public class PartnerMenuHandler implements MessageHandler {
     private final RequestVerificationCodeHandler requestCodeHandler;
     private final CreateCheckHandler createCheckHandler;
     private final PartnerEditingHandler partnerEditingHandler;
+    private final CreateStockHandler createStockHandler;
 
     @Override
     public BasicStep getStep() {
@@ -66,6 +58,10 @@ public class PartnerMenuHandler implements MessageHandler {
                 case UPDATE_PROFILE -> {
                     basicStates.get(telegramId).setStep(PARTNER_EDITING);
                     yield partnerEditingHandler.handle(messageDto, telegramId);
+                }
+                case ADD_STOCK -> {
+                    basicStates.get(telegramId).setStep((CREATE_STOCK));
+                    yield createStockHandler.handle(messageDto, telegramId);
                 }
                 default -> null;
             }

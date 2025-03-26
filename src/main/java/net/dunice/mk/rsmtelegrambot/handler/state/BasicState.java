@@ -33,6 +33,7 @@ public class BasicState {
         SHOW_ANALYTICS,
         REQUEST_VERIFICATION_CODE,
         CREATE_CHECK,
+        CREATE_STOCK,
         SHOW_STOCKS;
     }
 }

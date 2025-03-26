@@ -13,6 +13,7 @@ public class ButtonName {
         UNBAN = "✅ Разбанить",
         DELETE_USER = "\uD83D\uDEB7 Удалить пользователя",
         ADD_EVENT = "\uD83D\uDDD3 Добавить мероприятие",
+        ADD_STOCK = "\uD83D\uDDD3 Добавить акцию",
         TO_MAIN_MENU = "⌂ В главное меню",
         EVENTS_LIST = "☰ Мероприятия",
         STOCKS_LIST = "☰ Акции",
