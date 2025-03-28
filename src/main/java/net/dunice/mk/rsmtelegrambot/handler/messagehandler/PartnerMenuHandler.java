@@ -61,6 +61,7 @@ public class PartnerMenuHandler implements MessageHandler {
                 }
                 case ADD_STOCK -> {
                     basicStates.get(telegramId).setStep((CREATE_STOCK));
+                    messageDto.setText(telegramId.toString());
                     yield createStockHandler.handle(messageDto, telegramId);
                 }
                 default -> null;

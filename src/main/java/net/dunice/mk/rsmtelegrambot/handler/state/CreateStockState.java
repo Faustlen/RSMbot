@@ -10,6 +10,7 @@ import java.time.LocalDate;
 public class CreateStockState {
     private StockCreationStep step = StockCreationStep.REQUEST_STOCK_IMAGE;
 
+    private Long partnerId;
     private byte[] image;
     private String stockHead;
     private LocalDate periodStart;

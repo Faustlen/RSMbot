@@ -9,8 +9,7 @@ import static net.dunice.mk.rsmtelegrambot.constant.Menu.CANCEL_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.GO_TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.SELECTION_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.SKIP_MENU;
-import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.CREATE_STOCK;
-import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_MAIN_MENU;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.*;
 import static net.dunice.mk.rsmtelegrambot.handler.state.CreateStockState.StockCreationStep.CONFIRM_STOCK;
 
 import lombok.RequiredArgsConstructor;
@@ -23,6 +22,7 @@ import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
 import net.dunice.mk.rsmtelegrambot.handler.state.CreateStockState;
 import net.dunice.mk.rsmtelegrambot.repository.PartnerRepository;
 import net.dunice.mk.rsmtelegrambot.repository.StockRepository;
+import net.dunice.mk.rsmtelegrambot.repository.UserRepository;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
@@ -53,6 +53,7 @@ public class CreateStockHandler implements MessageHandler {
     private final Map<Long, BasicState> basicStates;
     private final StockRepository stockRepository;
     private final PartnerRepository partnerRepository;
+    private final UserRepository userRepository;
     private final EnumMap<Menu, ReplyKeyboard> menus;
     private final MenuGenerator menuGenerator;
 
@@ -69,6 +70,7 @@ public class CreateStockHandler implements MessageHandler {
         if (state == null) {
             state = new CreateStockState();
             createStockStates.put(telegramId, state);
+            state.setPartnerId(Long.parseLong(text));
         }
 
         if (StringUtils.equalsAny(text, TO_MAIN_MENU, CANCEL)) {
@@ -79,9 +81,9 @@ public class CreateStockHandler implements MessageHandler {
             case REQUEST_STOCK_IMAGE -> handleRequestStockImage(telegramId, state);
             case VALIDATE_STOCK_IMAGE -> handleValidateStockImage(messageDto, text, telegramId, state);
             case VALIDATE_STOCK_HEAD -> handleValidateStockHead(text, telegramId, state);
+            case VALIDATE_STOCK_DESCRIPTION -> handleValidateStockDescription(text, telegramId, state);
             case VALIDATE_PERIOD_START -> handleValidatePeriodStart(text, telegramId, state);
             case VALIDATE_PERIOD_END -> handleValidatePeriodEnd(text, telegramId, state);
-            case VALIDATE_STOCK_DESCRIPTION -> handleValidateStockDescription(text, telegramId, state);
             case CONFIRM_STOCK -> handleConfirmStock(text, telegramId, state);
             case FINISH -> handleFinish(text, telegramId);
         };
@@ -109,7 +111,6 @@ public class CreateStockHandler implements MessageHandler {
                 menus.get(CANCEL_MENU)
             );
         } else if (SKIP.equalsIgnoreCase(text)) {
-            // Позволяем пропустить изображение
             state.setImage(null);
             state.setStep(CreateStockState.StockCreationStep.VALIDATE_STOCK_HEAD);
             return generateSendMessage(
@@ -118,7 +119,6 @@ public class CreateStockHandler implements MessageHandler {
                 menus.get(CANCEL_MENU)
             );
         } else {
-            // Сообщаем об ошибке
             return generateSendMessage(
                 telegramId,
                 "Необходимо отправить изображение или нажать 'Пропустить'. Повторите ввод:",
@@ -130,7 +130,7 @@ public class CreateStockHandler implements MessageHandler {
     private PartialBotApiMethod<Message> handleValidateStockHead(String text,
                                                                  Long telegramId,
                                                                  CreateStockState state) {
-        if (text == null || text.strip().length() == 0 || text.strip().length() > 100) {
+        if (StringUtils.isBlank(text) || text.strip().length() > 100) {
             return generateSendMessage(
                 telegramId,
                 "Заголовок акции не должен быть пустым и не должен превышать 100 символов. Повторите ввод:",
@@ -138,6 +138,27 @@ public class CreateStockHandler implements MessageHandler {
             );
         }
         state.setStockHead(text.strip());
+
+        state.setStep(CreateStockState.StockCreationStep.VALIDATE_STOCK_DESCRIPTION);
+        return generateSendMessage(
+            telegramId,
+            "Введите описание акции (не более 250 символов):",
+            menus.get(CANCEL_MENU)
+        );
+    }
+
+    private PartialBotApiMethod<Message> handleValidateStockDescription(String text,
+                                                                        Long telegramId,
+                                                                        CreateStockState state) {
+        if (StringUtils.isBlank(text) || text.strip().length() > 250) {
+            return generateSendMessage(
+                telegramId,
+                "Описание акции не должно быть пустым и не может превышать 250 символов. Повторите ввод:",
+                menus.get(CANCEL_MENU)
+            );
+        }
+        state.setDescription(text.strip());
+
         state.setStep(CreateStockState.StockCreationStep.VALIDATE_PERIOD_START);
         return generateSendMessage(
             telegramId,
@@ -193,12 +214,9 @@ public class CreateStockHandler implements MessageHandler {
                 );
             }
             state.setPeriodEnd(endDate);
-            state.setStep(CreateStockState.StockCreationStep.VALIDATE_STOCK_DESCRIPTION);
-            return generateSendMessage(
-                telegramId,
-                "Введите описание акции (не более 250 символов):",
-                menus.get(CANCEL_MENU)
-            );
+
+            state.setStep(CONFIRM_STOCK);
+            return sendConfirmCreationMessage(telegramId);
         } catch (DateTimeParseException e) {
             return generateSendMessage(
                 telegramId,
@@ -208,26 +226,11 @@ public class CreateStockHandler implements MessageHandler {
         }
     }
 
-    private PartialBotApiMethod<Message> handleValidateStockDescription(String text,
-                                                                        Long telegramId,
-                                                                        CreateStockState state) {
-        if (text == null || text.strip().length() == 0 || text.strip().length() > 250) {
-            return generateSendMessage(
-                telegramId,
-                "Описание акции не должно быть пустым и не может превышать 250 символов. Повторите ввод:",
-                menus.get(CANCEL_MENU)
-            );
-        }
-        state.setDescription(text.strip());
-        state.setStep(CONFIRM_STOCK);
-        return sendConfirmCreationMessage(telegramId);
-    }
-
     private PartialBotApiMethod<Message> handleConfirmStock(String text,
                                                             Long telegramId,
                                                             CreateStockState state) {
         if (YES.equalsIgnoreCase(text)) {
-            saveStock(state, telegramId);
+            saveStock(state);
             state.setStep(CreateStockState.StockCreationStep.FINISH);
             return generateSendMessage(
                 telegramId,
@@ -257,28 +260,37 @@ public class CreateStockHandler implements MessageHandler {
         );
     }
 
-    private void saveStock(CreateStockState state, Long telegramId) {
-        Partner partner = partnerRepository.findById(telegramId).get();
+    private void saveStock(CreateStockState state) {
+        Partner partner = partnerRepository.findById(state.getPartnerId()).get();
 
         Stock stock = new Stock();
         stock.setPartnerTelegramId(partner);
         stock.setImage(state.getImage());
         stock.setHead(state.getStockHead());
+        stock.setDescription(state.getDescription());
         stock.setPeriodStocksStart(state.getPeriodStart());
         stock.setPeriodStocksEnd(state.getPeriodEnd());
-        stock.setDescription(state.getDescription());
 
         stockRepository.save(stock);
     }
 
     private SendMessage goToMainMenu(Long telegramId) {
-        BasicState baseState = basicStates.get(telegramId);
         createStockStates.remove(telegramId);
-        baseState.setStep(IN_MAIN_MENU);
-        return menuGenerator.generateRoleSpecificMainMenu(
-            telegramId,
-            baseState.getUser().getUserRole()
-        );
+
+        if (partnerRepository.existsById(telegramId)) {
+            basicStates.get(telegramId).setStep(IN_PARTNER_MENU);
+            return generateSendMessage(
+                telegramId,
+                "Выберите раздел:",
+                menus.get(Menu.PARTNER_MAIN_MENU)
+            );
+        } else {
+            basicStates.get(telegramId).setStep(IN_MAIN_MENU);
+            return menuGenerator.generateRoleSpecificMainMenu(
+                telegramId,
+                userRepository.findByTelegramId(telegramId).get().getUserRole()
+            );
+        }
     }
 
     private PartialBotApiMethod<Message> sendConfirmCreationMessage(Long telegramId) {

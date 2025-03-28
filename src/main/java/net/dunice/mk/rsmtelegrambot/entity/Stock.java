@@ -26,7 +26,7 @@ public class Stock {
     @JoinColumn(name = "partner_tg_id", nullable = false)
     private Partner partnerTelegramId;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private byte[] image;
 
     @Column(nullable = false)
