@@ -34,6 +34,7 @@ public class BasicState {
         REQUEST_VERIFICATION_CODE,
         CREATE_CHECK,
         CREATE_STOCK,
-        SHOW_STOCKS;
+        SHOW_STOCKS,
+        STOCK_EDITING;
     }
 }

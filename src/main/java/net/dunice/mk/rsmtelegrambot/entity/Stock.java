@@ -32,10 +32,10 @@ public class Stock {
     @Column(nullable = false)
     private String head;
 
-    @Column(nullable = false, name = "period_stocks_e")
+    @Column(nullable = false, name = "period_stocks_start")
     private LocalDate periodStocksStart;
 
-    @Column(nullable = false, name = "period_stocks_s")
+    @Column(nullable = false, name = "period_stocks_end")
     private LocalDate periodStocksEnd;
 
     @Column(nullable = false)

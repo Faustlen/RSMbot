@@ -10,4 +10,9 @@ ALTER TABLE stocks
 ALTER TABLE stocks
     ADD CONSTRAINT pk_stocks PRIMARY KEY (stocks_id);
 ALTER TABLE stocks
-    ADD CONSTRAINT fk_stocks_partners FOREIGN KEY (partner_tg_id) REFERENCES partners (partner_tg_id)
+    ADD CONSTRAINT fk_stocks_partners FOREIGN KEY (partner_tg_id) REFERENCES partners (partner_tg_id);
+
+ALTER TABLE stocks
+    RENAME COLUMN period_stocks_s TO period_stocks_start;
+ALTER TABLE stocks
+    RENAME COLUMN period_stocks_e TO period_stocks_end;
