@@ -129,7 +129,7 @@ public class ShowStocksHandler implements MessageHandler {
                 SendPhoto sendPhoto = generateImageMessage(
                     telegramId,
                     stockDescription,
-                    getUserActionKeyboard(telegramId),
+                    getUserActionKeyboard(telegramId, state),
                     image
                 );
                 sendPhoto.setParseMode("HTML");
@@ -138,7 +138,7 @@ public class ShowStocksHandler implements MessageHandler {
                 SendMessage sendMessage = generateSendMessage(
                     telegramId,
                     stockDescription,
-                    getUserActionKeyboard(telegramId)
+                    getUserActionKeyboard(telegramId, state)
                 );
                 sendMessage.setParseMode("HTML");
                 return sendMessage;
@@ -345,7 +345,7 @@ public class ShowStocksHandler implements MessageHandler {
         return logo != null && logo.length > 0;
     }
 
-    private InlineKeyboardMarkup getUserActionKeyboard(Long telegramId) {
+    private InlineKeyboardMarkup getUserActionKeyboard(Long telegramId, ShowStocksState state) {
         InlineKeyboardMarkup inlineKeyboard = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
 
@@ -358,7 +358,8 @@ public class ShowStocksHandler implements MessageHandler {
         rows.add(List.of(listStocksBtn));
 
         User user = userRepository.findById(telegramId).orElse(null);
-        if (user != null && user.getUserRole() != null && !user.getUserRole().name().equals("USER")) {
+        if ((user != null && user.getUserRole() != null && !user.getUserRole().name().equals("USER")) ||
+            telegramId.equals(state.getTargetStock().getPartnerTelegramId().getPartnerTelegramId())) {
             InlineKeyboardButton deleteBtn = new InlineKeyboardButton(DELETE_STOCK);
             deleteBtn.setCallbackData(DELETE_STOCK);
             rows.add(List.of(deleteBtn));
