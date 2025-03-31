@@ -33,6 +33,7 @@ import static net.dunice.mk.rsmtelegrambot.constant.Menu.PARTNER_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.SELECTION_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.SELECTION_USER_TYPE_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.SKIP_MENU;
+import static net.dunice.mk.rsmtelegrambot.constant.Menu.STOCK_FIELDS_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.SUPERUSER_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.TRY_AGAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.TRY_AGAIN_OR_GO_TO_MAIN_MENU;
@@ -65,7 +66,7 @@ public class MenuConfig {
         ReplyKeyboard partnerMainMenu, ReplyKeyboard cancelMenu,
         ReplyKeyboard categoryMenu, ReplyKeyboard eventFieldsMenu,
         ReplyKeyboard updateDiscountCodeMenu, ReplyKeyboard okMenu,
-        ReplyKeyboard skipMenu) {
+        ReplyKeyboard skipMenu, ReplyKeyboard stockFieldsMenu) {
         EnumMap<Menu, ReplyKeyboard> menus = new EnumMap<>(Menu.class);
         menus.put(OK_MENU, okMenu);
         menus.put(SELECTION_MENU, selectionMenu);
@@ -81,6 +82,7 @@ public class MenuConfig {
         menus.put(SKIP_MENU, skipMenu);
         menus.put(CATEGORY_MENU, categoryMenu);
         menus.put(EVENT_FIELDS_MENU, eventFieldsMenu);
+        menus.put(STOCK_FIELDS_MENU, stockFieldsMenu);
         menus.put(UPDATE_DISCOUNT_CODE_MENU, updateDiscountCodeMenu);
         return menus;
     }
@@ -244,7 +246,31 @@ public class MenuConfig {
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
         InlineKeyboardButton[] buttons = Stream
-            .of("Название", "Дата и Время", "Описание","Логотип", "Ссылка", "Адрес")
+            .of("Название", "Дата и Время", "Описание","Логотип", "Ссылка", "Адрес", CANCEL)
+            .map(category -> {
+                InlineKeyboardButton button = new InlineKeyboardButton(category);
+                button.setCallbackData(button.getText());
+                return button;
+            })
+            .toArray(InlineKeyboardButton[]::new);
+        for (int i = 0; i < buttons.length; i++) {
+            List<InlineKeyboardButton> row = new ArrayList<>();
+            row.add(buttons[i]);
+            if (++i < buttons.length) {
+                row.add(buttons[i]);
+            }
+            keyboard.add(row);
+        }
+        inlineKeyboardMarkup.setKeyboard(keyboard);
+        return inlineKeyboardMarkup;
+    }
+
+    @Bean("stockFieldsMenu")
+    public ReplyKeyboard getStockFieldsMenu() {
+        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
+        InlineKeyboardButton[] buttons = Stream
+            .of("Название", "Описание", "Дата начала","Дата окончания", "Логотип", CANCEL)
             .map(category -> {
                 InlineKeyboardButton button = new InlineKeyboardButton(category);
                 button.setCallbackData(button.getText());

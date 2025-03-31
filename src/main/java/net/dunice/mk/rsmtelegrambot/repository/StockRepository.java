@@ -2,11 +2,15 @@ package net.dunice.mk.rsmtelegrambot.repository;
 
 import net.dunice.mk.rsmtelegrambot.entity.Stock;
 import org.springframework.data.jpa.repository.JpaRepository;
-import java.time.LocalDate;
+import org.springframework.data.jpa.repository.Query;
 import java.util.List;
-import java.util.Optional;
 
 public interface StockRepository extends JpaRepository<Stock, Integer> {
 
-    List<Stock> findAllBetweenPeriodStocksStartAndBetweenByPeriodStocksEndOrderByPeriodStocksEndAsc(LocalDate now);
+    @Query("SELECT s FROM Stock s " +
+        "WHERE s.periodStocksStart <= CURRENT_DATE " +
+        "AND s.periodStocksEnd >= CURRENT_DATE " +
+        "ORDER BY s.periodStocksEnd ASC")
+    List<Stock> findAllCurrentStocks();
+
 }

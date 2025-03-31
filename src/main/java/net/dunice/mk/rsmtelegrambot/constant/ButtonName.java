@@ -49,6 +49,6 @@ public class ButtonName {
         CHANGE_ADDRESS = "Изменить адрес",
         CHANGE_PERIOD_START = "Изменить начало",
         CHANGE_PERIOD_END = "Изменить окончание",
-        DELETE_STOCK = "Удалить акцию",
-        EDIT_STOCK = "Редактировать акцию";
+        DELETE_STOCK = "\uD83D\uDDD1 Удалить акцию",
+        EDIT_STOCK = "✏\uFE0F Редактировать акцию";
 }
