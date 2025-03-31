@@ -1,12 +1,15 @@
 package net.dunice.mk.rsmtelegrambot.handler.messagehandler;
 
 import lombok.RequiredArgsConstructor;
+import net.dunice.mk.rsmtelegrambot.constant.Menu;
 import net.dunice.mk.rsmtelegrambot.dto.MessageDto;
+import net.dunice.mk.rsmtelegrambot.entity.Partner;
 import net.dunice.mk.rsmtelegrambot.entity.Stock;
 import net.dunice.mk.rsmtelegrambot.entity.User;
 import net.dunice.mk.rsmtelegrambot.handler.MenuGenerator;
 import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
 import net.dunice.mk.rsmtelegrambot.handler.state.ShowStocksState;
+import net.dunice.mk.rsmtelegrambot.repository.PartnerRepository;
 import net.dunice.mk.rsmtelegrambot.repository.StockRepository;
 import net.dunice.mk.rsmtelegrambot.repository.UserRepository;
 import org.apache.commons.lang3.StringUtils;
@@ -42,6 +45,7 @@ import static net.dunice.mk.rsmtelegrambot.constant.Menu.OK_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.SELECTION_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.STOCK_FIELDS_MENU;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_MAIN_MENU;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_PARTNER_MENU;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.SHOW_STOCKS;
 import static net.dunice.mk.rsmtelegrambot.handler.state.ShowEventsState.ShowEventsStep.SHOW_EVENT_DETAILS;
 import static net.dunice.mk.rsmtelegrambot.handler.state.ShowStocksState.ShowStocksStep.*;
@@ -59,7 +63,8 @@ public class ShowStocksHandler implements MessageHandler {
 
     private final MenuGenerator menuGenerator;
     private final StockRepository stockRepository;
-    private final UserRepository userRepository; // чтобы проверять роль пользователя, если нужно
+    private final UserRepository userRepository;
+    private final PartnerRepository partnerRepository;
     private final Map<Long, BasicState> basicStates;
     private final Map<Long, ShowStocksState> showStocksStates;
     private final Map<?, ReplyKeyboard> menus;
@@ -93,7 +98,17 @@ public class ShowStocksHandler implements MessageHandler {
     }
 
     private PartialBotApiMethod<Message> handleShowStocksList(Long telegramId, ShowStocksState state) {
-        List<Stock> stocks = stockRepository.findAllCurrentStocks();
+        List<Stock> stocks;
+
+        Optional<Partner> partnerOptional = partnerRepository.findById(telegramId);
+        if (partnerOptional.isPresent()) {
+            stocks = stockRepository.findByPartnerTelegramId(partnerOptional.get());
+        } else
+        if (basicStates.get(telegramId).getUser().getUserRole().name().equals("USER")) {
+            stocks = stockRepository.findAllCurrentStocks();
+        } else {
+            stocks = stockRepository.findAll();
+        }
         state.setStep(SHOW_STOCK_DETAILS);
 
         return generateSendMessage(
@@ -306,10 +321,22 @@ public class ShowStocksHandler implements MessageHandler {
     }
 
     private SendMessage goToMainMenu(Long telegramId) {
-        BasicState state = basicStates.get(telegramId);
         showStocksStates.remove(telegramId);
-        state.setStep(IN_MAIN_MENU);
-        return menuGenerator.generateRoleSpecificMainMenu(telegramId, state.getUser().getUserRole());
+
+        if (partnerRepository.existsById(telegramId)) {
+            basicStates.get(telegramId).setStep(IN_PARTNER_MENU);
+            return generateSendMessage(
+                telegramId,
+                "Выберите раздел:",
+                menus.get(Menu.PARTNER_MAIN_MENU)
+            );
+        } else {
+            basicStates.get(telegramId).setStep(IN_MAIN_MENU);
+            return menuGenerator.generateRoleSpecificMainMenu(
+                telegramId,
+                userRepository.findByTelegramId(telegramId).get().getUserRole()
+            );
+        }
     }
 
     private String getStockDescription(Stock stock) {

@@ -365,9 +365,10 @@ public class MenuConfig {
 
     private ReplyKeyboardMarkup getBasePartnerMenu() {
         return createReplyKeyboard(List.of(
-            List.of(PARTNERS_LIST, ADD_STOCK),
-            List.of(PERIOD_ANALYTICS, NEW_CHECK),
-            List.of(VERIFICATION_CODE, UPDATE_PROFILE)
+            List.of(PARTNERS_LIST, STOCKS_LIST),
+            List.of(ADD_STOCK, NEW_CHECK),
+            List.of(PERIOD_ANALYTICS, VERIFICATION_CODE),
+            List.of(UPDATE_PROFILE)
         ));
     }
 
