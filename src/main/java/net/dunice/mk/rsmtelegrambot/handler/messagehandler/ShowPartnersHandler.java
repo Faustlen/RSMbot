@@ -1,6 +1,7 @@
 package net.dunice.mk.rsmtelegrambot.handler.messagehandler;
 
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.ACTIVATE_PARTNER;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.ADD_STOCK;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CANCEL;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CHANGE_DISCOUNT;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.DEACTIVATE_PARTNER;
@@ -11,8 +12,6 @@ import static net.dunice.mk.rsmtelegrambot.constant.Menu.CANCEL_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.GO_TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.SELECTION_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.UPDATE_DISCOUNT_CODE_MENU;
-import static net.dunice.mk.rsmtelegrambot.entity.Role.ADMIN;
-import static net.dunice.mk.rsmtelegrambot.entity.Role.SUPER_USER;
 import static net.dunice.mk.rsmtelegrambot.entity.Role.USER;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_MAIN_MENU;
@@ -108,6 +107,7 @@ public class ShowPartnersHandler implements MessageHandler {
     private final UserRepository userRepository;
     private final Map<Long, ShowPartnersState> showPartnersStates;
     private final DiscountCodeService discountCodeService;
+    private final CreateStockHandler createStockHandler;
 
     @Override
     public BasicStep getStep() {
@@ -251,6 +251,10 @@ public class ShowPartnersHandler implements MessageHandler {
                 getUserActionKeyboard(userRepository.findById(telegramId),
                     Optional.of(currentPartner))
             );
+        } else if (ADD_STOCK.equalsIgnoreCase(text)) {
+            Partner currentPartner = state.getTargetPartner();
+            messageDto.setText(currentPartner.getPartnerTelegramId().toString());
+            return createStockHandler.handle(messageDto, telegramId);
         }
         return goToMainMenu(telegramId);
     }
@@ -454,6 +458,10 @@ public class ShowPartnersHandler implements MessageHandler {
             if (partnerOptional.isPresent()) {
                 Partner partner = partnerOptional.get();
                 if (partner.isValid()) {
+                    InlineKeyboardButton createStockButton = new InlineKeyboardButton(ADD_STOCK);
+                    createStockButton.setCallbackData(ADD_STOCK);
+                    keyboard.add(List.of(createStockButton));
+
                     InlineKeyboardButton changeDiscountButton = new InlineKeyboardButton(CHANGE_DISCOUNT);
                     changeDiscountButton.setCallbackData(CHANGE_DISCOUNT);
 
