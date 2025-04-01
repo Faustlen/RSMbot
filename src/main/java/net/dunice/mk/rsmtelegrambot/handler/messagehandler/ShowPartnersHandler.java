@@ -14,6 +14,7 @@ import static net.dunice.mk.rsmtelegrambot.constant.Menu.SELECTION_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.UPDATE_DISCOUNT_CODE_MENU;
 import static net.dunice.mk.rsmtelegrambot.entity.Role.USER;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.CREATE_STOCK;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_PARTNER_MENU;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.SHOW_PARTNERS;
@@ -254,6 +255,7 @@ public class ShowPartnersHandler implements MessageHandler {
         } else if (ADD_STOCK.equalsIgnoreCase(text)) {
             Partner currentPartner = state.getTargetPartner();
             messageDto.setText(currentPartner.getPartnerTelegramId().toString());
+            basicStates.get(telegramId).setStep((CREATE_STOCK));
             return createStockHandler.handle(messageDto, telegramId);
         }
         return goToMainMenu(telegramId);
