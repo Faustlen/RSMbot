@@ -33,8 +33,14 @@ import java.util.Map;
 import java.util.Optional;
 
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CANCEL;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CHANGE_INFO;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CHANGE_LOGO;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CHANGE_NAME;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CHANGE_PERIOD_END;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CHANGE_PERIOD_START;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.DELETE_STOCK;  // Добавьте в ButtonName
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.EDIT_STOCK;    // Добавьте в ButtonName
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.GO_TO_PARTNER;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.STOCKS_LIST;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.NO;
@@ -209,11 +215,11 @@ public class ShowStocksHandler implements MessageHandler {
         state.setStep(EDIT_STOCK_FIELD);
 
         String question = switch (text) {
-            case "Название" -> "Введите новое название акции:";
-            case "Описание" -> "Введите новое описание акции:";
-            case "Дата начала" -> "Введите новую дату начала в формате (ДД.ММ.ГГГГ):";
-            case "Дата окончания" -> "Введите новую дату окончания в формате (ДД.ММ.ГГГГ):";
-            case "Логотип" -> "Отправьте новое изображение (логотип) акции:";
+            case CHANGE_NAME -> "Введите новое название акции:";
+            case CHANGE_INFO -> "Введите новое описание акции:";
+            case CHANGE_PERIOD_START -> "Введите новую дату начала в формате (ДД.ММ.ГГГГ):";
+            case CHANGE_PERIOD_END -> "Введите новую дату окончания в формате (ДД.ММ.ГГГГ):";
+            case CHANGE_LOGO -> "Отправьте новое изображение (логотип) акции:";
             default -> "Поле неизвестно. Попробуйте снова.";
         };
 
@@ -238,27 +244,27 @@ public class ShowStocksHandler implements MessageHandler {
 
         try {
             switch (state.getEditingFieldName()) {
-                case "Название" -> {
+                case CHANGE_NAME -> {
                     if (text.length() > 100) {
                         return generateSendMessage(telegramId, "Название не более 100 символов!", menus.get(CANCEL_MENU));
                     }
                     targetStock.setHead(text.trim());
                 }
-                case "Описание" -> {
+                case CHANGE_INFO -> {
                     if (text.length() > 250) {
                         return generateSendMessage(telegramId, "Описание не более 250 символов!", menus.get(CANCEL_MENU));
                     }
                     targetStock.setDescription(text.trim());
                 }
-                case "Дата начала" -> {
+                case CHANGE_PERIOD_START -> {
                     LocalDate startDate = LocalDate.parse(text.trim(), DateTimeFormatter.ofPattern("dd.MM.yyyy"));
                     targetStock.setPeriodStocksStart(startDate);
                 }
-                case "Дата окончания" -> {
+                case CHANGE_PERIOD_END -> {
                     LocalDate endDate = LocalDate.parse(text.trim(), DateTimeFormatter.ofPattern("dd.MM.yyyy"));
                     targetStock.setPeriodStocksEnd(endDate);
                 }
-                case "Логотип" -> {
+                case CHANGE_LOGO -> {
                     if (messageDto.getImage() == null) {
                         return generateSendMessage(telegramId, "Нужно прислать изображение.", menus.get(CANCEL_MENU));
                     }
@@ -384,16 +390,20 @@ public class ShowStocksHandler implements MessageHandler {
         listStocksBtn.setCallbackData(STOCKS_LIST);
         rows.add(List.of(listStocksBtn));
 
+        if (!telegramId.equals(state.getTargetStock().getPartnerTelegramId().getPartnerTelegramId())) {
+            InlineKeyboardButton gotoPartner = new InlineKeyboardButton(GO_TO_PARTNER);
+            gotoPartner.setCallbackData(GO_TO_PARTNER);
+            rows.add(List.of(gotoPartner));
+        }
+
         User user = userRepository.findById(telegramId).orElse(null);
         if ((user != null && user.getUserRole() != null && !user.getUserRole().name().equals("USER")) ||
             telegramId.equals(state.getTargetStock().getPartnerTelegramId().getPartnerTelegramId())) {
             InlineKeyboardButton deleteBtn = new InlineKeyboardButton(DELETE_STOCK);
-            deleteBtn.setCallbackData(DELETE_STOCK);
-            rows.add(List.of(deleteBtn));
-
             InlineKeyboardButton editBtn = new InlineKeyboardButton(EDIT_STOCK);
+            deleteBtn.setCallbackData(DELETE_STOCK);
             editBtn.setCallbackData(EDIT_STOCK);
-            rows.add(List.of(editBtn));
+            rows.add(List.of(deleteBtn, editBtn));
         }
 
         inlineKeyboard.setKeyboard(rows);
@@ -402,7 +412,7 @@ public class ShowStocksHandler implements MessageHandler {
 
     private boolean isFieldName(String text) {
         if (text == null) return false;
-        return List.of("Название", "Описание", "Дата начала", "Дата окончания", "Логотип", CANCEL).contains(text);
+        return List.of(CHANGE_NAME, CHANGE_INFO, CHANGE_PERIOD_START, CHANGE_PERIOD_END, CHANGE_LOGO, CANCEL).contains(text);
     }
 
     private PartialBotApiMethod<Message> buildStockConfirmMessage(Long telegramId, Stock stock) {

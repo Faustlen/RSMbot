@@ -47,8 +47,9 @@ public class ButtonName {
         CHANGE_INFO = "Изменить описание",
         CHANGE_PHONE_NUMBER = "Изменить номер телефона",
         CHANGE_ADDRESS = "Изменить адрес",
-        CHANGE_PERIOD_START = "Изменить начало",
-        CHANGE_PERIOD_END = "Изменить окончание",
+        CHANGE_PERIOD_START = "Изменить дату начала",
+        CHANGE_PERIOD_END = "Изменить дату окончания",
         DELETE_STOCK = "\uD83D\uDDD1 Удалить акцию",
-        EDIT_STOCK = "✏\uFE0F Редактировать акцию";
+        EDIT_STOCK = "✏\uFE0F Редактировать акцию",
+        GO_TO_PARTNER = "➡ Перейти к партнёру акции";
 }
