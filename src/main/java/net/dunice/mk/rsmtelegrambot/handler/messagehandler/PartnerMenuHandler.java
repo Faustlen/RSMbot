@@ -20,6 +20,7 @@ import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.SH
 import lombok.RequiredArgsConstructor;
 import net.dunice.mk.rsmtelegrambot.dto.MessageDto;
 import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
 import org.telegram.telegrambots.meta.api.objects.Message;
@@ -32,12 +33,12 @@ import java.util.Optional;
 public class PartnerMenuHandler implements MessageHandler {
 
     private final Map<Long, BasicState> basicStates;
-    private final ShowPartnersHandler showPartnersHandler;
     private final ShowAnalyticsHandler showAnalyticsHandler;
     private final RequestVerificationCodeHandler requestCodeHandler;
     private final CreateCheckHandler createCheckHandler;
     private final PartnerEditingHandler partnerEditingHandler;
     private final CreateStockHandler createStockHandler;
+    private final ShowPartnersHandler showPartnersHandler;
     private final ShowStocksHandler showStocksHandler;
 
     @Override

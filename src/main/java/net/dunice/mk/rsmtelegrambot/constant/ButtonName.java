@@ -51,5 +51,6 @@ public class ButtonName {
         CHANGE_PERIOD_END = "Изменить дату окончания",
         DELETE_STOCK = "\uD83D\uDDD1 Удалить акцию",
         EDIT_STOCK = "✏\uFE0F Редактировать акцию",
-        GO_TO_PARTNER = "➡ Перейти к партнёру акции";
+        GO_TO_PARTNER = "➡ Перейти к партнёру акции",
+        GO_TO_STOCKS = "➡ Перейти к акциям партнёра";
 }

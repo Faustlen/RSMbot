@@ -13,6 +13,8 @@ import net.dunice.mk.rsmtelegrambot.repository.PartnerRepository;
 import net.dunice.mk.rsmtelegrambot.repository.StockRepository;
 import net.dunice.mk.rsmtelegrambot.repository.UserRepository;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -72,10 +74,16 @@ public class ShowStocksHandler implements MessageHandler {
     private final StockRepository stockRepository;
     private final UserRepository userRepository;
     private final PartnerRepository partnerRepository;
-    private final ShowPartnersHandler showPartnersHandler;
     private final Map<Long, BasicState> basicStates;
     private final Map<Long, ShowStocksState> showStocksStates;
     private final Map<?, ReplyKeyboard> menus;
+
+    private ShowPartnersHandler showPartnersHandler;
+
+    @Autowired
+    public void setShowPartnersHandler(@Lazy ShowPartnersHandler showPartnersHandler) {
+        this.showPartnersHandler = showPartnersHandler;
+    }
 
     @Override
     public BasicState.BasicStep getStep() {
@@ -105,14 +113,31 @@ public class ShowStocksHandler implements MessageHandler {
         };
     }
 
+    public PartialBotApiMethod<Message> handlePartnerStocks(MessageDto messageDto, Long telegramId) {
+        ShowStocksState state = showStocksStates.get(telegramId);
+        if (state == null) {
+            state = new ShowStocksState();
+            showStocksStates.put(telegramId, state);
+        }
+        state.setStep(SHOW_STOCK_DETAILS);
+
+        Optional<Partner> partnerOptional = partnerRepository.findById(Long.parseLong(messageDto.getText()));
+        List<Stock> stocks = stockRepository.findByPartnerTelegramId(partnerOptional.get());
+
+        return generateSendMessage(
+            telegramId,
+            "Выберите интересующую вас акцию:",
+            generateStocksListKeyboard(stocks)
+        );
+    }
+
     private PartialBotApiMethod<Message> handleShowStocksList(Long telegramId, ShowStocksState state) {
         List<Stock> stocks;
 
         Optional<Partner> partnerOptional = partnerRepository.findById(telegramId);
         if (partnerOptional.isPresent()) {
             stocks = stockRepository.findByPartnerTelegramId(partnerOptional.get());
-        } else
-        if (basicStates.get(telegramId).getUser().getUserRole().name().equals("USER")) {
+        } else if (basicStates.get(telegramId).getUser().getUserRole().name().equals("USER")) {
             stocks = stockRepository.findAllCurrentStocks();
         } else {
             stocks = stockRepository.findAll();
@@ -173,28 +198,38 @@ public class ShowStocksHandler implements MessageHandler {
 
     private PartialBotApiMethod<Message> handleUserAction(MessageDto messageDto, Long telegramId, ShowStocksState state) {
         String text = messageDto.getText();
-
-        if (STOCKS_LIST.equalsIgnoreCase(text)) {
-            state.setStep(SHOW_STOCKS_LIST);
-            return handleShowStocksList(telegramId, state);
-        } else if (EDIT_STOCK.equalsIgnoreCase(text)) {
-            state.setStep(SELECT_STOCK_FIELD);
-            return generateSendMessage(
-                telegramId,
-                "Выберите поле, которое хотите отредактировать:",
-                menus.get(STOCK_FIELDS_MENU)
-            );
-        } else if (DELETE_STOCK.equalsIgnoreCase(text)) {
-            state.setStep(CONFIRM_STOCK_DELETE);
-            return generateSendMessage(
-                telegramId,
-                String.format("Вы точно хотите удалить акцию '%s'?", state.getTargetStock().getHead()),
-                menus.get(SELECTION_MENU)
-            );
-        } else {
-            return generateSendMessage(telegramId, "Неверная команда", menus.get(GO_TO_MAIN_MENU));
-        }
+        return switch (text) {
+            case STOCKS_LIST -> {
+                state.setStep(SHOW_STOCKS_LIST);
+                yield handleShowStocksList(telegramId, state);
+            }
+            case EDIT_STOCK -> {
+                state.setStep(SELECT_STOCK_FIELD);
+                yield generateSendMessage(
+                    telegramId,
+                    "Выберите поле, которое хотите отредактировать:",
+                    menus.get(STOCK_FIELDS_MENU)
+                );
+            }
+            case DELETE_STOCK -> {
+                state.setStep(CONFIRM_STOCK_DELETE);
+                yield generateSendMessage(
+                    telegramId,
+                    String.format("Вы точно хотите удалить акцию '%s'?", state.getTargetStock().getHead()),
+                    menus.get(SELECTION_MENU)
+                );
+            }
+            case GO_TO_PARTNER -> {
+                basicStates.get(telegramId).setStep(SHOW_PARTNERS);
+                messageDto.setText(state.getTargetStock().getPartnerTelegramId().getName());
+                yield showPartnersHandler.handleDetails(messageDto, telegramId);
+            }
+            default -> {
+                yield generateSendMessage(telegramId, "Неверная команда", menus.get(GO_TO_MAIN_MENU));
+            }
+        };
     }
+
 
     private PartialBotApiMethod<Message> handleSelectStockField(MessageDto messageDto, Long telegramId, ShowStocksState state) {
         String text = messageDto.getText();
@@ -271,11 +306,6 @@ public class ShowStocksHandler implements MessageHandler {
                         return generateSendMessage(telegramId, "Нужно прислать изображение.", menus.get(CANCEL_MENU));
                     }
                     targetStock.setImage(messageDto.getImage());
-                }
-                case GO_TO_PARTNER -> {
-                    basicStates.get(telegramId).setStep(SHOW_PARTNERS);
-                    messageDto.setText(state.getTargetStock().getPartnerTelegramId().getName());
-                    return showPartnersHandler.handleDetails(messageDto, telegramId);
                 }
             }
         } catch (DateTimeParseException e) {

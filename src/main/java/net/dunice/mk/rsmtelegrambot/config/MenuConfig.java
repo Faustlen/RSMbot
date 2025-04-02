@@ -4,6 +4,11 @@ import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.ADD_EVENT;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.ADD_STOCK;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.ADMINS_LIST;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CANCEL;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CHANGE_INFO;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CHANGE_LOGO;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CHANGE_NAME;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CHANGE_PERIOD_END;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CHANGE_PERIOD_START;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.EVENTS_LIST;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.NEW_CHECK;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.NO;
@@ -270,7 +275,7 @@ public class MenuConfig {
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
         InlineKeyboardButton[] buttons = Stream
-            .of("Название", "Описание", "Дата начала","Дата окончания", "Логотип", CANCEL)
+            .of(CHANGE_NAME, CHANGE_INFO, CHANGE_PERIOD_START, CHANGE_PERIOD_END, CHANGE_LOGO, CANCEL)
             .map(category -> {
                 InlineKeyboardButton button = new InlineKeyboardButton(category);
                 button.setCallbackData(button.getText());
