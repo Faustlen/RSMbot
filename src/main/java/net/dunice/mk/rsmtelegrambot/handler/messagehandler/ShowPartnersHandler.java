@@ -139,6 +139,17 @@ public class ShowPartnersHandler implements MessageHandler {
         };
     }
 
+    public PartialBotApiMethod<Message> handleDetails(MessageDto messageDto, Long telegramId) {
+        ShowPartnersState state = showPartnersStates.get(telegramId);
+        if (state == null) {
+            state = new ShowPartnersState();
+            showPartnersStates.put(telegramId, state);
+        }
+
+        state.setStep(SHOW_PARTNER_DETAILS);
+        return handleShowPartnerDetails(messageDto, telegramId, state);
+    }
+
     private PartialBotApiMethod<Message> handleShowPartnersList(Long telegramId, ShowPartnersState state) {
         List<Partner> partners = partnerRepository.findAll();
         Optional<User> userOptional = userRepository.findById(telegramId);

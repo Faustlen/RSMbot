@@ -52,6 +52,7 @@ import static net.dunice.mk.rsmtelegrambot.constant.Menu.SELECTION_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.STOCK_FIELDS_MENU;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_PARTNER_MENU;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.SHOW_PARTNERS;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.SHOW_STOCKS;
 import static net.dunice.mk.rsmtelegrambot.handler.state.ShowEventsState.ShowEventsStep.SHOW_EVENT_DETAILS;
 import static net.dunice.mk.rsmtelegrambot.handler.state.ShowStocksState.ShowStocksStep.*;
@@ -71,6 +72,7 @@ public class ShowStocksHandler implements MessageHandler {
     private final StockRepository stockRepository;
     private final UserRepository userRepository;
     private final PartnerRepository partnerRepository;
+    private final ShowPartnersHandler showPartnersHandler;
     private final Map<Long, BasicState> basicStates;
     private final Map<Long, ShowStocksState> showStocksStates;
     private final Map<?, ReplyKeyboard> menus;
@@ -270,6 +272,11 @@ public class ShowStocksHandler implements MessageHandler {
                     }
                     targetStock.setImage(messageDto.getImage());
                 }
+                case GO_TO_PARTNER -> {
+                    basicStates.get(telegramId).setStep(SHOW_PARTNERS);
+                    messageDto.setText(state.getTargetStock().getPartnerTelegramId().getName());
+                    return showPartnersHandler.handleDetails(messageDto, telegramId);
+                }
             }
         } catch (DateTimeParseException e) {
             return generateSendMessage(
@@ -412,7 +419,15 @@ public class ShowStocksHandler implements MessageHandler {
 
     private boolean isFieldName(String text) {
         if (text == null) return false;
-        return List.of(CHANGE_NAME, CHANGE_INFO, CHANGE_PERIOD_START, CHANGE_PERIOD_END, CHANGE_LOGO, CANCEL).contains(text);
+        return List.of(
+            CHANGE_NAME,
+            CHANGE_INFO,
+            GO_TO_PARTNER,
+            CHANGE_PERIOD_START,
+            CHANGE_PERIOD_END,
+            CHANGE_LOGO,
+            CANCEL)
+            .contains(text);
     }
 
     private PartialBotApiMethod<Message> buildStockConfirmMessage(Long telegramId, Stock stock) {
