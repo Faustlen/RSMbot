@@ -20,6 +20,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findFirstByUserRole(Role role);
 
+    Optional<User> findByUserCard(Integer userCard);
+
+
     @Modifying
     @Transactional
     @Query("UPDATE User u SET u.info = :info WHERE u.telegramId = :telegramId")
