@@ -4,7 +4,9 @@ import lombok.RequiredArgsConstructor;
 import net.dunice.mk.rsmtelegrambot.constant.Menu;
 import net.dunice.mk.rsmtelegrambot.dto.MessageDto;
 import net.dunice.mk.rsmtelegrambot.entity.Category;
+import net.dunice.mk.rsmtelegrambot.entity.Partner;
 import net.dunice.mk.rsmtelegrambot.event.PartnerRegisteredEvent;
+import net.dunice.mk.rsmtelegrambot.handler.MenuGenerator;
 import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
 import net.dunice.mk.rsmtelegrambot.handler.state.PartnerEditingState;
 import net.dunice.mk.rsmtelegrambot.repository.CategoryRepository;
@@ -69,6 +71,7 @@ public class PartnerEditingHandler implements MessageHandler{
     private final PartnerRepository partnerRepository;
     private final CategoryRepository categoryRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final MenuGenerator menuGenerator;
 
     @Override
     public BasicState.BasicStep getStep() {
@@ -90,7 +93,7 @@ public class PartnerEditingHandler implements MessageHandler{
                 partnerRepository.save(state.getPartner());
                 eventPublisher.publishEvent(new PartnerRegisteredEvent(state.getPartner()));
             }
-            return goToMainMenu(telegramId);
+            return goToMainMenu(state.getPartner());
         }
 
         if (Objects.equals(text, CANCEL)) {
@@ -282,10 +285,10 @@ public class PartnerEditingHandler implements MessageHandler{
         return inlineKeyboardMarkup;
     }
 
-    private SendMessage goToMainMenu(Long telegramId) {
-        basicStates.get(telegramId).setStep(IN_PARTNER_MENU);
-        partnerEditingStates.remove(telegramId);
-        return generateSendMessage(telegramId, "Выберите раздел:", menus.get(Menu.PARTNER_MAIN_MENU));
+    private SendMessage goToMainMenu(Partner partner) {
+        basicStates.get(partner.getPartnerTelegramId()).setStep(IN_PARTNER_MENU);
+        partnerEditingStates.remove(partner.getPartnerTelegramId());
+        return generateSendMessage(partner.getPartnerTelegramId(), "Выберите раздел:", menuGenerator.getPartnerMenu(partner));
     }
 
     private String getHyperlinkFromAddress(String address) {

@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import net.dunice.mk.rsmtelegrambot.constant.Menu;
 import net.dunice.mk.rsmtelegrambot.dto.MessageDto;
 import net.dunice.mk.rsmtelegrambot.entity.Check;
+import net.dunice.mk.rsmtelegrambot.entity.Partner;
+import net.dunice.mk.rsmtelegrambot.handler.MenuGenerator;
 import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
 import net.dunice.mk.rsmtelegrambot.handler.state.CreateCheckState;
 import net.dunice.mk.rsmtelegrambot.repository.CheckRepository;
@@ -39,6 +41,7 @@ public class CreateCheckHandler implements MessageHandler {
     private final Map<Menu, ReplyKeyboard> menus;
     private final PartnerRepository partnerRepository;
     private final CheckRepository checkRepository;
+    private final MenuGenerator menuGenerator;
 
     @Override
     public BasicState.BasicStep getStep() {
@@ -68,7 +71,7 @@ public class CreateCheckHandler implements MessageHandler {
         }
 
         if (StringUtils.equalsAny(text, TO_MAIN_MENU, CANCEL)) {
-            return goToMainMenu(telegramId);
+            return goToMainMenu(state.getPartner());
         }
 
         return switch (state.getStep()) {
@@ -139,10 +142,10 @@ public class CreateCheckHandler implements MessageHandler {
         }
     }
 
-    private SendMessage goToMainMenu(Long telegramId) {
-        basicStates.get(telegramId).setStep(IN_PARTNER_MENU);
-        createCheckStates.remove(telegramId);
-        return generateSendMessage(telegramId, "Выберите раздел:", menus.get(Menu.PARTNER_MAIN_MENU));
+    private SendMessage goToMainMenu(Partner partner) {
+        basicStates.get(partner.getPartnerTelegramId()).setStep(IN_PARTNER_MENU);
+        createCheckStates.remove(partner.getPartnerTelegramId());
+        return generateSendMessage(partner.getPartnerTelegramId(), "Выберите раздел:", menuGenerator.getPartnerMenu(partner));
     }
 
     private void saveCheck(CreateCheckState state) {

@@ -1,7 +1,6 @@
 package net.dunice.mk.rsmtelegrambot.handler.messagehandler;
 
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TO_MAIN_MENU;
-import static net.dunice.mk.rsmtelegrambot.constant.Menu.PARTNER_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.UPDATE_DISCOUNT_CODE_MENU;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_PARTNER_MENU;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.REQUEST_VERIFICATION_CODE;
@@ -9,7 +8,10 @@ import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.RE
 import lombok.RequiredArgsConstructor;
 import net.dunice.mk.rsmtelegrambot.constant.Menu;
 import net.dunice.mk.rsmtelegrambot.dto.MessageDto;
+import net.dunice.mk.rsmtelegrambot.entity.Partner;
+import net.dunice.mk.rsmtelegrambot.handler.MenuGenerator;
 import net.dunice.mk.rsmtelegrambot.handler.state.BasicState;
+import net.dunice.mk.rsmtelegrambot.repository.PartnerRepository;
 import net.dunice.mk.rsmtelegrambot.service.DiscountCodeService;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -24,7 +26,9 @@ public class RequestVerificationCodeHandler implements MessageHandler {
 
     private final Map<Long, BasicState> basicStates;
     private final EnumMap<Menu, ReplyKeyboard> menus;
+    private final MenuGenerator menuGenerator;
     private final DiscountCodeService discountCodeService;
+    private final PartnerRepository partnerRepository;
 
     @Override
     public BasicState.BasicStep getStep() {
@@ -49,6 +53,7 @@ public class RequestVerificationCodeHandler implements MessageHandler {
 
     private SendMessage goToMainMenu(Long telegramId) {
         basicStates.get(telegramId).setStep(IN_PARTNER_MENU);
-        return generateSendMessage(telegramId, "Выберите раздел:", menus.get(PARTNER_MAIN_MENU));
+        Partner partner = partnerRepository.findById(telegramId).get();
+        return generateSendMessage(telegramId, "Выберите раздел:", menuGenerator.getPartnerMenu(partner));
     }
 }
