@@ -117,7 +117,9 @@ public class ShowUsersHandler implements MessageHandler {
                 Всего пользователей - (%s).
                 Выберите пользователя из списка,
                 или введите часть ФИО для уточнения поиска.
-                (минимум 3 символа) :"""
+                (минимум 3 символа),
+                или введите номер членского билета:
+            """
                     .formatted(state.getUsersToDisplay().size()),
             generateUserListKeyboard(state.getUsersToDisplay(), state.getPage()));
     }
@@ -136,6 +138,8 @@ public class ShowUsersHandler implements MessageHandler {
             state.incrementPage();
             state.setStep(SHOW_USERS_LIST);
             return handle(messageDto, telegramId);
+        } else if (text.matches("^\\d+$")) {
+            return handleUserCardFilter(telegramId, state, text);
         } else if (Pattern.compile("^[а-яА-ЯёЁ]+$").matcher(text).matches()) {
             return handleFullNameFilter(telegramId, state, text);
         } else {
@@ -165,6 +169,27 @@ public class ShowUsersHandler implements MessageHandler {
                 generateUserListKeyboard(state.getUsersToDisplay(), state.getPage()));
         }
     }
+
+    private SendMessage handleUserCardFilter(Long telegramId, ShowUsersState state, String text) {
+        try {
+            Integer card = Integer.valueOf(text);
+            Optional<User> userOptional = userRepository.findByUserCard(card);
+            if (userOptional.isPresent()) {
+                User targetUser = userOptional.get();
+                String userDescription = getUserDescription(targetUser);
+                state.setTargetUser(targetUser);
+                state.setStep(ShowUsersState.ShowUsersStep.HANDLE_USER_ACTION);
+                return generateSendMessage(telegramId, userDescription,
+                    generateUserActionKeyboard(basicStates.get(telegramId).getUser().getUserRole(), targetUser));
+            } else {
+                return generateSendMessage(telegramId,
+                    "Пользователь с номером билета " + text + " не найден, повторите ввод.");
+            }
+        } catch (NumberFormatException e) {
+            return generateSendMessage(telegramId, "Неверный номер билета. Повторите ввод.");
+        }
+    }
+
 
     private SendMessage handleUserSelection(Long telegramId, ShowUsersState state, String text) {
         try {
