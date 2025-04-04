@@ -13,6 +13,7 @@ public class ButtonName {
         UNBAN = "✅ Разбанить",
         DELETE_USER = "\uD83D\uDEB7 Удалить пользователя",
         ADD_EVENT = "\uD83D\uDDD3 Добавить мероприятие",
+        ADD_STOCK = "\uD83D\uDDD3 Добавить акцию",
         TO_MAIN_MENU = "⌂ В главное меню",
         EVENTS_LIST = "☰ Мероприятия",
         STOCKS_LIST = "☰ Акции",
@@ -45,5 +46,11 @@ public class ButtonName {
         CHANGE_CATEGORY = "Изменить категорию",
         CHANGE_INFO = "Изменить описание",
         CHANGE_PHONE_NUMBER = "Изменить номер телефона",
-        CHANGE_ADDRESS = "Изменить адрес";
+        CHANGE_ADDRESS = "Изменить адрес",
+        CHANGE_PERIOD_START = "Изменить дату начала",
+        CHANGE_PERIOD_END = "Изменить дату окончания",
+        DELETE_STOCK = "\uD83D\uDDD1 Удалить акцию",
+        EDIT_STOCK = "✏\uFE0F Редактировать акцию",
+        GO_TO_PARTNER = "➡ Перейти к партнёру акции",
+        GO_TO_STOCKS = "➡ Перейти к акциям партнёра";
 }

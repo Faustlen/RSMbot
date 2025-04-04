@@ -1,23 +1,25 @@
 package net.dunice.mk.rsmtelegrambot.handler.messagehandler;
 
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.ACTIVATE_PARTNER;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.ADD_STOCK;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CANCEL;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CHANGE_DISCOUNT;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.DEACTIVATE_PARTNER;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.GET_DISCOUNT_CODE;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.GO_TO_STOCKS;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.PARTNERS_LIST;
 import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.CANCEL_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.GO_TO_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.SELECTION_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.UPDATE_DISCOUNT_CODE_MENU;
-import static net.dunice.mk.rsmtelegrambot.entity.Role.ADMIN;
-import static net.dunice.mk.rsmtelegrambot.entity.Role.SUPER_USER;
 import static net.dunice.mk.rsmtelegrambot.entity.Role.USER;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.CREATE_STOCK;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_PARTNER_MENU;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.SHOW_PARTNERS;
+import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.SHOW_STOCKS;
 import static net.dunice.mk.rsmtelegrambot.handler.state.ShowPartnersState.ShowPartnersStep.CONFIRM_CHANGE;
 import static net.dunice.mk.rsmtelegrambot.handler.state.ShowPartnersState.ShowPartnersStep.HANDLE_USER_ACTION;
 import static net.dunice.mk.rsmtelegrambot.handler.state.ShowPartnersState.ShowPartnersStep.SEND_DISCOUNT_CODE;
@@ -42,6 +44,7 @@ import net.dunice.mk.rsmtelegrambot.repository.UserRepository;
 import net.dunice.mk.rsmtelegrambot.service.DiscountCodeService;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -108,6 +111,8 @@ public class ShowPartnersHandler implements MessageHandler {
     private final UserRepository userRepository;
     private final Map<Long, ShowPartnersState> showPartnersStates;
     private final DiscountCodeService discountCodeService;
+    private final CreateStockHandler createStockHandler;
+    private final ShowStocksHandler showStocksHandler;
 
     @Override
     public BasicStep getStep() {
@@ -137,6 +142,17 @@ public class ShowPartnersHandler implements MessageHandler {
             case CONFIRM_CHANGE -> handleConfirmChange(messageDto, telegramId, state);
             case SEND_DISCOUNT_CODE -> handleSendDiscountCode(telegramId);
         };
+    }
+
+    public PartialBotApiMethod<Message> handleDetails(MessageDto messageDto, Long telegramId) {
+        ShowPartnersState state = showPartnersStates.get(telegramId);
+        if (state == null) {
+            state = new ShowPartnersState();
+            showPartnersStates.put(telegramId, state);
+        }
+
+        state.setStep(SHOW_PARTNER_DETAILS);
+        return handleShowPartnerDetails(messageDto, telegramId, state);
     }
 
     private PartialBotApiMethod<Message> handleShowPartnersList(Long telegramId, ShowPartnersState state) {
@@ -190,7 +206,7 @@ public class ShowPartnersHandler implements MessageHandler {
             SendPhoto sendPhoto = generateImageMessage(
                 telegramId,
                 description,
-                getUserActionKeyboard(userOptional, partnerOptional),
+                getUserActionKeyboard(userOptional, partnerOptional, telegramId),
                 logo
             );
             sendPhoto.setParseMode("HTML");
@@ -199,7 +215,7 @@ public class ShowPartnersHandler implements MessageHandler {
             SendMessage sendMessage = generateSendMessage(
                 telegramId,
                 description,
-                getUserActionKeyboard(userOptional, partnerOptional)
+                getUserActionKeyboard(userOptional, partnerOptional, telegramId)
             );
             sendMessage.setParseMode("HTML");
             return sendMessage;
@@ -236,8 +252,10 @@ public class ShowPartnersHandler implements MessageHandler {
             return generateSendMessage(
                 telegramId,
                 "Партнёр успешно активирован.",
-                getUserActionKeyboard(userRepository.findById(telegramId),
-                    Optional.of(currentPartner))
+                getUserActionKeyboard(
+                    userRepository.findById(telegramId),
+                    Optional.of(currentPartner),
+                    telegramId)
             );
 
         } else if (DEACTIVATE_PARTNER.equalsIgnoreCase(text)) {
@@ -248,9 +266,20 @@ public class ShowPartnersHandler implements MessageHandler {
             return generateSendMessage(
                 telegramId,
                 "Партнёр успешно деактивирован.",
-                getUserActionKeyboard(userRepository.findById(telegramId),
-                    Optional.of(currentPartner))
+                getUserActionKeyboard(
+                    userRepository.findById(telegramId),
+                    Optional.of(currentPartner),
+                    telegramId)
             );
+        } else if (ADD_STOCK.equalsIgnoreCase(text)) {
+            Partner currentPartner = state.getTargetPartner();
+            messageDto.setText(currentPartner.getPartnerTelegramId().toString());
+            basicStates.get(telegramId).setStep((CREATE_STOCK));
+            return createStockHandler.handle(messageDto, telegramId);
+        } else if (GO_TO_STOCKS.equalsIgnoreCase(text)) {
+            basicStates.get(telegramId).setStep(SHOW_STOCKS);
+            messageDto.setText(state.getTargetPartner().getPartnerTelegramId().toString());
+            return showStocksHandler.handlePartnerStocks(messageDto, telegramId);
         }
         return goToMainMenu(telegramId);
     }
@@ -437,7 +466,8 @@ public class ShowPartnersHandler implements MessageHandler {
         );
     }
 
-    private ReplyKeyboard getUserActionKeyboard(Optional<User> userOptional, Optional<Partner> partnerOptional) {
+    private ReplyKeyboard getUserActionKeyboard(
+        Optional<User> userOptional, Optional<Partner> partnerOptional, Long telegramId) {
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
 
@@ -450,10 +480,21 @@ public class ShowPartnersHandler implements MessageHandler {
         keyboard.add(List.of(toMainMenuButton));
         keyboard.add(List.of(toPartnersButton));
 
+        if (!telegramId.equals(partnerOptional.get().getPartnerTelegramId())) {
+            InlineKeyboardButton toPartnerStocksButton = new InlineKeyboardButton(GO_TO_STOCKS);
+            toPartnerStocksButton. setCallbackData(GO_TO_STOCKS);
+
+            keyboard.add(List.of(toPartnerStocksButton));
+        }
+
         if (userOptional.isPresent() && userOptional.get().getUserRole() != USER) {
             if (partnerOptional.isPresent()) {
                 Partner partner = partnerOptional.get();
                 if (partner.isValid()) {
+                    InlineKeyboardButton createStockButton = new InlineKeyboardButton(ADD_STOCK);
+                    createStockButton.setCallbackData(ADD_STOCK);
+                    keyboard.add(List.of(createStockButton));
+
                     InlineKeyboardButton changeDiscountButton = new InlineKeyboardButton(CHANGE_DISCOUNT);
                     changeDiscountButton.setCallbackData(CHANGE_DISCOUNT);
 

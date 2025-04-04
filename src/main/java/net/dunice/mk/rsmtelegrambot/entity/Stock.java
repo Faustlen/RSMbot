@@ -26,16 +26,16 @@ public class Stock {
     @JoinColumn(name = "partner_tg_id", nullable = false)
     private Partner partnerTelegramId;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private byte[] image;
 
     @Column(nullable = false)
     private String head;
 
-    @Column(nullable = false, name = "period_stocks_e")
+    @Column(nullable = false, name = "period_stocks_start")
     private LocalDate periodStocksStart;
 
-    @Column(nullable = false, name = "period_stocks_s")
+    @Column(nullable = false, name = "period_stocks_end")
     private LocalDate periodStocksEnd;
 
     @Column(nullable = false)

@@ -27,3 +27,5 @@ databaseChangeLog:
       file: classpath:/db/changelog/changes/V013_alter_table_users_change_birth_date_to_varchar.sql
   - include:
       file: classpath:/db/changelog/changes/V014_create_table_stocks.sql
+  - include:
+      file: classpath:/db/changelog/changes/V015_alter_table_stocks_pk_generation_to_identity.sql

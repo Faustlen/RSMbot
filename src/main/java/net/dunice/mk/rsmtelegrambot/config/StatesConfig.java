@@ -91,6 +91,11 @@ public class StatesConfig {
         return new ConcurrentHashMap<>();
     }
 
+    @Bean("creatingStockStates")
+    public Map<Long, CreateStockState> getCreateStockStatesMap() {
+        return new ConcurrentHashMap<>();
+    }
+
     @Bean("allStates")
     public List<Map<Long, ?>> getAllStatesMap(Map<Long, BasicState> basicStates,
                                               Map<Long, GrantAdminState> grantAdminStates,
@@ -106,10 +111,12 @@ public class StatesConfig {
                                               Map<Long, MessageBroadcastState> messageBroadcastStates,
                                               Map<Long, ShowAnalyticsState> showAnalyticsStates,
                                               Map<Long, CreateCheckState> creatingCheckStates,
-                                              Map<Long, ShowStocksState> showStocksStates,
-                                              Map<Long, PartnerEditingState> partnerEditingStates) {
+                                              Map<Long, PartnerEditingState> partnerEditingStates,
+                                              Map<Long, CreateStockState> creatingStockStates,
+                                              Map<Long, ShowStocksState> showStocksStates) {
         return List.of(basicStates, grantAdminStates, userRegistrationStates, updateProfileStates, showEventStates, showPartnersStates,
             eventCreationStates, partnerRegistrationStates, showAdminsStates, showUsersStates, selectRegistrationStates,
-            messageBroadcastStates, showAnalyticsStates, creatingCheckStates, showStocksStates, partnerEditingStates);
+            messageBroadcastStates, showAnalyticsStates, creatingCheckStates, partnerEditingStates, creatingStockStates,
+            showStocksStates);
     }
 }

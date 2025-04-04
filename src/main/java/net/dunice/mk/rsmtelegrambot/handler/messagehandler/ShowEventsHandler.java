@@ -190,6 +190,11 @@ public class ShowEventsHandler implements MessageHandler {
                                                                 Long telegramId,
                                                                 ShowEventsState state) {
         String text = messageDto.getText();
+        if (CANCEL.equalsIgnoreCase(text) || text == null) {
+            state.setStep(SHOW_EVENT_DETAILS);
+            messageDto.setText(" " + state.getTargetEvent().getEventId());
+            return handleShowEventDetails(messageDto, telegramId, state);
+        }
 
         if (isFieldName(text)) {
             state.setStep(EDIT_EVENT_FIELD);

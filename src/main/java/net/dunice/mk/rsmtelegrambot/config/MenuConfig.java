@@ -1,6 +1,32 @@
 package net.dunice.mk.rsmtelegrambot.config;
 
-import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.*;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.ADD_EVENT;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.ADD_STOCK;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.ADMINS_LIST;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CANCEL;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CHANGE_INFO;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CHANGE_LOGO;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CHANGE_NAME;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CHANGE_PERIOD_END;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.CHANGE_PERIOD_START;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.EVENTS_LIST;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.NEW_CHECK;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.NO;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.OK;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.PARTNERS_LIST;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.PERIOD_ANALYTICS;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.RSM_MEMBER;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.RSM_PARTNER;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.SEND_MESSAGE_TO_EVERYONE;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.SKIP;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.STOCKS_LIST;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TO_MAIN_MENU;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.TRY_AGAIN;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.UPDATE_DISCOUNT_CODE;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.UPDATE_PROFILE;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.USERS_LIST;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.VERIFICATION_CODE;
+import static net.dunice.mk.rsmtelegrambot.constant.ButtonName.YES;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.ADMIN_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.CANCEL_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.CATEGORY_MENU;
@@ -12,6 +38,7 @@ import static net.dunice.mk.rsmtelegrambot.constant.Menu.PARTNER_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.SELECTION_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.SELECTION_USER_TYPE_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.SKIP_MENU;
+import static net.dunice.mk.rsmtelegrambot.constant.Menu.STOCK_FIELDS_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.SUPERUSER_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.TRY_AGAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.constant.Menu.TRY_AGAIN_OR_GO_TO_MAIN_MENU;
@@ -44,7 +71,7 @@ public class MenuConfig {
         ReplyKeyboard partnerMainMenu, ReplyKeyboard cancelMenu,
         ReplyKeyboard categoryMenu, ReplyKeyboard eventFieldsMenu,
         ReplyKeyboard updateDiscountCodeMenu, ReplyKeyboard okMenu,
-        ReplyKeyboard skipMenu) {
+        ReplyKeyboard skipMenu, ReplyKeyboard stockFieldsMenu) {
         EnumMap<Menu, ReplyKeyboard> menus = new EnumMap<>(Menu.class);
         menus.put(OK_MENU, okMenu);
         menus.put(SELECTION_MENU, selectionMenu);
@@ -60,6 +87,7 @@ public class MenuConfig {
         menus.put(SKIP_MENU, skipMenu);
         menus.put(CATEGORY_MENU, categoryMenu);
         menus.put(EVENT_FIELDS_MENU, eventFieldsMenu);
+        menus.put(STOCK_FIELDS_MENU, stockFieldsMenu);
         menus.put(UPDATE_DISCOUNT_CODE_MENU, updateDiscountCodeMenu);
         return menus;
     }
@@ -77,6 +105,11 @@ public class MenuConfig {
     @Bean("superUserMainMenu")
     public ReplyKeyboard getSuperUserMainMenu() {
         return getBaseSuperUserMenu();
+    }
+
+    @Bean("partnerMainMenu")
+    public ReplyKeyboard getPartnerMenu() {
+        return getBasePartnerMenu();
     }
 
     @Bean("selectionMenu")
@@ -213,33 +246,36 @@ public class MenuConfig {
         return inlineKeyboardMarkup;
     }
 
-    @Bean("partnerMainMenu")
-    public ReplyKeyboard getPartnerMenu() {
-        ReplyKeyboardMarkup replyMarkup = new ReplyKeyboardMarkup();
-        List<KeyboardRow> keyboard = new ArrayList<>();
-        keyboard.add(new KeyboardRow());
-        keyboard.get(0).addAll(List.of(
-            PARTNERS_LIST,
-            PERIOD_ANALYTICS));
-        keyboard.add(new KeyboardRow());
-        keyboard.get(1).addAll(List.of(
-            VERIFICATION_CODE,
-            NEW_CHECK));
-        keyboard.add(new KeyboardRow());
-        keyboard.get(2).addAll(List.of(
-            UPDATE_PROFILE));
-        replyMarkup.setKeyboard(keyboard);
-        replyMarkup.setResizeKeyboard(true);
-        replyMarkup.setOneTimeKeyboard(false);
-        return replyMarkup;
-    }
-
     @Bean("eventFieldsMenu")
     public ReplyKeyboard getEventFieldsMenu() {
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
         InlineKeyboardButton[] buttons = Stream
-            .of("Название", "Дата и Время", "Описание","Логотип", "Ссылка", "Адрес")
+            .of("Название", "Дата и Время", "Описание","Логотип", "Ссылка", "Адрес", CANCEL)
+            .map(category -> {
+                InlineKeyboardButton button = new InlineKeyboardButton(category);
+                button.setCallbackData(button.getText());
+                return button;
+            })
+            .toArray(InlineKeyboardButton[]::new);
+        for (int i = 0; i < buttons.length; i++) {
+            List<InlineKeyboardButton> row = new ArrayList<>();
+            row.add(buttons[i]);
+            if (++i < buttons.length) {
+                row.add(buttons[i]);
+            }
+            keyboard.add(row);
+        }
+        inlineKeyboardMarkup.setKeyboard(keyboard);
+        return inlineKeyboardMarkup;
+    }
+
+    @Bean("stockFieldsMenu")
+    public ReplyKeyboard getStockFieldsMenu() {
+        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
+        InlineKeyboardButton[] buttons = Stream
+            .of(CHANGE_NAME, CHANGE_INFO, CHANGE_PERIOD_START, CHANGE_PERIOD_END, CHANGE_LOGO, CANCEL)
             .map(category -> {
                 InlineKeyboardButton button = new InlineKeyboardButton(category);
                 button.setCallbackData(button.getText());
@@ -329,6 +365,15 @@ public class MenuConfig {
             List.of(EVENTS_LIST, ADD_EVENT),
             List.of(PERIOD_ANALYTICS, UPDATE_PROFILE),
             List.of(SEND_MESSAGE_TO_EVERYONE)
+        ));
+    }
+
+    private ReplyKeyboardMarkup getBasePartnerMenu() {
+        return createReplyKeyboard(List.of(
+            List.of(PARTNERS_LIST, STOCKS_LIST),
+            List.of(ADD_STOCK, NEW_CHECK),
+            List.of(PERIOD_ANALYTICS, VERIFICATION_CODE),
+            List.of(UPDATE_PROFILE)
         ));
     }
 
