@@ -1,6 +1,5 @@
 package net.dunice.mk.rsmtelegrambot.handler;
 
-import static net.dunice.mk.rsmtelegrambot.constant.Menu.PARTNER_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.entity.Role.SUPER_USER;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_MAIN_MENU;
 import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.IN_PARTNER_MENU;
@@ -8,7 +7,6 @@ import static net.dunice.mk.rsmtelegrambot.handler.state.BasicState.BasicStep.SE
 
 import lombok.RequiredArgsConstructor;
 import net.dunice.mk.rsmtelegrambot.constant.Command;
-import net.dunice.mk.rsmtelegrambot.constant.Menu;
 import net.dunice.mk.rsmtelegrambot.dto.MessageDto;
 import net.dunice.mk.rsmtelegrambot.entity.Partner;
 import net.dunice.mk.rsmtelegrambot.entity.User;
@@ -18,8 +16,6 @@ import net.dunice.mk.rsmtelegrambot.repository.PartnerRepository;
 import net.dunice.mk.rsmtelegrambot.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
-
 import java.util.Map;
 import java.util.Optional;
 
@@ -31,7 +27,6 @@ public class CommandHandler implements BaseHandler {
     private final PartnerRepository partnerRepository;
     private final SelectRegistrationHandler selectRegistrationHandler;
     private final MenuGenerator menuGenerator;
-    private final Map<Menu, ReplyKeyboard> menus;
     private final Map<Long, BasicState> basicStates;
 
     @Override
@@ -70,7 +65,7 @@ public class CommandHandler implements BaseHandler {
             if (partner.isPresent()) {
                 basicState.setStep(IN_PARTNER_MENU);
                 basicStates.put(telegramId, basicState);
-                return generateSendMessage(telegramId, "Выберите раздел:", menus.get(PARTNER_MAIN_MENU));
+                return generateSendMessage(telegramId, "Выберите раздел:", menuGenerator.getPartnerMenu(partner.get()));
             } else {
                 basicState.setStep(SELECT_REGISTRATION_TYPE);
                 basicStates.put(telegramId, basicState);

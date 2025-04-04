@@ -368,10 +368,11 @@ public class ShowStocksHandler implements MessageHandler {
 
         if (partnerRepository.existsById(telegramId)) {
             basicStates.get(telegramId).setStep(IN_PARTNER_MENU);
+            Partner partner = partnerRepository.findById(telegramId).get();
             return generateSendMessage(
                 telegramId,
                 "Выберите раздел:",
-                menus.get(Menu.PARTNER_MAIN_MENU)
+                menuGenerator.getPartnerMenu(partner)
             );
         } else {
             basicStates.get(telegramId).setStep(IN_MAIN_MENU);
